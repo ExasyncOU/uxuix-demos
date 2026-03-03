@@ -1,0 +1,101 @@
+{
+  "paths": {
+    "masterdatei": "data/Masterdatei Orders.xlsx",
+    "over_matrix": "data/Over Matrix.xlsx",
+    "exports_dir": "exports",
+    "output_dir": "K:\\Raussuchlisten\\2026",
+    "logs_dir": "logs",
+    "state_dir": "state"
+  },
+  "idis": {
+    "url": "https://idis.retail-sc.com",
+    "mailbox": "729",
+    "filter_name": "Liegeware",
+    "timeout_ms": 30000,
+    "screenshot_on_error": true,
+    "export_format": "CSV",
+    "export_separator": ";",
+    "export_fix_field_length": true
+  },
+  "idis_export_fields": {
+    "pre_over": {
+      "count": 19,
+      "fields": [
+        "Import Date",
+        "Order Number",
+        "AROS Number",
+        "Supplier",
+        "Class",
+        "Code",
+        "Serial",
+        "Shipping",
+        "Country",
+        "Committed Quantity",
+        "Ordered Quantity",
+        "Picking Method",
+        "Order Number",
+        "Country",
+        "Size",
+        "Quantity (for Size)",
+        "Item Number",
+        "Selling Price",
+        "Order Type"
+      ]
+    },
+    "post_over": {
+      "count": 20,
+      "fields": [
+        "Import Date",
+        "Order Number",
+        "AROS Number",
+        "Supplier",
+        "Class",
+        "Code",
+        "Serial",
+        "Shipping",
+        "Country",
+        "Committed Quantity",
+        "Ordered Quantity",
+        "Picking Method",
+        "Order Number",
+        "Country",
+        "Size",
+        "Quantity (for Size)",
+        "Item Number",
+        "Selling Price",
+        "Order Type",
+        "Committed Quantity (for Size)"
+      ]
+    }
+  },
+  "masterdatei_sheets": {
+    "alle_orders": "Alle Orders",
+    "ol_kartonage": "OL Kartonage"
+  },
+  "overconfirmation": {
+    "never_hochsetzen_countries": ["D"],
+    "factor_pcs": 1,
+    "factor_ppp": 3
+  },
+  "picklist": {
+    "list_number_min": 1001,
+    "list_number_max": 9999,
+    "date_format": "%d.%m.%y",
+    "filename_pattern": "KI_UXUIX-{list_nr:04d}-{order_code}-{date}.xlsx"
+  },
+  "printer": {
+    "name": "",
+    "copies": 1,
+    "orientation": "landscape"
+  },
+  "reporting": {
+    "edge_function_url": "https://crslpxgwxjmovrhyxiim.supabase.co/functions/v1/nacke-report",
+    "machine_name": "nacke-vm",
+    "enabled": true
+  },
+  "schedule": {
+    "start_time": "04:00",
+    "deadline": "05:30",
+    "weekdays": ["Mon", "Tue", "Wed", "Thu"]
+  }
+}
