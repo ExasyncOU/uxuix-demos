@@ -1,4 +1,4 @@
-# nacke_deploy.ps1 – Nacke NackeScript Deployment + Testlauf
+# nacke_deploy.ps1 - Nacke NackeScript Deployment + Testlauf
 # Laedt alle Scripts von GitHub, mappt K: falls noetig, erstellt Ordnerstruktur
 # und startet test_export_picklist.py
 
@@ -13,7 +13,7 @@ Write-Host "VM: $($env:COMPUTERNAME) | User: $(whoami) | Timestamp: $ts"
 # 1. K: Laufwerk mappen (subst falls kein echtes K:)
 # ------------------------------------------------------------------
 if (-not (Test-Path 'K:\')) {
-    Write-Host "K: nicht vorhanden – erstelle via subst K: C:\" -ForegroundColor Yellow
+    Write-Host "K: nicht vorhanden - erstelle via subst K: C:\" -ForegroundColor Yellow
     subst K: C:\ 2>&1 | Out-Null
     if (Test-Path 'K:\') {
         Write-Host "K: erfolgreich gemappt (K: -> C:\)" -ForegroundColor Green
