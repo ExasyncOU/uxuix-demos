@@ -448,19 +448,21 @@ class IdisBrowser:
                         pass
 
             if download is None:
-                # Versuch B: "Export List" Button auf der (evtl. navigierten) Seite
-                # Selektor mainForm:_idJsp253 = SEL_CONFIRM_PRINT (zweiter Export-Schritt)
+                # Versuch B: IDIS navigiert nach Export Selected zu /jsf/orderExport.faces
+                # Dort ist der "Export List" Button ein <a>-Element (JSF commandLink)
+                # Verifizierter Selektor (03.03.2026): a[name="mainForm:header:_idJsp47"]
                 for sel in [
-                    self.SEL_CONFIRM_PRINT,  # mainForm:_idJsp253 = Export List
+                    'a[name="mainForm:header:_idJsp47"]',  # Verifiziert 03.03.2026
+                    'a[name*="header:_idJsp"]',             # Flexibler Fallback
+                    self.SEL_CONFIRM_PRINT,                 # Fallback: input-Button
                     'input[value*="Export"]',
-                    'input[value*="List"]',
-                    'button:has-text("Export")',
-                    'a:has-text("Export")',
+                    'a[name*="export"]',
+                    'a[name*="Export"]',
                 ]:
                     try:
                         btn = page.locator(sel)
-                        if await btn.is_visible(timeout=2000):
-                            logger.info("Export List Button gefunden: %s", sel)
+                        if await btn.is_visible(timeout=3000):
+                            logger.info("Export List Element gefunden: %s", sel)
                             async with page.expect_download(timeout=30000) as dl_info:
                                 await btn.click()
                             download = await dl_info.value
