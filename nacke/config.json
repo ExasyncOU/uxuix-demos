@@ -2,10 +2,10 @@
   "paths": {
     "masterdatei": "K:\\Masterdatei Orders.xlsx",
     "over_matrix": "data/Over Matrix.xlsx",
-    "exports_dir": "exports",
-    "output_dir": "C:\\NackeScript\\raussuchlisten\\2026",
-    "logs_dir": "logs",
-    "state_dir": "state"
+    "exports_dir": "K:\\Raussuchlisten\\Export",
+    "output_dir": "K:\\Raussuchlisten\\2026",
+    "logs_dir": "C:\\NackeScript\\logs",
+    "state_dir": "C:\\NackeScript\\state"
   },
   "idis": {
     "url": "https://idis.retail-sc.com",
