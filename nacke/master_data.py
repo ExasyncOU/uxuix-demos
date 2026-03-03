@@ -68,7 +68,8 @@ class MasterData:
         """
         path = Path(self.cfg["paths"]["masterdatei"])
         if not path.exists():
-            raise FileNotFoundError(f"Masterdatei nicht gefunden: {path}")
+            logger.warning("Masterdatei nicht gefunden: %s – Bundle-Daten leer.", path)
+            return
 
         sheet_orders = self.cfg["masterdatei_sheets"]["alle_orders"]
         sheet_ol = self.cfg["masterdatei_sheets"]["ol_kartonage"]
