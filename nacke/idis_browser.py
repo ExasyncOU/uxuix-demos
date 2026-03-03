@@ -449,51 +449,53 @@ class IdisBrowser:
 
             if download is None:
                 # Versuch B: IDIS navigiert nach Export Selected zu /jsf/orderExport.faces
-                # Vollständige Seiten-Inspektion um Download-Mechanismus zu verstehen
+                # Dort gibt es type="image" Buttons (kein type="submit"!):
+                #   INPUT[1] name=mainForm:_idJsp128 → Export (primäre Aktion)
+                #   INPUT[2] name=mainForm:_idJsp129 → Abbrechen
+                # Verifiziert 03.03.2026 via vollständiger Seiten-Inspektion.
+                SEL_EXPORT_IMAGE_BTN = 'input[name="mainForm:_idJsp128"]'
 
-                # B0: Alle <a>-Elemente und ihre Attribute loggen (inkl. href, id, text)
-                all_a = await page.locator("a").all()
-                for i, a_elem in enumerate(all_a):
+                export_img_btn = page.locator(SEL_EXPORT_IMAGE_BTN)
+                if await export_img_btn.is_visible(timeout=5000):
+                    logger.info("Export Image Button gefunden (type=image, name=mainForm:_idJsp128)")
+
+                    # Ansatz B1: Click + expect_download (CSV mit Content-Disposition)
                     try:
-                        a_href = await a_elem.get_attribute("href") or ""
-                        a_name = await a_elem.get_attribute("name") or ""
-                        a_id   = await a_elem.get_attribute("id") or ""
-                        a_text = (await a_elem.inner_text()).strip()[:40]
-                        a_vis  = await a_elem.is_visible()
-                        logger.info(
-                            "A[%d] href=%s name=%s id=%s text=%s visible=%s",
-                            i, a_href[:80], a_name, a_id, a_text, a_vis,
-                        )
-                    except Exception:
-                        pass
+                        async with page.expect_download(timeout=60000) as dl_info:
+                            await export_img_btn.click()
+                        download = await dl_info.value
+                        logger.info("Download via Image Button: %s",
+                                    download.suggested_filename)
+                    except Exception as e:
+                        logger.info("Image Button kein Download-Event: %s", type(e).__name__)
 
-                # B0b: Alle <input> und <button> Elemente (auch versteckte)
-                all_inp = await page.locator("input, button").all()
-                for i, inp in enumerate(all_inp[:20]):
-                    try:
-                        t = await inp.get_attribute("type") or ""
-                        n = await inp.get_attribute("name") or ""
-                        v = await inp.get_attribute("value") or ""
-                        vis = await inp.is_visible()
-                        logger.info("INPUT[%d] type=%s name=%s value=%s visible=%s", i, t, n, v[:30], vis)
-                    except Exception:
-                        pass
-
-                # B0c: Seiten-Quelle (ersten 1000 Zeichen)
-                page_src = await page.content()
-                logger.info("Page source (1000 chars): %s", page_src[:1000])
-
-                # B1: Warte auf Auto-Download (IDIS könnte CSV automatisch senden)
-                # Viele IDIS-Versionen starten Download automatisch wenn man orderExport.faces lädt
-                logger.info("Warte auf Auto-Download (60s)...")
-                try:
-                    async with page.expect_download(timeout=60000) as dl_info:
-                        # Seite neu laden um Auto-Download zu triggern
-                        await page.reload()
-                    download = await dl_info.value
-                    logger.info("Auto-Download nach Reload: %s", download.suggested_filename)
-                except Exception as e:
-                    logger.info("Kein Auto-Download nach 60s Reload: %s", type(e).__name__)
+                    if download is None:
+                        # Ansatz B2: CSV wird direkt im Browser angezeigt (kein attachment)
+                        await page.wait_for_load_state("networkidle")
+                        nav_url = page.url
+                        logger.info("URL nach Image Button Klick: %s", nav_url)
+                        body_text = await page.locator("body").inner_text()
+                        logger.info("Body (200 chars): %s", body_text[:200])
+                        lines = body_text.strip().splitlines()
+                        if len(lines) > 5 and ";" in body_text:
+                            logger.info(
+                                "CSV-Daten direkt im Browser (%d Zeilen) – speichere",
+                                len(lines),
+                            )
+                            archive_name = (
+                                f"IDIS_EXPORT_{export_date.strftime('%Y-%m-%d')}"
+                                f"_{suffix}.csv"
+                            )
+                            archive_path = self.exports_dir / archive_name
+                            archive_path.write_text(body_text, encoding="utf-8-sig")
+                            logger.info("CSV gespeichert: %s", archive_path)
+                            rows = self._parse_csv(str(archive_path))
+                            logger.info("Export enthaelt %d Zeilen", len(rows))
+                            return str(archive_path), rows
+                else:
+                    logger.warning(
+                        "Export Image Button %s nicht sichtbar", SEL_EXPORT_IMAGE_BTN
+                    )
 
             if download is None:
                 raise RuntimeError(
