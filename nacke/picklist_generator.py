@@ -106,7 +106,7 @@ class PicklistGenerator:
                 "picking": "Mixed",
                 "total_qty": total_qty,
             })
-            logger.info("Liste %04d: %s %s, %d Stk → %s", list_nr, aros_key, abrufart, total_qty, filename)
+            logger.info("Liste %04d: %s %s, %d Stk -> %s", list_nr, aros_key, abrufart, total_qty, filename)
 
         logger.info("Insgesamt %d Picklisten generiert.", len(generated))
         return generated
