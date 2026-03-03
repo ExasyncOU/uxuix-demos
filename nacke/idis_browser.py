@@ -451,26 +451,86 @@ class IdisBrowser:
                 # Versuch B: IDIS navigiert nach Export Selected zu /jsf/orderExport.faces
                 # Dort ist der "Export List" Button ein <a>-Element (JSF commandLink)
                 # Verifizierter Selektor (03.03.2026): a[name="mainForm:header:_idJsp47"]
-                for sel in [
-                    'a[name="mainForm:header:_idJsp47"]',  # Verifiziert 03.03.2026
-                    'a[name*="header:_idJsp"]',             # Flexibler Fallback
-                    self.SEL_CONFIRM_PRINT,                 # Fallback: input-Button
-                    'input[value*="Export"]',
-                    'a[name*="export"]',
-                    'a[name*="Export"]',
-                ]:
-                    try:
-                        btn = page.locator(sel)
-                        if await btn.is_visible(timeout=3000):
-                            logger.info("Export List Element gefunden: %s", sel)
-                            async with page.expect_download(timeout=30000) as dl_info:
-                                await btn.click()
+                export_link = page.locator('a[name="mainForm:header:_idJsp47"]')
+                if await export_link.is_visible(timeout=5000):
+                    # Diagnose: href und onclick des Links loggen
+                    href = await export_link.get_attribute("href") or ""
+                    onclick = await export_link.get_attribute("onclick") or ""
+                    logger.info("Export Link href: %s", href[:200])
+                    logger.info("Export Link onclick: %s", onclick[:200])
+
+                    # Ansatz B1: Direkte Navigation zum href (falls href eine URL ist)
+                    if href and href not in ("#", "javascript:void(0)", "javascript:;"):
+                        try:
+                            logger.info("Navigiere direkt zu href: %s", href)
+                            async with page.expect_download(timeout=15000) as dl_info:
+                                await page.goto(href)
                             download = await dl_info.value
-                            logger.info("Download via Export List: %s",
+                            logger.info("Download via Direkt-Navigation: %s",
                                         download.suggested_filename)
-                            break
-                    except Exception:
-                        pass
+                        except Exception as e:
+                            logger.info("Direkt-Navigation kein Download: %s", e)
+
+                    if download is None:
+                        # Ansatz B2: Click + Navigation-Wait (kein Download-Event erwartet)
+                        # IDIS könnte nach dem Klick zu einer anderen URL navigieren
+                        # und die CSV dort bereitstellen
+                        logger.info("Klicke Export Link, warte auf Navigation...")
+                        try:
+                            async with page.expect_navigation(
+                                url=lambda u: u != "https://idis.retail-sc.com/jsf/orderExport.faces",
+                                timeout=20000,
+                            ) as nav_info:
+                                await export_link.click()
+                            await nav_info.value
+                            nav_url = page.url
+                            logger.info("Navigation nach Klick: %s", nav_url)
+                            # Seite zeigt CSV direkt? Inhalt prüfen
+                            content_type = ""
+                            try:
+                                content_type = await page.evaluate(
+                                    "document.contentType || document.mimeType || ''"
+                                )
+                            except Exception:
+                                pass
+                            logger.info("Content-Type nach Navigation: %s", content_type)
+                            body_text = await page.locator("body").inner_text()
+                            logger.info("Body (100 chars): %s", body_text[:100])
+                            # Falls es CSV-Daten sind (Semikolon-getrennt, viele Zeilen)
+                            lines = body_text.strip().splitlines()
+                            if len(lines) > 5 and ";" in body_text:
+                                logger.info(
+                                    "CSV-Daten direkt im Browser (%d Zeilen) – speichere",
+                                    len(lines),
+                                )
+                                archive_name = (
+                                    f"IDIS_EXPORT_{export_date.strftime('%Y-%m-%d')}"
+                                    f"_{suffix}.csv"
+                                )
+                                archive_path = self.exports_dir / archive_name
+                                archive_path.write_text(body_text, encoding="utf-8-sig")
+                                logger.info("CSV gespeichert: %s", archive_path)
+                                rows = self._parse_csv(str(archive_path))
+                                logger.info("Export enthalt %d Zeilen", len(rows))
+                                return str(archive_path), rows
+                        except Exception as e:
+                            logger.info("Navigation-Wait Fehler: %s", e)
+
+                    if download is None:
+                        # Ansatz B3: JavaScript onclick direkt ausfuehren
+                        if onclick:
+                            logger.info("Fuehre onclick JavaScript aus...")
+                            try:
+                                async with page.expect_download(timeout=15000) as dl_info:
+                                    await page.evaluate(onclick)
+                                download = await dl_info.value
+                                logger.info("Download via JS eval: %s",
+                                            download.suggested_filename)
+                            except Exception as e:
+                                logger.info("JS eval Download Fehler: %s", e)
+
+                else:
+                    logger.warning("Export Link a[name='mainForm:header:_idJsp47'] nicht gefunden")
 
             if download is None:
                 raise RuntimeError(
