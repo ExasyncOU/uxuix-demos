@@ -12,8 +12,13 @@ foreach ($fname in @('idis_browser.py', 'test_export_picklist.py')) {
     Write-Host "  -> $dest ($sz bytes)"
 }
 
-Write-Host "`nStarte test_export_picklist.py..."
+Write-Host "`nStarte test_export_picklist.py (CWD=$BASE)..."
 $logfile = Join-Path $BASE "exports\test_run_cleanup_$ts.log"
-& python "$BASE\test_export_picklist.py" 2>&1 | Tee-Object -FilePath $logfile
+Push-Location $BASE
+try {
+    & python test_export_picklist.py 2>&1 | Tee-Object -FilePath $logfile
+} finally {
+    Pop-Location
+}
 Write-Host "`n=== LETZTEN 20 ZEILEN ==="
 Get-Content $logfile | Select-Object -Last 20
