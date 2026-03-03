@@ -76,7 +76,7 @@ async def main():
             p = Path(g["filepath"])
             size_kb = p.stat().st_size / 1024 if p.exists() else 0
             logger.info(
-                "  ✓ %s  (%d Stk, %.1f KB)",
+                "  OK  %s  (%d Stk, %.1f KB)",
                 g["filename"], g["total_qty"], size_kb,
             )
 
