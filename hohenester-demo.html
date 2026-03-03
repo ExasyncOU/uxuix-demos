@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UXUIX Demo – Hohenester Agrarhandel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --card2: #222535;
+      --border: #2d3148;
+      --accent: #4f6ef7;
+      --accent2: #6c8aff;
+      --green: #22c55e;
+      --yellow: #fbbf24;
+      --orange: #fb923c;
+      --red: #ef4444;
+      --text: #e8eaf0;
+      --muted: #7c82a0;
+      --excel-header: #217346;
+      --excel-yellow: #fff2cc;
+      --excel-orange: #fce4d6;
+      --excel-green: #e2efda;
+      --excel-gray: #f2f2f2;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ─── TOP BAR ─── */
+    .topbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+    .logo span { color: var(--accent2); }
+    .customer-badge {
+      background: rgba(79,110,247,0.15);
+      border: 1px solid rgba(79,110,247,0.3);
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      color: var(--accent2);
+    }
+    .step-counter { font-size: 13px; color: var(--muted); }
+
+    /* ─── PROGRESS BAR ─── */
+    .progress-track {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      display: flex;
+      gap: 0;
+      flex-shrink: 0;
+    }
+    .progress-step {
+      flex: 1;
+      padding: 10px 6px;
+      font-size: 11px;
+      color: var(--muted);
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .progress-step.active {
+      color: var(--accent2);
+      border-bottom-color: var(--accent2);
+      font-weight: 600;
+    }
+    .progress-step.done {
+      color: var(--green);
+      border-bottom-color: var(--green);
+    }
+
+    /* ─── MAIN CONTENT ─── */
+    .main { flex: 1; overflow: hidden; position: relative; }
+
+    .screen {
+      position: absolute; inset: 0;
+      display: none;
+      flex-direction: column;
+      padding: 24px 28px;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    .screen.active { display: flex; }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideRight { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+    @keyframes rowSlide { from { opacity: 0; transform: translateY(-8px); background: #4f6ef730; } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes highlight { 0% { background: transparent; } 30% { background: rgba(251,191,36,0.35); } 100% { background: rgba(251,191,36,0.15); } }
+    @keyframes checkPop { 0% { transform: scale(0); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    @keyframes counterUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
+    .slide-right { animation: slideRight 0.35s ease forwards; }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .card-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* ─── SCREEN 0: INTRO ─── */
+    #s0 {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .intro-logo {
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      margin-bottom: 6px;
+    }
+    .intro-logo span { color: var(--accent2); }
+    .intro-sub { color: var(--muted); font-size: 16px; margin-bottom: 8px; }
+    .intro-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+    .intro-desc { color: var(--muted); font-size: 14px; max-width: 520px; margin: 0 auto 24px; line-height: 1.6; }
+    .flow-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    .flow-node {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .flow-arrow { color: var(--muted); font-size: 18px; }
+
+    /* ─── SCREEN 1: INBOX ─── */
+    .inbox-list { display: flex; flex-direction: column; gap: 1px; }
+    .inbox-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 4px;
+    }
+    .inbox-item:hover { border-color: var(--accent); background: var(--card2); }
+    .inbox-item.new { border-color: var(--accent); background: rgba(79,110,247,0.08); }
+    .inbox-item.new:hover { background: rgba(79,110,247,0.14); }
+    .inbox-item.read { opacity: 0.6; }
+    .inbox-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); margin-top: 5px; flex-shrink: 0;
+    }
+    .inbox-dot.read { background: transparent; border: 1px solid var(--muted); }
+    .inbox-from { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+    .inbox-subj { font-size: 13px; color: var(--text); margin-bottom: 2px; }
+    .inbox-prev { font-size: 12px; color: var(--muted); }
+    .inbox-meta { margin-left: auto; text-align: right; flex-shrink: 0; }
+    .inbox-time { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .inbox-badge {
+      background: var(--accent);
+      color: white;
+      border-radius: 10px;
+      font-size: 11px;
+      padding: 1px 7px;
+      font-weight: 600;
+    }
+    .inbox-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+      display: inline-block;
+    }
+    .tag-new { background: rgba(79,110,247,0.2); color: var(--accent2); border: 1px solid rgba(79,110,247,0.3); }
+
+    /* ─── SCREEN 2: EMAIL VIEW ─── */
+    .email-header { margin-bottom: 16px; }
+    .email-from { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+    .email-from strong { color: var(--text); }
+    .email-subject { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+    .email-body {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      font-size: 14px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      position: relative;
+    }
+    .highlight-word {
+      border-radius: 3px;
+      padding: 0 2px;
+      transition: all 0.3s;
+    }
+    .hl-product { background: rgba(79,110,247,0.25); color: var(--accent2); }
+    .hl-amount { background: rgba(251,191,36,0.25); color: var(--yellow); }
+    .hl-customer { background: rgba(34,197,94,0.2); color: var(--green); }
+    .hl-date { background: rgba(251,146,60,0.2); color: var(--orange); }
+    .hl-extra { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    /* ─── SCREEN 3: KI ANALYSE ─── */
+    .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .analysis-left { display: flex; flex-direction: column; gap: 12px; }
+    .email-raw {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.8;
+      flex: 1;
+    }
+    .ai-steps { display: flex; flex-direction: column; gap: 8px; }
+    .ai-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      opacity: 0.3;
+      transition: all 0.4s;
+    }
+    .ai-step.active { opacity: 1; border-color: var(--accent); }
+    .ai-step.done { opacity: 1; border-color: var(--green); }
+    .ai-step-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+    .icon-pending { background: var(--card); border: 1px solid var(--border); }
+    .icon-spin { background: rgba(79,110,247,0.2); border: 1px solid var(--accent); animation: spin 1s linear infinite; }
+    .icon-done { background: rgba(34,197,94,0.2); border: 1px solid var(--green); animation: checkPop 0.3s ease; }
+    .ai-step-label { flex: 1; }
+    .ai-step-value { font-weight: 600; color: var(--accent2); font-size: 12px; }
+
+    /* ─── SCREEN 4: VALIDATION ─── */
+    .validation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .field-group { display: flex; flex-direction: column; gap: 4px; }
+    .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); }
+    .field-value {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .field-value.ok { border-color: rgba(34,197,94,0.4); }
+    .field-value.warn { border-color: rgba(251,191,36,0.5); background: rgba(251,191,36,0.06); }
+    .field-check { font-size: 15px; }
+    .field-input {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      flex: 1;
+      outline: none;
+    }
+    .field-source { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .confidence {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: auto;
+    }
+    .conf-high { background: rgba(34,197,94,0.15); color: var(--green); }
+    .conf-med { background: rgba(251,191,36,0.15); color: var(--yellow); }
+
+    /* ─── SCREEN 5: EXCEL ─── */
+    .excel-wrapper {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid #888;
+    }
+    .excel-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 900px;
+    }
+    .excel-header-row th {
+      background: #217346;
+      color: white;
+      padding: 7px 10px;
+      text-align: left;
+      font-weight: 600;
+      white-space: nowrap;
+      border-right: 1px solid #1a5c38;
+    }
+    .excel-header-row th:first-child { background: #1e6c40; min-width: 30px; text-align: center; }
+    .excel-row td {
+      padding: 5px 10px;
+      border-bottom: 1px solid #d0d0d0;
+      border-right: 1px solid #e0e0e0;
+      color: #1a1a1a;
+      white-space: nowrap;
+      background: white;
+    }
+    .excel-row td:first-child {
+      background: #f2f2f2;
+      color: #666;
+      text-align: center;
+      font-size: 11px;
+      border-right: 2px solid #d0d0d0;
+    }
+    .row-yellow td { background: #fff2cc !important; }
+    .row-yellow td:first-child { background: #f2e8b0 !important; }
+    .row-orange td { background: #fce4d6 !important; }
+    .row-orange td:first-child { background: #f0ccbc !important; }
+    .row-green td { background: #e2efda !important; }
+    .row-green td:first-child { background: #cce0c4 !important; }
+    .row-gray td { background: #f8f8f8 !important; }
+    .row-new {
+      animation: rowSlide 0.5s ease forwards;
+    }
+    .row-new td {
+      background: #fff2cc !important;
+      font-weight: 600;
+    }
+    .row-new td:first-child { background: #f2e8b0 !important; }
+    .typing-cursor::after {
+      content: '|';
+      animation: blink 0.7s step-end infinite;
+      color: #217346;
+    }
+    .excel-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-box { width: 14px; height: 14px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.1); }
+
+    /* ─── SCREEN 6: DONE ─── */
+    #s6 { justify-content: center; align-items: center; text-align: center; }
+    .done-icon { font-size: 64px; margin-bottom: 12px; }
+    .done-title { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .done-sub { color: var(--muted); font-size: 15px; margin-bottom: 28px; max-width: 480px; }
+    .stats-row {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    .stat-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 24px;
+      min-width: 140px;
+    }
+    .stat-number { font-size: 36px; font-weight: 800; color: var(--accent2); }
+    .stat-label { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .next-steps { display: flex; flex-direction: column; gap: 8px; max-width: 420px; width: 100%; }
+    .next-step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      text-align: left;
+    }
+    .next-step .ns-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: rgba(79,110,247,0.2);
+      border: 1px solid rgba(79,110,247,0.4);
+      color: var(--accent2);
+      font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79,110,247,0.4); }
+    .btn-secondary {
+      background: var(--card2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent2); }
+    .btn-green {
+      background: #15803d;
+      color: white;
+    }
+    .btn-green:hover { background: #16a34a; transform: translateY(-1px); }
+    .btn-large { padding: 14px 32px; font-size: 16px; }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    /* ─── SCREEN TITLE ─── */
+    .screen-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .screen-sub { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+
+    /* misc */
+    .divider { height: 1px; background: var(--border); }
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .tag-blue { background: rgba(79,110,247,0.15); color: var(--accent2); border: 1px solid rgba(79,110,247,0.3); }
+    .tag-green { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+    .tag-yellow { background: rgba(251,191,36,0.12); color: var(--yellow); border: 1px solid rgba(251,191,36,0.3); }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .loading-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .loading-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    @media (max-width: 700px) {
+      .analysis-grid, .two-col, .validation-grid { grid-template-columns: 1fr; }
+      .flow-preview { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">UX<span>UIX</span></div>
+  <div class="customer-badge">🌾 Hohenester Agrarhandel</div>
+  <div class="step-counter" id="step-counter">Demo: Automatische Bestellerfassung</div>
+</div>
+
+<!-- PROGRESS STEPS -->
+<div class="progress-track">
+  <div class="progress-step" id="ps1">📬 Posteingang</div>
+  <div class="progress-step" id="ps2">📧 E-Mail lesen</div>
+  <div class="progress-step" id="ps3">🤖 KI-Analyse</div>
+  <div class="progress-step" id="ps4">✅ Prüfen</div>
+  <div class="progress-step" id="ps5">📊 Excel</div>
+  <div class="progress-step" id="ps6">🏁 Fertig</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ═══ SCREEN 0: INTRO ═══ -->
+  <div class="screen active" id="s0">
+    <div class="intro-logo">UX<span>UIX</span></div>
+    <div class="intro-sub">Operation System für KI-gestützte Prozessautomatisierung</div>
+    <div class="intro-title">Probe-Automatisierung: Bestelleingang</div>
+    <div class="intro-desc">
+      Diese Demo zeigt, wie eingehende Bestellungen automatisch aus E-Mails erkannt,
+      geprüft und direkt in die Excel-Datei <strong>Bestellungen.xlsx</strong> übertragen werden —
+      ohne manuelle Eingabe.
+    </div>
+    <div class="flow-preview">
+      <div class="flow-node">📧 E-Mail Posteingang</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">🤖 KI-Erkennung</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">👤 Kurzprüfung</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">📊 Excel-Eintrag</div>
+    </div>
+    <button class="btn btn-primary btn-large" onclick="goto(1)">
+      Demo starten &nbsp;→
+    </button>
+    <div style="margin-top:10px; font-size:12px; color:var(--muted);">Erstellt auf Basis Ihrer echten Prozessunterlagen · 03.03.2026</div>
+  </div>
+
+  <!-- ═══ SCREEN 1: INBOX ═══ -->
+  <div class="screen" id="s1">
+    <div>
+      <div class="screen-title">📬 E-Mail Posteingang</div>
+      <div class="screen-sub">Eingehende Bestellungen — zentrale@hohenester-agrar.de (Postfach Disposition)</div>
+    </div>
+    <div class="inbox-list">
+      <!-- Existing / read emails -->
+      <div class="inbox-item read">
+        <div class="inbox-dot read"></div>
+        <div style="flex:1">
+          <div class="inbox-from">Fellner GmbH, Mainburg</div>
+          <div class="inbox-subj">Bestellung Rapsschrot – 18 t, Lieferung Do KW 9</div>
+          <div class="inbox-prev">...bitte wie besprochen 18 Tonnen Rapsschrot disponieren für...</div>
+        </div>
+        <div class="inbox-meta">
+          <div class="inbox-time">Gestern 14:22</div>
+          <div class="tag tag-green" style="font-size:11px;">Erfasst ✓</div>
+        </div>
+      </div>
+      <div class="inbox-item read">
+        <div class="inbox-dot read"></div>
+        <div style="flex:1">
+          <div class="inbox-from">Huber GbR, Frontenhausen</div>
+          <div class="inbox-subj">AW: LP-Soja 25 t / geblasen / Do KW 9</div>
+          <div class="inbox-prev">...bestätigen Sie bitte die Lieferung für Donnerstag 24. Februar...</div>
+        </div>
+        <div class="inbox-meta">
+          <div class="inbox-time">Gestern 09:17</div>
+          <div class="tag tag-green" style="font-size:11px;">Erfasst ✓</div>
+        </div>
+      </div>
+      <div class="inbox-item read">
+        <div class="inbox-dot read"></div>
+        <div style="flex:1">
+          <div class="inbox-from">Goderbauer, Stehberg</div>
+          <div class="inbox-subj">Goderbauer Stehberg 12 t LP(38,10) / Lieferung: eilt Mi KW 8</div>
+          <div class="inbox-prev">Hallo, wir benötigen dringend 12 Tonnen LP-Soja, Lieferung wenn möglich...</div>
+        </div>
+        <div class="inbox-meta">
+          <div class="inbox-time">19.02. 08:44</div>
+          <div class="tag tag-green" style="font-size:11px;">Erfasst ✓</div>
+        </div>
+      </div>
+
+      <!-- NEW: highlighted -->
+      <div class="inbox-item new" style="cursor:default;">
+        <div class="inbox-dot"></div>
+        <div style="flex:1">
+          <div class="inbox-from" style="color:var(--accent2);">Anton Trellinger, Rosenmühle
+            <span class="inbox-badge" style="margin-left:8px;">NEU</span>
+          </div>
+          <div class="inbox-subj">Sojaschrot LP Bestellung – 11 t, Anfang nächste Woche</div>
+          <div class="inbox-prev" style="color:var(--text);">bitte 11to Sojaschrot LP, QS-Soja+, geblasen. Lieferung Anfang nächster Woche...</div>
+        </div>
+        <div class="inbox-meta">
+          <div class="inbox-time" style="color:var(--accent2);">Heute 07:41</div>
+          <span class="tag tag-blue">Neu</span>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goto(2)">📧 E-Mail öffnen &nbsp;→</button>
+      <div style="font-size:12px; color:var(--muted);">Normalerweise wird jede neue E-Mail automatisch erkannt</div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 2: EMAIL VIEW ═══ -->
+  <div class="screen" id="s2">
+    <div class="card">
+      <div class="email-from">
+        <strong>Von:</strong> Anton Trellinger &lt;a.trellinger@rosenmühle-lb.de&gt; &nbsp;·&nbsp;
+        <strong>An:</strong> Disposition &lt;zentrale@hohenester-agrar.de&gt; &nbsp;·&nbsp;
+        <strong>Datum:</strong> Mo, 03.03.2026 07:41
+      </div>
+      <div class="email-subject">Sojaschrot LP Bestellung – 11 t, Anfang nächste Woche</div>
+      <div class="email-body" id="email-body">Sehr geehrte Damen und Herren,
+
+bitte 11to Sojaschrot LP, QS-Soja+, geblasen.
+Lieferung Anfang nächster Woche.
+
+Kunde:
+Anton Trellinger
+Rosenmühle
+84069 Schierling
+
+Vielen Dank und freundliche Grüße,
+Anton Trellinger</div>
+    </div>
+    <div style="background:rgba(79,110,247,0.07); border:1px solid rgba(79,110,247,0.25); border-radius:8px; padding:14px 18px; font-size:13px; color:var(--muted);">
+      💡 <strong style="color:var(--text);">Ohne Automatisierung:</strong> Der Disponent liest die E-Mail, tippt alle Felder manuell in Excel ein — ca. 3–5 Minuten pro Bestellung.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goto(1)">← Zurück</button>
+      <button class="btn btn-primary" onclick="startAnalysis()">🤖 UXUIX Automatisierung starten &nbsp;→</button>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 3: KI ANALYSE ═══ -->
+  <div class="screen" id="s3">
+    <div>
+      <div class="screen-title">🤖 KI-Analyse läuft...</div>
+      <div class="screen-sub">Das System liest und strukturiert die E-Mail automatisch</div>
+    </div>
+    <div class="loading-bar"><div class="loading-fill" id="load-bar" style="width:0%"></div></div>
+    <div class="two-col">
+      <!-- Left: email with highlights -->
+      <div>
+        <div class="card-title" style="margin-bottom:8px">📧 Erkannte Felder in der E-Mail</div>
+        <div class="email-raw" id="analysis-email">
+          Sehr geehrte Damen und Herren,<br><br>
+          bitte <span id="hl-amt" class="highlight-word" style="transition:all 0.3s">11to</span> <span id="hl-prod" class="highlight-word" style="transition:all 0.3s">Sojaschrot LP</span>, <span id="hl-ext" class="highlight-word" style="transition:all 0.3s">QS-Soja+, geblasen</span>.<br>
+          Lieferung <span id="hl-date" class="highlight-word" style="transition:all 0.3s">Anfang nächster Woche</span>.<br><br>
+          Kunde:<br>
+          <span id="hl-cust" class="highlight-word" style="transition:all 0.3s">Anton Trellinger<br>Rosenmühle<br>84069 Schierling</span><br><br>
+          Vielen Dank und freundliche Grüße,<br>
+          Anton Trellinger
+        </div>
+      </div>
+      <!-- Right: ai steps -->
+      <div>
+        <div class="card-title" style="margin-bottom:8px">📋 Verarbeitungsschritte</div>
+        <div class="ai-steps" id="ai-steps">
+          <div class="ai-step" id="as1">
+            <div class="ai-step-icon icon-pending">⏳</div>
+            <div class="ai-step-label">E-Mail wird eingelesen</div>
+            <div class="ai-step-value" id="av1"></div>
+          </div>
+          <div class="ai-step" id="as2">
+            <div class="ai-step-icon icon-pending">⏳</div>
+            <div class="ai-step-label">Produkt erkennen</div>
+            <div class="ai-step-value" id="av2"></div>
+          </div>
+          <div class="ai-step" id="as3">
+            <div class="ai-step-icon icon-pending">⏳</div>
+            <div class="ai-step-label">Menge ermitteln</div>
+            <div class="ai-step-value" id="av3"></div>
+          </div>
+          <div class="ai-step" id="as4">
+            <div class="ai-step-icon icon-pending">⏳</div>
+            <div class="ai-step-label">Kunden abgleichen</div>
+            <div class="ai-step-value" id="av4"></div>
+          </div>
+          <div class="ai-step" id="as5">
+            <div class="ai-step-icon icon-pending">⏳</div>
+            <div class="ai-step-label">Liefertermin ableiten</div>
+            <div class="ai-step-value" id="av5"></div>
+          </div>
+          <div class="ai-step" id="as6">
+            <div class="ai-step-icon icon-pending">⏳</div>
+            <div class="ai-step-label">Aktuellen Preis prüfen</div>
+            <div class="ai-step-value" id="av6"></div>
+          </div>
+          <div class="ai-step" id="as7">
+            <div class="ai-step-icon icon-pending">⏳</div>
+            <div class="ai-step-label">Datensatz vorbereiten</div>
+            <div class="ai-step-value" id="av7"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goto(2)">← Zurück</button>
+      <button class="btn btn-primary" id="to-validate-btn" style="display:none" onclick="goto(4)">Ergebnis prüfen &nbsp;→</button>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 4: VALIDATION ═══ -->
+  <div class="screen" id="s4">
+    <div>
+      <div class="screen-title">✅ Kurzprüfung — Erkannte Daten</div>
+      <div class="screen-sub">KI-Konfidenz: 97% · Bitte kurz prüfen, dann direkt bestätigen</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Extrahierte Bestellfelder (Bestellungen.xlsx / Tab: LP-Soja)</div>
+      <div class="validation-grid">
+        <div class="field-group">
+          <div class="field-label">Bestelldatum</div>
+          <div class="field-value ok">
+            <span class="field-check">✅</span>
+            <input class="field-input" value="03.03.2026">
+            <span class="confidence conf-high">100%</span>
+          </div>
+          <div class="field-source">→ Aus: E-Mail-Eingangsdatum</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Produkt / Tab</div>
+          <div class="field-value ok">
+            <span class="field-check">✅</span>
+            <input class="field-input" value="LP-Soja">
+            <span class="confidence conf-high">98%</span>
+          </div>
+          <div class="field-source">→ Aus: „Sojaschrot LP" → Kundenstamm: LP-Soja</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Name / Kunde</div>
+          <div class="field-value ok">
+            <span class="field-check">✅</span>
+            <input class="field-input" value="Trellinger, Rosenmühle">
+            <span class="confidence conf-high">99%</span>
+          </div>
+          <div class="field-source">→ Aus: Kundenblock im E-Mail-Text</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Händler</div>
+          <div class="field-value ok">
+            <span class="field-check">✅</span>
+            <input class="field-input" value="— (Direktkunde)">
+            <span class="confidence conf-high">95%</span>
+          </div>
+          <div class="field-source">→ Kein Vermittler erkannt</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Menge (t)</div>
+          <div class="field-value ok">
+            <span class="field-check">✅</span>
+            <input class="field-input" value="11">
+            <span class="confidence conf-high">99%</span>
+          </div>
+          <div class="field-source">→ Aus: „11to" → normiert auf 11 Tonnen</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Zusätzlich</div>
+          <div class="field-value ok">
+            <span class="field-check">✅</span>
+            <input class="field-input" value="geblasen, QS-Soja+">
+            <span class="confidence conf-high">97%</span>
+          </div>
+          <div class="field-source">→ Aus: „QS-Soja+, geblasen"</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Termin / Lieferwunsch</div>
+          <div class="field-value warn">
+            <span class="field-check">⚠️</span>
+            <input class="field-input" value="Mo–Mi KW 10" id="termin-input">
+            <span class="confidence conf-med">82%</span>
+          </div>
+          <div class="field-source">→ Aus: „Anfang nächster Woche" → KW 10 abgeleitet · bitte prüfen</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Aktueller Preis (€/t)</div>
+          <div class="field-value ok">
+            <span class="field-check">✅</span>
+            <input class="field-input" value="38,70">
+            <span class="confidence conf-high">100%</span>
+          </div>
+          <div class="field-source">→ Aus: aktuelle Preisliste LP-Soja</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:rgba(251,191,36,0.07); border:1px solid rgba(251,191,36,0.25); border-radius:8px; padding:12px 16px; font-size:13px; color:var(--muted);">
+      ⚠️ <strong style="color:var(--yellow);">1 Feld zur Prüfung:</strong> Termin wurde aus „Anfang nächster Woche" abgeleitet. Bitte ggf. anpassen.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goto(3)">← Zurück</button>
+      <button class="btn btn-green btn-large" onclick="startExcel()">
+        ✅ Alles korrekt — in Excel übertragen &nbsp;→
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 5: EXCEL ENTRY ═══ -->
+  <div class="screen" id="s5">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start">
+      <div>
+        <div class="screen-title">📊 Excel-Eintrag: Bestellungen.xlsx</div>
+        <div class="screen-sub">Tab: <strong style="color:#217346">LP-Soja</strong> · Neuer Eintrag wird automatisch angelegt</div>
+      </div>
+      <div id="excel-status" style="display:none" class="fade-in">
+        <div style="background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3); border-radius:8px; padding:8px 16px; font-size:13px; color:var(--green); font-weight:600;">
+          ✅ Eintrag erfasst
+        </div>
+      </div>
+    </div>
+
+    <div class="excel-wrapper">
+      <table class="excel-table" id="excel-tbl">
+        <thead>
+          <tr class="excel-header-row">
+            <th>#</th>
+            <th>Bestelldatum</th>
+            <th>Name / Kunde</th>
+            <th>Händler</th>
+            <th>Menge (t)</th>
+            <th>Zusätzlich</th>
+            <th>Termin</th>
+            <th>LKW</th>
+            <th>Tag</th>
+            <th>Datum</th>
+            <th>Bemerkung</th>
+            <th>Dispo</th>
+            <th>LS/WK-Nr.</th>
+            <th>Preis</th>
+          </tr>
+        </thead>
+        <tbody id="excel-body">
+          <!-- Existing rows (real data, realistic names) -->
+          <tr class="excel-row row-green">
+            <td>1</td>
+            <td>19.02.2026</td>
+            <td>Goderbauer, Stehberg</td>
+            <td></td>
+            <td>12</td>
+            <td></td>
+            <td>eilt</td>
+            <td>177</td>
+            <td>Do</td>
+            <td>19.02.</td>
+            <td></td>
+            <td>✓</td>
+            <td>8863</td>
+            <td>38,10</td>
+          </tr>
+          <tr class="excel-row row-green">
+            <td>2</td>
+            <td>24.02.2026</td>
+            <td>Huber GbR, Frontenhausen</td>
+            <td></td>
+            <td>5</td>
+            <td></td>
+            <td>Do/Fr</td>
+            <td>311</td>
+            <td>Di</td>
+            <td>24.02.</td>
+            <td></td>
+            <td>✓</td>
+            <td>8806</td>
+            <td>38,20</td>
+          </tr>
+          <tr class="excel-row row-orange">
+            <td>3</td>
+            <td>24.02.2026</td>
+            <td>Maier, Dingolfing</td>
+            <td></td>
+            <td>25</td>
+            <td>geblasen</td>
+            <td>Do</td>
+            <td>177</td>
+            <td>Mi</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>38,20</td>
+          </tr>
+          <tr class="excel-row row-orange">
+            <td>4</td>
+            <td>24.02.2026</td>
+            <td>Fellner GmbH, Mainburg</td>
+            <td>Hartmann Agrar</td>
+            <td>12</td>
+            <td>gekippt</td>
+            <td>spät. Fr</td>
+            <td>5003</td>
+            <td>Mi</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr class="excel-row row-yellow">
+            <td>5</td>
+            <td>25.02.2026</td>
+            <td>Bauer, Reisbach</td>
+            <td></td>
+            <td>8,5</td>
+            <td></td>
+            <td>spät. Fr</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>38,70</td>
+          </tr>
+          <tr class="excel-row row-yellow">
+            <td>6</td>
+            <td>25.02.2026</td>
+            <td>Wimmer, Landau</td>
+            <td></td>
+            <td>3</td>
+            <td></td>
+            <td>d. Wo</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>Lieferung in Hof</td>
+            <td></td>
+            <td></td>
+            <td>38,70</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="excel-legend">
+      <div class="legend-item"><div class="legend-box" style="background:#e2efda"></div> Geliefert / abgeschlossen</div>
+      <div class="legend-item"><div class="legend-box" style="background:#fce4d6"></div> Disponiert (LKW zugewiesen)</div>
+      <div class="legend-item"><div class="legend-box" style="background:#fff2cc"></div> Ware bestellt / erfasst</div>
+    </div>
+
+    <div class="btn-row" id="excel-next-btn" style="display:none">
+      <button class="btn btn-secondary" onclick="goto(4)">← Zurück</button>
+      <button class="btn btn-primary btn-large" onclick="goto(6)">Zum Abschluss &nbsp;→</button>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 6: DONE ═══ -->
+  <div class="screen" id="s6">
+    <div class="done-icon">🎉</div>
+    <div class="done-title">Bestellung erfasst. Fertig.</div>
+    <div class="done-sub">
+      Die E-Mail von Trellinger, Rosenmühle wurde automatisch gelesen, geprüft
+      und direkt in <strong>Bestellungen.xlsx / LP-Soja</strong> eingetragen.
+    </div>
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-number">~4 min</div>
+        <div class="stat-label">Zeitersparnis<br>pro Bestellung</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number">0</div>
+        <div class="stat-label">Manuelle<br>Tipp-Fehler</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number">~30+</div>
+        <div class="stat-label">Bestellungen<br>täglich</div>
+      </div>
+      <div class="stat-box" style="border-color:rgba(34,197,94,0.4)">
+        <div class="stat-number" style="color:var(--green);">2 Std</div>
+        <div class="stat-label">Ersparte Arbeit<br>pro Tag</div>
+      </div>
+    </div>
+    <div class="next-steps">
+      <div style="font-size:12px; color:var(--muted); text-align:left; margin-bottom:4px;">MÖGLICHE NÄCHSTE SCHRITTE:</div>
+      <div class="next-step">
+        <div class="ns-num">2</div>
+        <div>Automatische <strong>LKW-Zuweisung</strong> + Übertrag in LP-Soja.xlsx (Ladeplan)</div>
+      </div>
+      <div class="next-step">
+        <div class="ns-num">3</div>
+        <div>Lieferschein per <strong>Scan / Foto → Excel</strong> automatisch zuordnen</div>
+      </div>
+      <div class="next-step">
+        <div class="ns-num">4</div>
+        <div>Automatischer Export an <strong>Landwehr L3</strong> (Warenwirtschaft)</div>
+      </div>
+    </div>
+    <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center">
+      <button class="btn btn-secondary" onclick="goto(0)">↩ Demo neu starten</button>
+      <div style="background:rgba(79,110,247,0.1); border:1px solid rgba(79,110,247,0.3); border-radius:8px; padding:12px 20px; font-size:13px; color:var(--muted);">
+        📞 Nächster Schritt: <strong style="color:var(--text);">Live-Termin mit Hohenester Agrarhandel</strong>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+  let currentScreen = 0;
+  const stepNames = ['', 'ps1','ps2','ps3','ps4','ps5','ps6'];
+
+  function goto(n) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('s' + n).classList.add('active');
+    currentScreen = n;
+
+    // update progress
+    for (let i = 1; i <= 6; i++) {
+      const el = document.getElementById('ps' + i);
+      if (!el) continue;
+      el.classList.remove('active','done');
+      if (i < n) el.classList.add('done');
+      if (i === n) el.classList.add('active');
+    }
+
+    const labels = ['', 'Schritt 1/6', 'Schritt 2/6', 'Schritt 3/6', 'Schritt 4/6', 'Schritt 5/6', 'Abschluss'];
+    document.getElementById('step-counter').textContent = labels[n] || 'Intro';
+  }
+
+  /* ─── ANALYSIS ANIMATION ─── */
+  function startAnalysis() {
+    goto(3);
+    setTimeout(runAnalysis, 300);
+  }
+
+  const steps = [
+    { id: 1, label: 'E-Mail lesen', value: 'OK', hl: null, delay: 600 },
+    { id: 2, label: 'Produkt: LP-Soja', value: 'LP-Soja ✓', hl: 'hl-prod', hlClass: 'hl-product', delay: 1100 },
+    { id: 3, label: 'Menge: 11 t', value: '11 t ✓', hl: 'hl-amt', hlClass: 'hl-amount', delay: 1700 },
+    { id: 4, label: 'Kunde: Trellinger ✓', value: 'Gefunden', hl: 'hl-cust', hlClass: 'hl-customer', delay: 2400 },
+    { id: 5, label: 'Termin: Mo–Mi KW 10', value: 'KW 10 (Mo–Mi)', hl: 'hl-date', hlClass: 'hl-date', delay: 3100 },
+    { id: 6, label: 'Preis: 38,70 €/t', value: '38,70 €/t', hl: null, delay: 3700 },
+    { id: 7, label: 'Datensatz bereit', value: 'Fertig ✓', hl: null, delay: 4300 },
+  ];
+
+  function runAnalysis() {
+    const loadBar = document.getElementById('load-bar');
+    steps.forEach((s, idx) => {
+      setTimeout(() => {
+        // set prev to done
+        if (idx > 0) {
+          const prev = document.getElementById('as' + (idx));
+          prev.classList.remove('active');
+          prev.classList.add('done');
+          prev.querySelector('.ai-step-icon').className = 'ai-step-icon icon-done';
+          prev.querySelector('.ai-step-icon').textContent = '✓';
+        }
+        const el = document.getElementById('as' + s.id);
+        el.classList.add('active');
+        el.querySelector('.ai-step-icon').className = 'ai-step-icon icon-spin';
+        el.querySelector('.ai-step-icon').textContent = '↻';
+
+        loadBar.style.width = ((idx + 1) / steps.length * 100) + '%';
+
+        if (s.hl) {
+          const hlEl = document.getElementById(s.hl);
+          if (hlEl) hlEl.className = 'highlight-word ' + s.hlClass;
+        }
+      }, s.delay);
+
+      if (idx === steps.length - 1) {
+        setTimeout(() => {
+          const el = document.getElementById('as' + s.id);
+          el.classList.remove('active');
+          el.classList.add('done');
+          el.querySelector('.ai-step-icon').className = 'ai-step-icon icon-done';
+          el.querySelector('.ai-step-icon').textContent = '✓';
+          document.getElementById('av' + s.id).textContent = s.value;
+          loadBar.style.width = '100%';
+          document.getElementById('to-validate-btn').style.display = 'inline-flex';
+        }, s.delay + 600);
+      } else {
+        setTimeout(() => {
+          document.getElementById('av' + s.id).textContent = s.value;
+        }, s.delay + 400);
+      }
+    });
+  }
+
+  /* ─── EXCEL ANIMATION ─── */
+  function startExcel() {
+    goto(5);
+    setTimeout(addExcelRow, 800);
+  }
+
+  function addExcelRow() {
+    const tbody = document.getElementById('excel-body');
+    const newRow = document.createElement('tr');
+    newRow.className = 'excel-row row-new';
+    newRow.id = 'new-excel-row';
+
+    const cells = [
+      '7',
+      '', // date - will type
+      '', // name
+      '—',
+      '', // menge
+      '', // zusatz
+      '', // termin
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '', // preis
+    ];
+
+    cells.forEach(c => {
+      const td = document.createElement('td');
+      td.textContent = c;
+      newRow.appendChild(td);
+    });
+
+    tbody.appendChild(newRow);
+    newRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    const tds = newRow.querySelectorAll('td');
+    const data = [
+      { i: 1, val: '03.03.2026' },
+      { i: 2, val: 'Trellinger, Rosenmühle' },
+      { i: 4, val: '11' },
+      { i: 5, val: 'geblasen, QS-Soja+' },
+      { i: 6, val: 'Mo–Mi KW 10' },
+      { i: 13, val: '38,70' },
+    ];
+
+    let idx = 0;
+    function typeNext() {
+      if (idx >= data.length) {
+        document.getElementById('excel-status').style.display = 'block';
+        document.getElementById('excel-next-btn').style.display = 'flex';
+        newRow.classList.add('fade-in');
+        return;
+      }
+      const { i, val } = data[idx];
+      const td = tds[i];
+      td.textContent = '';
+      td.classList.add('typing-cursor');
+      let charIdx = 0;
+      const typer = setInterval(() => {
+        td.textContent += val[charIdx];
+        charIdx++;
+        if (charIdx >= val.length) {
+          clearInterval(typer);
+          td.classList.remove('typing-cursor');
+          idx++;
+          setTimeout(typeNext, 180);
+        }
+      }, 45);
+    }
+    setTimeout(typeNext, 400);
+  }
+
+  // start
+  goto(0);
+</script>
+</body>
+</html>
