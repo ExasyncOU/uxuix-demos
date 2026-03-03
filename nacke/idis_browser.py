@@ -397,17 +397,52 @@ class IdisBrowser:
 
             # Export-Flow: Export Selected → Export List → Download
             # IDIS hat zwei Schritte: erst "Export Selected", dann "Export List"
-            async with page.expect_download(timeout=60000) as download_info:
-                await page.click(self.SEL_EXPORT_SELECTED)
-                await page.wait_for_timeout(1500)
-                # "Export List" Button pruefen (erscheint nach Export Selected)
+
+            # Schritt 1: Export Selected klicken
+            await page.click(self.SEL_EXPORT_SELECTED)
+            await page.wait_for_load_state("networkidle")
+            await page.wait_for_timeout(2000)
+            await self._screenshot(f"after_export_selected_{suffix}")
+
+            # Diagnose: alle sichtbaren Buttons nach Export Selected loggen
+            all_inputs = await page.locator("input[type='submit'], input[type='button']").all()
+            btn_names = []
+            for inp in all_inputs:
                 try:
-                    confirm_btn = page.locator(f'input[name="mainForm:_idJsp253"]')
-                    if await confirm_btn.is_visible(timeout=4000):
-                        await confirm_btn.click()
-                        logger.info("Export List geklickt")
+                    n = await inp.get_attribute("name") or ""
+                    v = await inp.get_attribute("value") or ""
+                    if n:
+                        btn_names.append(f"{n}={v}")
                 except Exception:
-                    pass  # Kein zweiter Klick noetig
+                    pass
+            logger.info("Buttons nach Export Selected: %s", btn_names[:10])
+
+            # Schritt 2: "Export List" Button suchen und klicken
+            export_list_found = False
+            for sel in ['input[name="mainForm:_idJsp253"]', 'input[value*="Export"]', 'input[value*="List"]']:
+                try:
+                    btn = page.locator(sel)
+                    if await btn.is_visible(timeout=2000):
+                        await btn.click()
+                        logger.info("Export List geklickt (%s)", sel)
+                        export_list_found = True
+                        break
+                except Exception:
+                    pass
+
+            # Schritt 3: Download warten
+            try:
+                async with page.expect_download(timeout=30000) as download_info:
+                    if not export_list_found:
+                        # Vielleicht erneut Export Selected klicken
+                        await page.click(self.SEL_EXPORT_SELECTED)
+                download = await download_info.value
+            except Exception:
+                # Letzter Versuch: direkt auf CONFIRM_PRINT klicken
+                logger.warning("Download Event nicht gefeuert – versuche CONFIRM_PRINT")
+                async with page.expect_download(timeout=30000) as download_info:
+                    await page.click(self.SEL_CONFIRM_PRINT)
+                download = await download_info.value
 
             download = await download_info.value
             archive_name = (
