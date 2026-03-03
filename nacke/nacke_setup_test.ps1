@@ -1,5 +1,5 @@
 $ScriptDir = "C:\NackeScript"
-$GistBase = "https://gist.githubusercontent.com/ExasyncOU/1765952815a7f89598db2ef1e5447609/raw"
+$RawBase = "https://raw.githubusercontent.com/ExasyncOU/uxuix-demos/main/nacke"
 $ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
 Write-Host "=== Nacke Setup + Testlauf ===" -ForegroundColor Cyan
@@ -9,7 +9,7 @@ Write-Host "Zeitstempel: $ts"
 # Python-Dateien herunterladen
 $files = @("idis_browser.py", "picklist_generator.py", "master_data.py", "test_export_picklist.py", "config.json")
 foreach ($f in $files) {
-    $url = "$GistBase/$f`?v=$ts"
+    $url = "$RawBase/$f`?v=$ts"
     $dest = "$ScriptDir\$f"
     Write-Host "  Downloading $f ..." -NoNewline
     Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
