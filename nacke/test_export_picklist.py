@@ -41,11 +41,12 @@ async def main():
 
         # 2. Export (heutiges Datum)
         csv_path, rows = await browser.export_orders(date.today(), suffix="test")
-        logger.info("Export: %d Zeilen aus %s", len(rows), csv_path)
 
         if not rows:
-            logger.info("KEINE DATEN HEUTE – Testlauf beendet (kein Fehler)")
+            logger.info("KEINE DATEN HEUTE – Export leer, Testlauf beendet (kein Fehler)")
             return
+
+        logger.info("Export: %d Zeilen aus %s", len(rows), csv_path)
 
         # 3. Eindeutige AROS-Keys sammeln (Reihenfolge erhalten)
         seen = {}
