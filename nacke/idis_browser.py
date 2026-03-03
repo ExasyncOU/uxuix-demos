@@ -374,6 +374,15 @@ class IdisBrowser:
             await page.wait_for_timeout(3000)
             await self._screenshot(f"show_result_{suffix}")
 
+            # Pruefen ob Ergebnisse vorhanden (Regel: keine Daten = nichts tun)
+            data_rows = page.locator("tr.row_odd, tr.row_even")
+            row_count = await data_rows.count()
+            if row_count == 0:
+                logger.info("Keine Orders fuer %s – Export uebersprungen", date_str)
+                return "", []
+
+            logger.info("Ergebnis-Tabelle: %d Zeilen gefunden", row_count)
+
             # Select All (Checkbox in der Tabellen-Kopfzeile)
             select_all = page.locator(
                 'input[type="checkbox"][name*="selectAll"], '
@@ -386,10 +395,19 @@ class IdisBrowser:
             except Exception as e:
                 logger.warning("Select All nicht gefunden: %s", e)
 
-            # Export Selected klicken -> Download
+            # Export-Flow: Export Selected → Export List → Download
+            # IDIS hat zwei Schritte: erst "Export Selected", dann "Export List"
             async with page.expect_download(timeout=60000) as download_info:
                 await page.click(self.SEL_EXPORT_SELECTED)
-                await page.wait_for_timeout(2000)
+                await page.wait_for_timeout(1500)
+                # "Export List" Button pruefen (erscheint nach Export Selected)
+                try:
+                    confirm_btn = page.locator(f'input[name="mainForm:_idJsp253"]')
+                    if await confirm_btn.is_visible(timeout=4000):
+                        await confirm_btn.click()
+                        logger.info("Export List geklickt")
+                except Exception:
+                    pass  # Kein zweiter Klick noetig
 
             download = await download_info.value
             archive_name = (
