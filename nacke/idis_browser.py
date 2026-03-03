@@ -3,13 +3,15 @@ idis_browser.py – Playwright-basierte IDIS-Automation.
 
 Funktionen:
   - login() → IDIS Mailbox 729 einloggen
-  - export_orders(date) → Filter aktueller Tag → Select All → Export List → CSV
+  - export_orders(date) → Filter aktueller Tag → Select All → Export Selected
+                          → orderExport.faces → Image Button → CSV Download
   - get_result_table_data() → Extrahiert Order-Daten aus der Result-Tabelle
   - apply_amendments(amendments) → Für jede Order: Amend → neue Menge → Speichern
   - Archiviert jeden Export als IDIS_EXPORT_YYYY-MM-DD_pre.csv / _post.csv
   - Screenshot bei Fehler
 
 Selektoren: Verifiziert 2026-02-23 via Playwright DOM-Analyse (Table #24, 439 rows).
+Export-Flow verifiziert 03.03.2026: Export Selected → orderExport.faces → _idJsp129.
 """
 
 import asyncio
@@ -147,6 +149,13 @@ class IdisBrowser:
     SEL_BACK = 'input[name="mainForm:_idJsp246"]'
     SEL_EXPORT_SELECTED = 'input[name="mainForm:_idJsp252"]'
     SEL_CONFIRM_PRINT = 'input[name="mainForm:_idJsp253"]'
+
+    # orderExport.faces Selektoren (verifiziert 03.03.2026)
+    # Nach Klick auf Export Selected navigiert IDIS zu /jsf/orderExport.faces.
+    # Dort gibt es ausschliesslich type="image" Inputs (kein type="submit"!):
+    SEL_ORDER_EXPORT_CANCEL = 'input[name="mainForm:_idJsp128"]'  # Abbrechen (→ processEditor.faces)
+    SEL_ORDER_EXPORT_BTN   = 'input[name="mainForm:_idJsp129"]'   # Export CSV Download ← VERIFIZIERT
+    # ACHTUNG: mainForm:header:_idJsp47 = LOGOUT – NIEMALS klicken!
 
     # ------------------------------------------------------------------
     # Amend Form Selectors (verified 2026-02-23)
@@ -412,54 +421,18 @@ class IdisBrowser:
                 logger.info("Kein sofortiger Download nach Export Selected (%s)", type(e).__name__)
 
             if download is None:
-                # Seite analysieren: IDIS navigiert nach Export Selected
+                # IDIS navigiert nach Export Selected zu /jsf/orderExport.faces.
+                # Dort gibt es type="image" Buttons:
+                #   _idJsp128 = Abbrechen (→ processEditor.faces)
+                #   _idJsp129 = Export CSV Download ← VERIFIZIERT 03.03.2026
                 await page.wait_for_load_state("networkidle")
                 await page.wait_for_timeout(2000)
                 await self._screenshot(f"after_export_selected_{suffix}")
+                logger.info("URL nach Export Selected: %s", page.url)
 
-                current_url = page.url
-                logger.info("URL nach Export Selected: %s", current_url)
-
-                # Alle Steuerelemente loggen (input, button, a)
-                all_elems = []
-                for sel in ["input[type='submit']", "input[type='button']", "button", "a"]:
-                    items = await page.locator(sel).all()
-                    for item in items:
-                        try:
-                            n = await item.get_attribute("name") or ""
-                            v = (await item.get_attribute("value") or
-                                 await item.inner_text() or "")
-                            t = sel.split("[")[0]
-                            all_elems.append(f"{t}:{n}={v[:25]}")
-                        except Exception:
-                            pass
-                logger.info("Steuerelemente nach Export Selected: %s", all_elems[:20])
-
-                # Neue Pages im Context? (IDIS könnte window.open() genutzt haben)
-                if len(self._context.pages) > 1:
-                    new_page = self._context.pages[-1]
-                    logger.info("Neue Page erkannt: %s", new_page.url)
-                    try:
-                        async with new_page.expect_download(timeout=15000) as dl_info:
-                            await new_page.wait_for_load_state("networkidle")
-                        download = await dl_info.value
-                        logger.info("Download von neuer Page: %s", download.suggested_filename)
-                    except Exception:
-                        pass
-
-            if download is None:
-                # Versuch B: IDIS navigiert nach Export Selected zu /jsf/orderExport.faces
-                # Dort gibt es type="image" Buttons (kein type="submit"!):
-                #   INPUT[1] name=mainForm:_idJsp128 → Abbrechen (navigiert zurück!)
-                #   INPUT[2] name=mainForm:_idJsp129 → Export (richtiger Download-Button)
-                # Verifiziert 03.03.2026: _idJsp128 = Cancel, _idJsp129 = Export
-                SEL_EXPORT_IMAGE_BTN = 'input[name="mainForm:_idJsp129"]'
-
-                export_img_btn = page.locator(SEL_EXPORT_IMAGE_BTN)
+                export_img_btn = page.locator(self.SEL_ORDER_EXPORT_BTN)
                 if await export_img_btn.is_visible(timeout=5000):
-                    logger.info("Export Image Button gefunden (type=image, name=mainForm:_idJsp128)")
-
-                    # Ansatz B1: Click + expect_download (CSV mit Content-Disposition)
+                    logger.info("Export Image Button gefunden (name=mainForm:_idJsp129) – klicke...")
                     try:
                         async with page.expect_download(timeout=60000) as dl_info:
                             await export_img_btn.click()
@@ -470,12 +443,9 @@ class IdisBrowser:
                         logger.info("Image Button kein Download-Event: %s", type(e).__name__)
 
                     if download is None:
-                        # Ansatz B2: CSV wird direkt im Browser angezeigt (kein attachment)
+                        # Fallback: CSV direkt im Browser angezeigt (kein Content-Disposition)
                         await page.wait_for_load_state("networkidle")
-                        nav_url = page.url
-                        logger.info("URL nach Image Button Klick: %s", nav_url)
                         body_text = await page.locator("body").inner_text()
-                        logger.info("Body (200 chars): %s", body_text[:200])
                         lines = body_text.strip().splitlines()
                         if len(lines) > 5 and ";" in body_text:
                             logger.info(
@@ -494,7 +464,7 @@ class IdisBrowser:
                             return str(archive_path), rows
                 else:
                     logger.warning(
-                        "Export Image Button %s nicht sichtbar", SEL_EXPORT_IMAGE_BTN
+                        "Export Image Button nicht sichtbar: %s", self.SEL_ORDER_EXPORT_BTN
                     )
 
             if download is None:
