@@ -450,10 +450,10 @@ class IdisBrowser:
             if download is None:
                 # Versuch B: IDIS navigiert nach Export Selected zu /jsf/orderExport.faces
                 # Dort gibt es type="image" Buttons (kein type="submit"!):
-                #   INPUT[1] name=mainForm:_idJsp128 → Export (primäre Aktion)
-                #   INPUT[2] name=mainForm:_idJsp129 → Abbrechen
-                # Verifiziert 03.03.2026 via vollständiger Seiten-Inspektion.
-                SEL_EXPORT_IMAGE_BTN = 'input[name="mainForm:_idJsp128"]'
+                #   INPUT[1] name=mainForm:_idJsp128 → Abbrechen (navigiert zurück!)
+                #   INPUT[2] name=mainForm:_idJsp129 → Export (richtiger Download-Button)
+                # Verifiziert 03.03.2026: _idJsp128 = Cancel, _idJsp129 = Export
+                SEL_EXPORT_IMAGE_BTN = 'input[name="mainForm:_idJsp129"]'
 
                 export_img_btn = page.locator(SEL_EXPORT_IMAGE_BTN)
                 if await export_img_btn.is_visible(timeout=5000):
