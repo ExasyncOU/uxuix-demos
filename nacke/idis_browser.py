@@ -395,56 +395,85 @@ class IdisBrowser:
             except Exception as e:
                 logger.warning("Select All nicht gefunden: %s", e)
 
-            # Export-Flow: Export Selected → Export List → Download
-            # IDIS hat zwei Schritte: erst "Export Selected", dann "Export List"
+            # Export-Flow: Export Selected → (Seite navigiert) → Export List → Download
+            # WICHTIG: expect_download MUSS vor dem auslösenden Click gesetzt werden!
 
-            # Schritt 1: Export Selected klicken
-            await page.click(self.SEL_EXPORT_SELECTED)
-            await page.wait_for_load_state("networkidle")
-            await page.wait_for_timeout(2000)
-            await self._screenshot(f"after_export_selected_{suffix}")
+            download = None
 
-            # Diagnose: alle sichtbaren Buttons nach Export Selected loggen
-            all_inputs = await page.locator("input[type='submit'], input[type='button']").all()
-            btn_names = []
-            for inp in all_inputs:
-                try:
-                    n = await inp.get_attribute("name") or ""
-                    v = await inp.get_attribute("value") or ""
-                    if n:
-                        btn_names.append(f"{n}={v}")
-                except Exception:
-                    pass
-            logger.info("Buttons nach Export Selected: %s", btn_names[:10])
-
-            # Schritt 2: "Export List" Button suchen und klicken
-            export_list_found = False
-            for sel in ['input[name="mainForm:_idJsp253"]', 'input[value*="Export"]', 'input[value*="List"]']:
-                try:
-                    btn = page.locator(sel)
-                    if await btn.is_visible(timeout=2000):
-                        await btn.click()
-                        logger.info("Export List geklickt (%s)", sel)
-                        export_list_found = True
-                        break
-                except Exception:
-                    pass
-
-            # Schritt 3: Download warten
+            # Versuch A: Export Selected löst Download direkt aus (Content-Disposition)
+            # Listener muss VOR dem Click aktiv sein
+            logger.info("Export Selected: Starte Download-Listener und klicke...")
             try:
-                async with page.expect_download(timeout=30000) as download_info:
-                    if not export_list_found:
-                        # Vielleicht erneut Export Selected klicken
-                        await page.click(self.SEL_EXPORT_SELECTED)
-                download = await download_info.value
-            except Exception:
-                # Letzter Versuch: direkt auf CONFIRM_PRINT klicken
-                logger.warning("Download Event nicht gefeuert – versuche CONFIRM_PRINT")
-                async with page.expect_download(timeout=30000) as download_info:
-                    await page.click(self.SEL_CONFIRM_PRINT)
-                download = await download_info.value
+                async with page.expect_download(timeout=12000) as dl_info:
+                    await page.click(self.SEL_EXPORT_SELECTED)
+                download = await dl_info.value
+                logger.info("Download via Export Selected: %s", download.suggested_filename)
+            except Exception as e:
+                logger.info("Kein sofortiger Download nach Export Selected (%s)", type(e).__name__)
 
-            download = await download_info.value
+            if download is None:
+                # Seite analysieren: IDIS navigiert nach Export Selected
+                await page.wait_for_load_state("networkidle")
+                await page.wait_for_timeout(2000)
+                await self._screenshot(f"after_export_selected_{suffix}")
+
+                current_url = page.url
+                logger.info("URL nach Export Selected: %s", current_url)
+
+                # Alle Steuerelemente loggen (input, button, a)
+                all_elems = []
+                for sel in ["input[type='submit']", "input[type='button']", "button", "a"]:
+                    items = await page.locator(sel).all()
+                    for item in items:
+                        try:
+                            n = await item.get_attribute("name") or ""
+                            v = (await item.get_attribute("value") or
+                                 await item.inner_text() or "")
+                            t = sel.split("[")[0]
+                            all_elems.append(f"{t}:{n}={v[:25]}")
+                        except Exception:
+                            pass
+                logger.info("Steuerelemente nach Export Selected: %s", all_elems[:20])
+
+                # Neue Pages im Context? (IDIS könnte window.open() genutzt haben)
+                if len(self._context.pages) > 1:
+                    new_page = self._context.pages[-1]
+                    logger.info("Neue Page erkannt: %s", new_page.url)
+                    try:
+                        async with new_page.expect_download(timeout=15000) as dl_info:
+                            await new_page.wait_for_load_state("networkidle")
+                        download = await dl_info.value
+                        logger.info("Download von neuer Page: %s", download.suggested_filename)
+                    except Exception:
+                        pass
+
+            if download is None:
+                # Versuch B: "Export List" Button auf der (evtl. navigierten) Seite
+                # Selektor mainForm:_idJsp253 = SEL_CONFIRM_PRINT (zweiter Export-Schritt)
+                for sel in [
+                    self.SEL_CONFIRM_PRINT,  # mainForm:_idJsp253 = Export List
+                    'input[value*="Export"]',
+                    'input[value*="List"]',
+                    'button:has-text("Export")',
+                    'a:has-text("Export")',
+                ]:
+                    try:
+                        btn = page.locator(sel)
+                        if await btn.is_visible(timeout=2000):
+                            logger.info("Export List Button gefunden: %s", sel)
+                            async with page.expect_download(timeout=30000) as dl_info:
+                                await btn.click()
+                            download = await dl_info.value
+                            logger.info("Download via Export List: %s",
+                                        download.suggested_filename)
+                            break
+                    except Exception:
+                        pass
+
+            if download is None:
+                raise RuntimeError(
+                    "IDIS Export: Kein Download nach Export Selected + Export List"
+                )
             archive_name = (
                 f"IDIS_EXPORT_{export_date.strftime('%Y-%m-%d')}_{suffix}.csv"
             )
