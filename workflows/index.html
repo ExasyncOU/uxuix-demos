@@ -315,78 +315,39 @@ table.history .status-dot.err { background: var(--red); }
 <div class="panel" id="panel-history">
   <div class="history-header">
     <h2>Laufzeit-Historie</h2>
-    <button class="btn" onclick="alert('Supabase-Anbindung: SELECT * FROM agent_metrics WHERE workflow_id=\'nacke\' ORDER BY run_date DESC')">Connect to Supabase</button>
+    <span id="historyLiveIndicator" style="font-size:11px; color:var(--text-muted);"></span>
   </div>
 
   <div class="history-stats">
-    <div class="stat-box"><div class="val">267</div><div class="label">Auftraege / Lauf</div></div>
-    <div class="stat-box"><div class="val">39s</div><div class="label">Dauer / Lauf</div></div>
-    <div class="stat-box"><div class="val">94%</div><div class="label">Erfolgsrate</div></div>
-    <div class="stat-box"><div class="val">22</div><div class="label">Amendments / Lauf</div></div>
+    <div class="stat-box"><div class="val" id="statAvgDuration">--</div><div class="label">Avg. Dauer</div></div>
+    <div class="stat-box"><div class="val" id="statSuccessRate">--</div><div class="label">Erfolgsrate</div></div>
+    <div class="stat-box"><div class="val" id="statTotalRuns">--</div><div class="label">Laeufe (20)</div></div>
+    <div class="stat-box"><div class="val" id="statLastRun">--</div><div class="label">Letzter Lauf</div></div>
   </div>
 
   <table class="history">
     <thead>
       <tr>
         <th>Datum</th>
-        <th>Modus</th>
-        <th>Auftraege</th>
-        <th>Amendments</th>
-        <th>Dauer</th>
         <th>Status</th>
+        <th>Schritt</th>
+        <th>Dauer</th>
+        <th>VM</th>
+        <th>Trigger</th>
         <th>Bemerkung</th>
       </tr>
     </thead>
-    <tbody>
-      <tr><td>10.03.2026</td><td>dry-run</td><td>0</td><td>0</td><td>2s</td><td><span class="status-dot dry"></span></td><td>Kein Importdatum</td></tr>
-      <tr><td>09.03.2026</td><td>production</td><td>342</td><td>28</td><td>45s</td><td><span class="status-dot ok"></span></td><td></td></tr>
-      <tr><td>08.03.2026</td><td>-</td><td>-</td><td>-</td><td>-</td><td></td><td>Wochenende (Sa)</td></tr>
-      <tr><td>07.03.2026</td><td>-</td><td>-</td><td>-</td><td>-</td><td></td><td>Wochenende (So)</td></tr>
-      <tr class="incident"><td>06.03.2026</td><td>production</td><td>702</td><td>702</td><td>89s</td><td><span class="status-dot err"></span></td><td>INCIDENT: Freitag, Env-Var Dry-Run ignoriert</td></tr>
-      <tr><td>05.03.2026</td><td>production</td><td>289</td><td>22</td><td>41s</td><td><span class="status-dot ok"></span></td><td></td></tr>
-      <tr><td>04.03.2026</td><td>dry-run</td><td>195</td><td>15</td><td>12s</td><td><span class="status-dot dry"></span></td><td>Test vor Deploy</td></tr>
-      <tr><td>03.03.2026</td><td>production</td><td>421</td><td>35</td><td>52s</td><td><span class="status-dot ok"></span></td><td></td></tr>
-      <tr><td>02.03.2026</td><td>production</td><td>156</td><td>12</td><td>32s</td><td><span class="status-dot ok"></span></td><td></td></tr>
+    <tbody id="historyBody">
+      <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">Lade Historie...</td></tr>
     </tbody>
   </table>
 
   <!-- Incident Timeline -->
   <h2 style="margin-top:32px; font-size:16px;">Incident Timeline</h2>
-  <p style="font-size:12px; color:var(--text-muted); margin:8px 0 16px;">Alle relevanten Vorfaelle und Learnings chronologisch.</p>
+  <p style="font-size:12px; color:var(--text-muted); margin:8px 0 16px;">Alle relevanten Vorfaelle und Learnings aus Supabase.</p>
 
-  <div class="incident-timeline">
-    <div class="incident-item severity-high">
-      <div class="inc-date">06.03.2026 — NackeScript</div>
-      <div class="inc-title">702 Amendments produktiv auf IDIS geschrieben (Freitag!)</div>
-      <div class="inc-desc">AFK Task mit $env:NACKE_DRYRUN=1 gestartet, aber run_nacke_v2.ps1 gibt das NICHT als --dry-run an Python weiter. Zweiter Vorfall dieser Art. Ergebnis: HARTES VERBOT fuer Remote-Production-Starts eingefuehrt.</div>
-      <span class="inc-tag p0">P0</span>
-      <span class="inc-tag resolved">Resolved</span>
-      <span class="inc-tag learning">Deploy Gate eingefuehrt</span>
-    </div>
-
-    <div class="incident-item severity-med">
-      <div class="inc-date">05.03.2026 — Fleetboard</div>
-      <div class="inc-title">IMAP-Fetch 3 Tage tot (Passwort nicht synchronisiert)</div>
-      <div class="inc-desc">bodo.buschick@uxuix.de Passwort geaendert, aber .env auf UXUIX-VM und credential_vault in Supabase NICHT aktualisiert. Ergebnis: Credential-Sync-Regel und Email-Geografie-Regel eingefuehrt.</div>
-      <span class="inc-tag p0">P1</span>
-      <span class="inc-tag resolved">Resolved</span>
-      <span class="inc-tag learning">1 Email = 1 Geografie</span>
-    </div>
-
-    <div class="incident-item severity-low">
-      <div class="inc-date">09.03.2026 — NackeScript</div>
-      <div class="inc-title">Deploy Gate v1.0 erfolgreich eingefuehrt</div>
-      <div class="inc-desc">Erster Produktionslauf nach Einfuehrung des 11-Punkte Deploy Gates. Alle Gates bestanden, 342 Auftraege korrekt verarbeitet. Gate-System funktioniert wie geplant.</div>
-      <span class="inc-tag resolved">Milestone</span>
-    </div>
-
-    <div class="incident-item severity-low">
-      <div class="inc-date">10.03.2026 — Workflow Monitor</div>
-      <div class="inc-title">Workflow Monitor v2 Dashboard live</div>
-      <div class="inc-desc">Swimlane-Dashboard mit Code-Viewer, Guardrails, Integration Map und Historie. Module-Freeze-Mechanismus mit SHA-256 Integrity. CLI Tool workflow-engine.mjs.</div>
-      <span class="inc-tag resolved">Milestone</span>
-      <span class="inc-tag learning">Quality Pipeline</span>
-    </div>
+  <div class="incident-timeline" id="incidentTimeline">
+    <div style="color:var(--text-muted); font-size:13px;">Lade Incidents...</div>
   </div>
 </div>
 
@@ -643,6 +604,8 @@ function switchWorkflow(wfId) {
   renderGuardrails(wf);
   renderIntegration(wfId);
   updateWorkflowMeta(wfId);
+  loadHistory(wfId);
+  loadIncidents(wfId);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -743,1070 +706,8 @@ function highlightPython(code) {
   }).join('\n');
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MODULE CODE DATA
-// ═══════════════════════════════════════════════════════════════
-const MODULES = {
-config: {
-  title: "Modul 1: Config laden — orchestrator.py",
-  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-# MODUL: Config laden
-# DATEI: orchestrator.py (Zeilen 30-65)
-# ERKLAERUNG: Laedt die Konfiguration aus config.json.
-# Die Config steuert ALLES: Pfade, IDIS-Einstellungen, Zeitplan.
-# Ohne gueltige Config startet die Pipeline NICHT.
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-
-import json
-import sys
-from datetime import date, datetime
-from pathlib import Path
-
-class Orchestrator:
-    """Hauptsteuerung der NackeScript Pipeline.
-
-    Koordiniert alle Schritte: Config \u2192 Daten \u2192 IDIS \u2192 Report.
-    Kann in 3 Modi laufen:
-      - Production:        Alles ausfuehren inkl. IDIS Amendments
-      - --dry-run:         Nur Export + Berechnung, KEINE Aenderungen
-      - --stop-before-save: Felder ausfuellen aber NICHT speichern
-    """
-
-    def __init__(self, config_path: str = "config.json"):
-        # Config-Datei laden und parsen
-        with open(config_path, "r", encoding="utf-8") as f:
-            self.config = json.load(f)
-
-        # ERKLAERUNG: config_version pruefen!
-        # Ohne Version wissen wir nicht ob die Config aktuell ist.
-        if "config_version" not in self.config:
-            raise ValueError("config.json hat keine config_version!")
-
-        # Pfade aus Config extrahieren
-        paths = self.config["paths"]
-        self.masterdatei_path = Path(paths["masterdatei"])
-        self.exports_dir = Path(paths["exports_dir"])
-        self.output_dir = Path(paths["output_dir"])
-        self.logs_dir = Path(paths["logs_dir"])
-
-        # ERKLAERUNG: Pruefen ob alle Pfade existieren
-        # Wenn ein Pfad fehlt (z.B. Netzlaufwerk nicht verbunden),
-        # brechen wir SOFORT ab statt spaeter kryptische Fehler zu bekommen.
-        for p in [self.masterdatei_path, self.exports_dir, self.output_dir]:
-            if not p.exists():
-                raise FileNotFoundError(f"Pfad nicht gefunden: {p}")
-
-        self.logs_dir.mkdir(parents=True, exist_ok=True)
-
-        # Schedule-Einstellungen
-        self.schedule = self.config.get("schedule", {})
-        self.allowed_days = self.schedule.get("weekdays", ["Mon","Tue","Wed","Thu"])
-        self.retry_count = self.schedule.get("retry_count", 3)
-        self.retry_delay = self.schedule.get("retry_delay_minutes", 20)`
-},
-
-masterdata: {
-  title: "Modul 2: Stammdaten laden — master_data.py",
-  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-# MODUL: Stammdaten laden
-# DATEI: master_data.py (Zeilen 1-160)
-# ERKLAERUNG: Laedt die Masterdatei (Excel) mit allen Artikeln.
-# Die Masterdatei enthaelt Bundle-Groessen, Laender-Regeln,
-# und die Zuordnung AROS-Key \u2192 Artikelinfo.
-# Ohne Stammdaten kann KEINE Hochsetzung berechnet werden.
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-
-import math
-import pandas as pd
-from pathlib import Path
-
-class MasterData:
-    """Verwaltet Nacke Stammdaten aus der Masterdatei Excel.
-
-    Laeddt zwei wichtige Sheets:
-    1. Orders-Sheet: Alle Artikel mit Bundle-Groessen
-    2. OL Kartonage Sheet: Spezielle Bundle-Groessen fuer OL-Auftraege
-
-    Die Daten werden als Dict gespeichert fuer schnellen Zugriff
-    ueber den AROS-Key (z.B. "73066.200.25.180").
-    """
-
-    def __init__(self, config_path: str = "config.json"):
-        import json
-        with open(config_path, "r", encoding="utf-8") as f:
-            config = json.load(f)
-
-        self.masterdatei_path = Path(config["paths"]["masterdatei"])
-        self.over_matrix_path = Path(config["paths"]["over_matrix"])
-
-        # ERKLAERUNG: Daten werden beim Start einmal geladen
-        # und dann im Speicher gehalten. Das ist schneller als
-        # fuer jeden Auftrag die Excel-Datei neu zu lesen.
-        self._orders = {}        # AROS-Key \u2192 Artikelinfo
-        self._ol_kartonage = {}  # AROS-Key \u2192 OL Bundle Size
-        self._over_matrix = None # Laender \u00d7 Abrufart Matrix
-
-        self._load_masterdatei()
-        self._load_over_matrix()
-
-    def _load_masterdatei(self):
-        """Masterdatei Excel laden und in Dicts umwandeln."""
-        # ERKLAERUNG: openpyxl liest die xlsx-Datei
-        # header=0 = erste Zeile ist die Spaltenueberschrift
-        df = pd.read_excel(
-            self.masterdatei_path,
-            sheet_name="Orders",
-            header=0,
-            engine="openpyxl"
-        )
-
-        # ERKLAERUNG: Spalten fuer den AROS-Key finden
-        # Die Spalte heisst manchmal "Verketten Raussuchliste",
-        # manchmal "Verketten", manchmal "AROS"
-        key_col = None
-        for candidate in ["Verketten Raussuchliste", "Verketten", "AROS"]:
-            if candidate in df.columns:
-                key_col = candidate
-                break
-
-        if not key_col:
-            raise ValueError("Keine AROS-Key Spalte in Masterdatei gefunden!")
-
-        # ERKLAERUNG: Jede Zeile als Dict speichern
-        # Bundle Size Store = Spalte J, Bundle Size Depot = Spalte K
-        for _, row in df.iterrows():
-            aros_key = str(row[key_col]).strip()
-            if not aros_key or aros_key == "nan":
-                continue
-
-            self._orders[aros_key] = {
-                "abrufart": str(row.get("Abrufart", "")).strip(),
-                "picking": str(row.get("Picking", "")).strip(),
-                "bundle_size_store": self._safe_float(row.iloc[9]),  # Col J
-                "bundle_size_depot": self._safe_float(row.iloc[10]), # Col K
-                "artikel": str(row.get("Artikel", "")),
-                "lagerort": str(row.get("Lagerort", "")),
-            }
-
-        # OL Kartonage Sheet laden (separates Sheet)
-        try:
-            ol_df = pd.read_excel(
-                self.masterdatei_path,
-                sheet_name="OL Kartonage",
-                header=0
-            )
-            ol_key_col = None
-            for c in ["Verkettung", "Verketten", "AROS"]:
-                if c in ol_df.columns:
-                    ol_key_col = c
-                    break
-
-            if ol_key_col:
-                for _, row in ol_df.iterrows():
-                    key = str(row[ol_key_col]).strip()
-                    if key and key != "nan":
-                        # ERKLAERUNG: OL Bundle Size steht in einer
-                        # bestimmten Spalte (variiert je nach Version)
-                        self._ol_kartonage[key] = self._safe_float(
-                            row.get("Bundle Size", row.iloc[3])
-                        )
-        except Exception:
-            pass  # OL Sheet ist optional
-
-    @staticmethod
-    def _safe_float(val) -> float:
-        """Sicherer Float-Parser mit NaN/Inf Schutz.
-
-        ERKLAERUNG: pandas gibt manchmal NaN oder Inf zurueck
-        wenn eine Excel-Zelle leer ist oder einen Fehler enthaelt.
-        Wir fangen das ab und geben 0.0 zurueck.
-        """
-        try:
-            result = float(val)
-            if math.isnan(result) or math.isinf(result):
-                return 0.0
-            return result
-        except (ValueError, TypeError):
-            return 0.0
-
-    def get_order_info(self, aros_key: str) -> dict | None:
-        """Artikelinfo fuer einen AROS-Key nachschlagen."""
-        return self._orders.get(aros_key)
-
-    def get_ol_bundle(self, aros_key: str) -> float | None:
-        """OL Bundle Size fuer einen AROS-Key nachschlagen."""
-        return self._ol_kartonage.get(aros_key)`
-},
-
-export: {
-  title: "Modul 3: Auftraege abrufen (Pre-Export) — idis_browser.py",
-  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-# MODUL: Auftraege abrufen (Pre-Export)
-# DATEI: idis_browser.py (Zeilen 355-525)
-# ERKLAERUNG: Navigiert in IDIS zur Auftragsseite, setzt Filter,
-# waehlt alle Auftraege aus und exportiert sie als CSV.
-# Das ist der ERSTE Kontakt mit dem IDIS Browser.
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-
-async def export_orders(self, export_date: date, suffix: str = "pre") -> tuple:
-    """Auftraege aus IDIS exportieren.
-
-    # ERKLAERUNG:
-    # 1. Navigiert zu "Process AROS Orders"
-    # 2. Setzt den Import-Date Filter auf das gewuenschte Datum
-    # 3. Klickt "Show Result" \u2192 Tabelle wird geladen
-    # 4. Waehlt ALLE Auftraege aus (per JavaScript, nicht per Klick!)
-    # 5. Klickt "Export Selected" \u2192 Export-Seite oeffnet sich
-    # 6. Klickt den Export-Button \u2192 CSV wird heruntergeladen
-    # 7. Liest und parst die CSV-Datei
-
-    Args:
-        export_date: Datum fuer den Import-Filter (z.B. heute)
-        suffix: "pre" fuer Vor-Export, "post" fuer Nach-Export
-
-    Returns:
-        (csv_path, list_of_order_dicts)
-    """
-    page = await self._ensure_browser()
-
-    # ERKLAERUNG: Zur Auftragsseite navigieren
-    # "Process AROS Orders" ist der Menue-Punkt in IDIS
-    await page.goto(f"{self.idis_url}/idis/processAROSOrders.faces")
-    await page.wait_for_load_state("networkidle")
-
-    # ERKLAERUNG: Import-Date Filter setzen
-    # Das Dropdown filtert nach dem Importdatum der Auftraege
-    date_str = export_date.strftime("%d.%m.%Y")
-    await page.select_option(
-        'select[name="mainForm:importDateFilter"]',
-        label=date_str
-    )
-
-    # ERKLAERUNG: "Show Result" klicken \u2192 Tabelle laden
-    await page.click('input[name="mainForm:_idJsp49"]')
-    await page.wait_for_selector("table.dataTable", timeout=30000)
-
-    # ERKLAERUNG: ALLE Checkboxen per JavaScript setzen
-    # WICHTIG: Wir benutzen JavaScript statt einzelne Klicks,
-    # weil JSF (Java Server Faces) bei vielen Klick-Events
-    # die Session ueberlasten kann!
-    await page.evaluate("""
-        document.querySelectorAll('input[type="checkbox"]')
-            .forEach(cb => { cb.checked = true; });
-    """)
-
-    # ERKLAERUNG: "Export Selected" klicken
-    # Das navigiert zu orderExport.faces
-    await page.click('input[name="mainForm:_idJsp252"]')
-    await page.wait_for_load_state("networkidle")
-
-    # ERKLAERUNG: Export-Button klicken \u2192 CSV Download
-    # Der Button ist ein Image-Button (kein normaler Submit)
-    async with page.expect_download() as download_info:
-        await page.click('input[name="mainForm:_idJsp129"]')
-
-    download = await download_info.value
-    csv_filename = f"IDIS_EXPORT_{export_date.isoformat()}_{suffix}.csv"
-    csv_path = self.exports_dir / csv_filename
-    await download.save_as(str(csv_path))
-
-    # CSV parsen
-    orders = self._parse_export_csv(str(csv_path))
-    print(f"[Export] {len(orders)} Auftraege exportiert ({suffix})")
-
-    return str(csv_path), orders
-
-def _parse_export_csv(self, csv_path: str) -> list:
-    """IDIS CSV-Export parsen.
-
-    # ERKLAERUNG: Die IDIS CSV-Datei hat KEINE Kopfzeile!
-    # Die Felder sind durch Semikolon getrennt.
-    # Wir muessen die Spalten-Positionen hart kodieren:
-    #   Spalte 2  = Order Number
-    #   Spalte 12 = AROS Number (der wichtige Key!)
-    #   Spalte 26 = Quantity (Menge)
-    #   Spalte 28 = Order Type (S=Store, D=Depot)
-    """
-    import csv
-    orders = []
-
-    # ERKLAERUNG: Verschiedene Encodings probieren
-    # IDIS kann UTF-8 oder Latin-1 exportieren
-    for encoding in ["utf-8-sig", "utf-8", "latin-1"]:
-        try:
-            with open(csv_path, "r", encoding=encoding) as f:
-                reader = csv.reader(f, delimiter=";")
-                for row in reader:
-                    if len(row) < 19:
-                        continue
-                    orders.append({
-                        "order_id": row[2].strip(),
-                        "aros_key": row[12].strip(),
-                        "quantity": int(row[26]) if row[26].strip() else 0,
-                        "order_type": row[28].strip(),  # S or D
-                        "country": row[8].strip(),
-                        "abrufart": row[14].strip(),
-                    })
-            break
-        except UnicodeDecodeError:
-            continue
-
-    return orders`
-},
-
-login: {
-  title: "Modul 4: IDIS Login — idis_browser.py",
-  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-# MODUL: IDIS Login
-# DATEI: idis_browser.py (Zeilen 60-180)
-# ERKLAERUNG: Startet den Browser und loggt sich in IDIS ein.
-# Benutzt Chrome Debug Protocol (CDP) um sich an einen
-# bereits laufenden Chrome-Browser anzudocken.
-# So bleibt die Session zwischen Pipeline-Laeufen erhalten.
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-
-from playwright.async_api import async_playwright
-
-class IdisBrowser:
-    """Browser-Automation fuer das IDIS Portal.
-
-    # ERKLAERUNG: IDIS ist eine Java Server Faces (JSF) Webanwendung.
-    # JSF hat viele Eigenheiten:
-    # - Sessions sind empfindlich (zu viele Requests = Absturz)
-    # - Formular-IDs enthalten Zahlen die sich aendern koennen
-    # - Export-Buttons sind Image-Buttons (kein normaler Submit)
-    #
-    # Deshalb benutzen wir CDP statt normale Browser-Steuerung.
-    # CDP verbindet sich zu einem LAUFENDEN Chrome-Prozess.
-    """
-
-    def __init__(self, config_path: str = "config.json"):
-        import json
-        with open(config_path, "r", encoding="utf-8") as f:
-            config = json.load(f)
-
-        idis_cfg = config["idis"]
-        self.idis_url = idis_cfg["url"]    # https://idis.retail-sc.com
-        self.mailbox = idis_cfg["mailbox"]  # 729
-        self.timeout = idis_cfg["timeout_ms"]  # 30000
-
-        self.exports_dir = Path(config["paths"]["exports_dir"])
-        self._browser = None
-        self._page = None
-
-    async def _ensure_browser(self):
-        """Browser-Verbindung sicherstellen.
-
-        # ERKLAERUNG:
-        # - Versucht zuerst CDP-Verbindung auf Port 9222
-        # - Wenn kein Chrome laeuft: startet neuen Chrome-Prozess
-        # - Der Browser wird NIEMALS geschlossen (bleibt fuer naechsten Lauf)
-        """
-        if self._page:
-            try:
-                await self._page.title()  # Verbindung testen
-                return self._page
-            except:
-                self._page = None
-
-        pw = await async_playwright().start()
-
-        try:
-            # ERKLAERUNG: An bestehenden Chrome andocken (CDP)
-            self._browser = await pw.chromium.connect_over_cdp(
-                "http://localhost:9222"
-            )
-            contexts = self._browser.contexts
-            if contexts:
-                pages = contexts[0].pages
-                self._page = pages[0] if pages else await contexts[0].new_page()
-            else:
-                ctx = await self._browser.new_context()
-                self._page = await ctx.new_page()
-        except:
-            # ERKLAERUNG: Kein Chrome laeuft \u2192 neuen starten
-            self._browser = await pw.chromium.launch(
-                headless=False,
-                args=[
-                    "--remote-debugging-port=9222",
-                    "--start-maximized"
-                ]
-            )
-            ctx = await self._browser.new_context(no_viewport=True)
-            self._page = await ctx.new_page()
-
-        return self._page
-
-    async def login(self) -> bool:
-        """In IDIS einloggen.
-
-        # ERKLAERUNG: Credentials kommen aus Umgebungsvariablen.
-        # NIEMALS im Code speichern!
-        """
-        import os
-        page = await self._ensure_browser()
-
-        await page.goto(f"{self.idis_url}/idis/login.faces")
-        await page.wait_for_load_state("networkidle")
-
-        # Pruefen ob schon eingeloggt
-        if "login" not in page.url.lower():
-            print("[Login] Bereits eingeloggt")
-            return True
-
-        # ERKLAERUNG: Credentials aus Environment laden
-        username = os.environ.get("IDIS_USER", "")
-        password = os.environ.get("IDIS_PASS", "")
-
-        if not username or not password:
-            raise ValueError("IDIS_USER oder IDIS_PASS nicht gesetzt!")
-
-        await page.fill('input[name="j_username"]', username)
-        await page.fill('input[name="j_password"]', password)
-        await page.click('input[type="submit"]')
-
-        # ERKLAERUNG: Warten bis Login durchgeht
-        # Wenn der URL-Pfad sich aendert, war Login erfolgreich
-        await page.wait_for_url("**/idis/**", timeout=self.timeout)
-
-        if "login" in page.url.lower():
-            raise Exception("Login fehlgeschlagen - falsches Passwort?")
-
-        # Mailbox setzen
-        if self.mailbox:
-            await page.goto(f"{self.idis_url}/idis/selectMailbox.faces")
-            await page.select_option("#mailboxSelect", value=self.mailbox)
-            await page.click("#submitMailbox")
-
-        print("[Login] Erfolgreich eingeloggt")
-        return True`
-},
-
-navigate: {
-  title: "Modul 5: Seite navigieren — idis_browser.py",
-  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-# MODUL: Seite navigieren
-# DATEI: idis_browser.py (Zeilen 220-354)
-# ERKLAERUNG: Navigiert innerhalb von IDIS zur richtigen Seite.
-# IDIS hat ein Menue-System mit Unterpunkten.
-# Wir muessen zum Punkt "Process AROS Orders" navigieren
-# und dort die richtigen Filter setzen.
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-
-# IDIS CSS Selektoren (verifiziert 23.02.2026)
-# ERKLAERUNG: Diese Selektoren identifizieren die HTML-Elemente
-# in der IDIS-Oberflaeche. Sie koennen sich bei IDIS-Updates
-# aendern! Deshalb sind sie hier zentral definiert.
-
-SEL_LOGIN_USER = 'input[name="j_username"]'
-SEL_LOGIN_PASS = 'input[name="j_password"]'
-SEL_FILTER_IMPORT_DATE = 'select[name="mainForm:importDateFilter"]'
-SEL_SHOW_RESULT = 'input[name="mainForm:_idJsp49"]'
-SEL_EXPORT_SELECTED = 'input[name="mainForm:_idJsp252"]'
-SEL_ORDER_EXPORT_BTN = 'input[name="mainForm:_idJsp129"]'
-
-# ERKLAERUNG: Amendment-Selektoren (fuer Hochsetzung)
-# {j} wird durch die Zeilen-Nummer ersetzt (0, 1, 2, ...)
-SEL_AMEND_QTY_TPL = 'input[name="mainForm:_idJsp109:{j}:_idJsp140"]'
-SEL_AMEND_SAVE = 'input[name="mainForm:_idJsp155"]'
-
-# Ergebnis-Tabelle Spalten-Mapping
-COL_CHECKBOX = 0        # Checkbox fuer Auswahl
-COL_ORDER_NUMBER = 2    # Auftragsnummer
-COL_AROS_NUMBER = 12    # AROS-Key (wichtigste Spalte!)
-COL_QUANTITY = 26       # Menge
-COL_ORDER_TYPE = 28     # Typ: S=Store, D=Depot
-
-async def navigate_to_orders(self):
-    """Zur Auftragsbearbeitungs-Seite navigieren.
-
-    # ERKLAERUNG: IDIS ist eine JSF-App (Java Server Faces).
-    # Die Navigation funktioniert ueber HTTP-Posts, nicht ueber
-    # normale Links. Deshalb navigieren wir per URL.
-    """
-    page = await self._ensure_browser()
-
-    # ERKLAERUNG: Direkt zur Seite navigieren
-    await page.goto(
-        f"{self.idis_url}/idis/processAROSOrders.faces"
-    )
-    await page.wait_for_load_state("networkidle")
-
-    # ERKLAERUNG: Pruefen ob die Seite geladen wurde
-    # Wenn wir auf der Login-Seite landen, ist die Session abgelaufen
-    if "login" in page.url.lower():
-        print("[Nav] Session abgelaufen, neu einloggen...")
-        await self.login()
-        await page.goto(
-            f"{self.idis_url}/idis/processAROSOrders.faces"
-        )
-
-    # ERKLAERUNG: Warten bis der Filter sichtbar ist
-    await page.wait_for_selector(
-        SEL_FILTER_IMPORT_DATE,
-        timeout=self.timeout
-    )
-    print("[Nav] Auftragsseite geladen")
-
-async def get_result_table_data(self) -> list:
-    """Ergebnis-Tabelle auslesen.
-
-    # ERKLAERUNG: Liest alle sichtbaren Zeilen aus der IDIS-Tabelle.
-    # Jede Zeile wird als Dict mit den wichtigsten Feldern zurueckgegeben.
-    # Das brauchen wir um die richtigen Zeilen fuer Amendments zu finden.
-    """
-    page = await self._ensure_browser()
-
-    # ERKLAERUNG: Alle Tabellenzeilen per JavaScript auslesen
-    # Das ist schneller als jeden Selektor einzeln abzufragen
-    rows = await page.evaluate("""
-        () => {
-            const rows = document.querySelectorAll('table.dataTable tbody tr');
-            return Array.from(rows).map(tr => {
-                const cells = tr.querySelectorAll('td');
-                return {
-                    order_id: cells[2]?.textContent?.trim() || '',
-                    aros_key: cells[12]?.textContent?.trim() || '',
-                    quantity: parseInt(cells[26]?.textContent?.trim() || '0'),
-                    order_type: cells[28]?.textContent?.trim() || ''
-                };
-            });
-        }
-    """)
-
-    return rows`
-},
-
-overconfirm: {
-  title: "Modul 6: Auftraege bestaetigen (Hochsetzung) — overconfirmation.py",
-  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-# MODUL: Auftraege bestaetigen (Hochsetzung)
-# DATEI: overconfirmation.py + idis_browser.py (Zeilen 536-682)
-# ERKLAERUNG: Das HERZSTUECK der Pipeline!
-# 1. Berechnet fuer jeden Auftrag die neue Menge (Hochsetzung)
-# 2. Traegt die neue Menge im IDIS ein
-#
-# HOCHSETZUNG = Menge auf naechstes Vielfaches der Bundle-Groesse
-# aufrunden. Beispiel: Menge 7, Bundle 3 \u2192 Hochsetzung auf 9.
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-
-import math
-
-class OverconfirmationCalculator:
-    """Berechnet Hochsetzungen (Amendments) fuer IDIS-Auftraege.
-
-    # ERKLAERUNG: "Hochsetzung" bedeutet:
-    # Die bestellte Menge wird auf das naechste Vielfache
-    # der Bundle-Groesse aufgerundet.
-    #
-    # Beispiel: Kunde bestellt 7 Stueck, Bundle = 3
-    # \u2192 Hochsetzung auf 9 (naechstes Vielfaches von 3)
-    #
-    # Faktoren:
-    # - PCS (Pieces): Faktor 1 (normal)
-    # - PPP (Pre-Packed Pallet): Faktor 3 (groessere Einheiten)
-    """
-
-    def __init__(self, master: 'MasterData', config_path: str = "config.json"):
-        self.master = master
-        import json
-        with open(config_path) as f:
-            cfg = json.load(f)
-        oc = cfg.get("overconfirmation", {})
-        self.never_countries = oc.get("never_hochsetzen_countries", ["D"])
-        self.factor_pcs = oc.get("factor_pcs", 1)
-        self.factor_ppp = oc.get("factor_ppp", 3)
-
-    def calculate_amendments(self, export_rows: list) -> list:
-        """Amendments fuer alle Export-Zeilen berechnen.
-
-        # ERKLAERUNG:
-        # - Fuer jede Zeile pruefen: Soll hochgesetzt werden?
-        # - Land "D" (Deutschland) wird NICHT hochgesetzt
-        # - Bundle-Groesse aus Masterdatei holen
-        # - Neue Menge berechnen: ceil(menge / bundle) * bundle
-        # - Nur zurueckgeben wenn neue Menge != alte Menge
-        """
-        amendments = []
-
-        for row in export_rows:
-            country = row["country"]
-            aros_key = row["aros_key"]
-            menge = row["quantity"]
-            abrufart = row["abrufart"]
-            order_type = row["order_type"]
-
-            # ERKLAERUNG: Deutschland nie hochsetzen
-            if country in self.never_countries:
-                continue
-
-            # ERKLAERUNG: Artikelinfo aus Stammdaten holen
-            info = self.master.get_order_info(aros_key)
-            if not info:
-                print(f"  [WARN] Kein Stammdatensatz: {aros_key}")
-                continue
-
-            # ERKLAERUNG: Bundle-Groesse bestimmen
-            # Store-Auftraege \u2192 Col J, Depot \u2192 Col K, OL \u2192 OL Sheet
-            bundle = self._get_bundle_size(aros_key, country, order_type, info)
-            if bundle <= 0:
-                continue
-
-            # ERKLAERUNG: Faktor bestimmen (PCS=1, PPP=3)
-            factor = self.factor_ppp if "PPP" in abrufart.upper() else self.factor_pcs
-
-            # ERKLAERUNG: Hochsetzung berechnen
-            # ceil() rundet auf die naechste ganze Zahl auf
-            effective_bundle = bundle * factor
-            neue_menge = math.ceil(menge / effective_bundle) * int(effective_bundle)
-
-            # ERKLAERUNG: Nur wenn sich etwas aendert
-            if neue_menge != menge:
-                amendments.append({
-                    "order_id": row["order_id"],
-                    "aros_key": aros_key,
-                    "land": country,
-                    "abrufart": abrufart,
-                    "order_type": order_type,
-                    "alt_menge": menge,
-                    "neu_menge": int(neue_menge),
-                    "bundle_size": bundle,
-                    "factor": factor,
-                })
-
-        print(f"[Overconfirm] {len(amendments)} Hochsetzungen berechnet")
-        return amendments
-
-    def _get_bundle_size(self, aros_key, country, order_type, info):
-        """Bundle-Groesse fuer einen Auftrag bestimmen.
-
-        # ERKLAERUNG: Die Bundle-Groesse haengt ab von:
-        # - Order Type: "S" (Store) \u2192 Spalte J, "D" (Depot) \u2192 Spalte K
-        # - OL-Auftraege: Separates Sheet "OL Kartonage"
-        """
-        # OL-Auftraege haben eigene Bundle-Groessen
-        ol_bundle = self.master.get_ol_bundle(aros_key)
-        if ol_bundle and ol_bundle > 0:
-            return ol_bundle
-
-        # Store oder Depot?
-        if order_type == "S":
-            return info.get("bundle_size_store", 0)
-        else:
-            return info.get("bundle_size_depot", 0)
-
-# \u2500\u2500\u2500 IDIS Amendment eintragen (idis_browser.py) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-
-async def apply_amendments(self, amendments: list, stop_before_save=False) -> int:
-    """Amendments im IDIS eintragen.
-
-    # ERKLAERUNG: Fuer jedes Amendment:
-    # 1. Die richtige Zeile in der Ergebnis-Tabelle finden
-    # 2. Den "Amend" Button fuer diese Zeile klicken
-    # 3. Das Mengen-Feld mit der neuen Menge befuellen
-    # 4. "Save" klicken (oder stoppen wenn stop_before_save=True)
-    #
-    # ACHTUNG: Nach jedem Save kann sich die Tabelle aendern
-    # (JSF rendert die Seite neu). Deshalb muessen wir nach
-    # jedem Save die Tabelle neu auslesen!
-    """
-    page = await self._ensure_browser()
-    applied = 0
-
-    for amend in amendments:
-        try:
-            order_id = amend["order_id"]
-            neue_menge = amend["neu_menge"]
-
-            # ERKLAERUNG: Zeile in Ergebnis-Tabelle finden
-            rows = await self.get_result_table_data()
-            row_index = None
-            for i, r in enumerate(rows):
-                if r["order_id"] == order_id:
-                    row_index = i
-                    break
-
-            if row_index is None:
-                print(f"  [SKIP] Zeile nicht gefunden: {order_id}")
-                continue
-
-            # ERKLAERUNG: Mengen-Feld befuellen
-            # Der Selektor enthaelt {j} = Zeilenindex
-            qty_selector = SEL_AMEND_QTY_TPL.replace("{j}", str(row_index))
-            await page.fill(qty_selector, str(neue_menge))
-
-            if stop_before_save:
-                print(f"  [STOP] {order_id}: {amend['alt_menge']} \u2192 {neue_menge} (nicht gespeichert)")
-                continue
-
-            # ERKLAERUNG: Save klicken
-            await page.click(SEL_AMEND_SAVE)
-            await page.wait_for_load_state("networkidle")
-
-            applied += 1
-            print(f"  [OK] {order_id}: {amend['alt_menge']} \u2192 {neue_menge}")
-
-        except Exception as e:
-            print(f"  [ERR] {amend['order_id']}: {e}")
-            # Screenshot bei Fehler
-            await page.screenshot(path=f"error_{amend['order_id']}.png")
-
-    return applied`
-},
-
-postexport: {
-  title: "Modul 7: Ergebnis speichern (Post-Export) — orchestrator.py",
-  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-# MODUL: Ergebnis speichern (Post-Export)
-# DATEI: orchestrator.py (Zeilen 200-280)
-# ERKLAERUNG: Nach der Hochsetzung exportieren wir nochmal.
-# Der zweite Export ("post") enthaelt die geaenderten Mengen.
-# Durch Vergleich pre vs post pruefen wir ob alles stimmt.
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-
-async def _run_idis_steps(self, master, run_date, dry_run=False, stop_before_save=False):
-    """IDIS Schritte ausfuehren (Export \u2192 Amend \u2192 Re-Export).
-
-    # ERKLAERUNG: Dies ist das Herzstueck der Pipeline.
-    # In 3 Phasen:
-    #
-    # Phase 1 - Pre-Export:
-    #   \u2192 Alle Auftraege exportieren (Ist-Zustand)
-    #
-    # Phase 2 - Amendment:
-    #   \u2192 Hochsetzungen berechnen und eintragen
-    #
-    # Phase 3 - Post-Export:
-    #   \u2192 Nochmal exportieren (Soll-Zustand nach Hochsetzung)
-    #   \u2192 Vergleich: Wurden alle Amendments korrekt uebernommen?
-    """
-    from .idis_browser import IdisBrowser
-    from .overconfirmation import OverconfirmationCalculator
-
-    browser = IdisBrowser(self.config_path)
-    calculator = OverconfirmationCalculator(master, self.config_path)
-
-    # PHASE 1: Pre-Export
-    print("=" * 60)
-    print("PHASE 1: Pre-Export")
-    await browser.login()
-    pre_path, pre_rows = await browser.export_orders(run_date, "pre")
-    print(f"  \u2192 {len(pre_rows)} Auftraege exportiert")
-
-    if not pre_rows:
-        print("  \u2192 Keine Auftraege gefunden")
-        return [], [], []
-
-    # PHASE 2: Amendments berechnen und anwenden
-    print("=" * 60)
-    print("PHASE 2: Hochsetzung")
-    amendments = calculator.calculate_amendments(pre_rows)
-
-    if amendments and not dry_run:
-        applied = await browser.apply_amendments(amendments, stop_before_save)
-        print(f"  \u2192 {applied}/{len(amendments)} Amendments angewendet")
-    elif dry_run:
-        print(f"  \u2192 DRY-RUN: {len(amendments)} Amendments berechnet (nicht angewendet)")
-
-    # PHASE 3: Post-Export (nur wenn Amendments angewendet wurden)
-    post_rows = []
-    if amendments and not dry_run and not stop_before_save:
-        print("=" * 60)
-        print("PHASE 3: Post-Export")
-        post_path, post_rows = await browser.export_orders(run_date, "post")
-        print(f"  \u2192 {len(post_rows)} Auftraege re-exportiert")
-
-        # ERKLAERUNG: Vergleich Pre vs Post
-        # Pruefen ob die Amendments korrekt uebernommen wurden
-        mismatches = 0
-        for amend in amendments:
-            post_row = next(
-                (r for r in post_rows if r["order_id"] == amend["order_id"]),
-                None
-            )
-            if post_row and post_row["quantity"] != amend["neu_menge"]:
-                print(f"  [WARN] Mismatch: {amend['order_id']} "
-                      f"erwartet={amend['neu_menge']}, "
-                      f"ist={post_row['quantity']}")
-                mismatches += 1
-
-        if mismatches:
-            print(f"  [ALERT] {mismatches} Mismatches gefunden!")
-
-    return pre_rows, amendments, post_rows`
-},
-
-report: {
-  title: "Modul 8: Report erstellen — daily_report.py",
-  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-# MODUL: Report erstellen
-# DATEI: daily_report.py (Zeilen 1-180)
-# ERKLAERUNG: Erstellt den Tagesreport mit Zusammenfassung
-# und Plausibilitaetspruefungen. Der Report entscheidet
-# ob gedruckt werden darf oder nicht!
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-
-from datetime import date, datetime
-from pathlib import Path
-
-class DailyReport:
-    """Tagesreport mit Plausibilitaetspruefung.
-
-    # ERKLAERUNG: Der Report macht 3 wichtige Checks:
-    # 1. Quersumme: Stimmt die Gesamtmenge ueberein?
-    # 2. Anzahl: Stimmt die Anzahl der Listen?
-    # 3. Missing Keys: Fehlen Stammdaten fuer Auftraege?
-    #
-    # Wenn ein Check fehlschlaegt, wird NICHT gedruckt!
-    # Das verhindert fehlerhafte Raussuchlisten.
-    """
-
-    def __init__(self, config_path: str = "config.json"):
-        import json
-        with open(config_path) as f:
-            config = json.load(f)
-        self.logs_dir = Path(config["paths"]["logs_dir"])
-        self.logs_dir.mkdir(parents=True, exist_ok=True)
-
-    def generate_report(
-        self,
-        run_date: date,
-        start_time: datetime,
-        end_time: datetime,
-        export_rows: list,
-        generated_lists: list,
-        missing_keys: list,
-        amendments: list | None = None,
-    ) -> tuple:
-        """Tagesreport generieren.
-
-        Returns:
-            (plausibility_ok: bool, report_path: str)
-
-        # ERKLAERUNG:
-        # plausibility_ok = True  \u2192 Alles OK, drucken erlaubt
-        # plausibility_ok = False \u2192 Fehler, NICHT drucken!
-        """
-        duration = (end_time - start_time).total_seconds()
-
-        # ERKLAERUNG: Metriken berechnen
-        total_orders = len(export_rows)
-        total_lists = len(generated_lists)
-        unique_aros = len(set(r["aros_key"] for r in export_rows))
-        total_qty_export = sum(r["quantity"] for r in export_rows)
-        total_qty_lists = sum(pl.get("total_qty", 0) for pl in generated_lists)
-
-        # \u2550\u2550\u2550 PLAUSIBILITAETSPRUEFUNGEN \u2550\u2550\u2550
-        checks = {}
-
-        # Check 1: Quersumme (Gesamtmenge Export == Gesamtmenge Listen)
-        checks["quersumme"] = total_qty_export == total_qty_lists
-
-        # Check 2: Anzahl (unique AROS Keys == Anzahl Listen)
-        checks["anzahl"] = unique_aros == total_lists
-
-        # Check 3: Missing Keys (sollte leer sein)
-        checks["missing_keys"] = len(missing_keys) == 0
-
-        plausibility_ok = all(checks.values())
-
-        # ERKLAERUNG: Report-Text zusammenbauen
-        lines = []
-        lines.append(f"\u2550\u2550\u2550 NackeScript Tagesreport {run_date} \u2550\u2550\u2550")
-        lines.append(f"")
-        lines.append(f"Laufzeit:       {start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')} ({duration:.0f}s)")
-        lines.append(f"Auftraege:      {total_orders}")
-        lines.append(f"Raussuchlisten: {total_lists}")
-        lines.append(f"")
-
-        if amendments:
-            lines.append(f"Hochsetzungen:  {len(amendments)}")
-            for a in amendments[:10]:  # Max 10 anzeigen
-                lines.append(f"  {a['aros_key']}: {a['alt_menge']} \u2192 {a['neu_menge']} (Bundle {a['bundle_size']})")
-            if len(amendments) > 10:
-                lines.append(f"  ... und {len(amendments) - 10} weitere")
-            lines.append(f"")
-
-        # ERKLAERUNG: Plausibilitaetsergebnis anzeigen
-        lines.append(f"\u2550\u2550\u2550 Plausibilitaet \u2550\u2550\u2550")
-        for name, ok in checks.items():
-            status = "OK" if ok else "FEHLER"
-            lines.append(f"  [{status}] {name}")
-
-        if not plausibility_ok:
-            lines.append(f"")
-            lines.append(f"WARNUNG: Plausibilitaet NICHT bestanden!")
-            lines.append(f"         Drucken ist GESPERRT bis Fehler behoben.")
-
-        # Report speichern
-        report_text = "\\n".join(lines)
-        report_path = self.logs_dir / f"report_{run_date}.txt"
-        report_path.write_text(report_text, encoding="utf-8")
-
-        print(f"[Report] Gespeichert: {report_path}")
-        print(f"[Report] Plausibilitaet: {'OK' if plausibility_ok else 'FEHLER'}")
-
-        return plausibility_ok, str(report_path)`
-},
-
-email: {
-  title: "Modul 9: Email senden — orchestrator.py (Edge Function)",
-  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-# MODUL: Email senden (via Edge Function)
-# DATEI: orchestrator.py (Zeilen 65-106)
-# ERKLAERUNG: Sendet den Report an die Supabase Edge Function
-# "nacke-report". Die Edge Function formatiert die Email
-# und sendet sie ueber SMTP.
-#
-# SUPABASE EDGE FUNCTION: nacke-report
-# URL: https://crslpxgwxjmovrhyxiim.supabase.co/functions/v1/nacke-report
-# SMTP: automation@uxuix.de (Geografie: Finnland/Cloud)
-# PROD: nacke-report@exasync.ai
-# TEST: bodo.buschick@uxuix.de
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-
-import os
-import json
-import urllib.request
-
-def send_report_to_edge(report_data: dict, config: dict) -> bool:
-    """Report an nacke-report Edge Function senden.
-
-    # ERKLAERUNG:
-    # Die Edge Function macht den eigentlichen Email-Versand.
-    # Wir senden nur die Daten als JSON hin.
-    #
-    # Warum Edge Function statt direkt SMTP?
-    # \u2192 SMTP-Credentials liegen sicher im Supabase Vault
-    # \u2192 Die Edge Function kann die Email formatieren
-    # \u2192 Zentrales Logging aller gesendeten Reports
-    """
-    edge_url = config.get("reporting", {}).get(
-        "edge_function_url",
-        "https://crslpxgwxjmovrhyxiim.supabase.co/functions/v1/nacke-report"
-    )
-
-    # ERKLAERUNG: Supabase Service Key fuer Authentifizierung
-    service_key = os.environ.get("SUPABASE_SERVICE_KEY", "")
-    if not service_key:
-        print("[Email] WARNUNG: Kein SUPABASE_SERVICE_KEY, Report nicht gesendet")
-        return False
-
-    # ERKLAERUNG: JSON Payload zusammenbauen
-    payload = {
-        "workflow_id": "nacke",
-        "report": report_data,
-        "run_date": report_data.get("date", ""),
-        "mode": report_data.get("mode", "production"),
-        "status": report_data.get("status", "unknown"),
-    }
-
-    # ERKLAERUNG: HTTP POST an die Edge Function
-    req = urllib.request.Request(
-        edge_url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {service_key}",
-        },
-        method="POST"
-    )
-
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            result = json.loads(resp.read())
-            print(f"[Email] Report gesendet: {result.get('message', 'OK')}")
-            return True
-    except Exception as e:
-        print(f"[Email] FEHLER beim Senden: {e}")
-        return False`
-},
-
-metrics: {
-  title: "Modul 10: Metriken loggen — orchestrator.py",
-  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-# MODUL: Metriken loggen
-# DATEI: orchestrator.py (Zeilen 107-150)
-# ERKLAERUNG: Sammelt alle Laufzeit-Metriken und schreibt sie
-# nach Supabase in die agent_metrics Tabelle.
-# Diese Daten nutzen wir fuer:
-# - Dashboard: Wie lange laeuft die Pipeline?
-# - Alerts: Fehlerrate > 5%?
-# - Historie: Trends ueber Wochen/Monate
-#
-# SUPABASE TABELLE: agent_metrics
-# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-
-import time
-import json
-import os
-import urllib.request
-
-def log_metrics(report_data: dict, start_time: float) -> dict:
-    """Pipeline-Metriken in Supabase speichern.
-
-    # ERKLAERUNG:
-    # Wir speichern fuer JEDEN Lauf:
-    # - Laufzeit in Sekunden
-    # - Anzahl Auftraege (total, bestaetigt, Fehler)
-    # - Erfolgsrate in Prozent
-    # - Modus (production/dry-run/stop-before-save)
-    # - Status (completed/error/no_orders)
-    #
-    # So koennen wir im Dashboard sehen:
-    # "Heute 342 Auftraege in 45 Sekunden, 99.7% Erfolgsrate"
-    """
-    duration = round(time.time() - start_time, 2)
-
-    steps = report_data.get("steps", {})
-    oc = steps.get("overconfirmation", {})
-
-    metrics = {
-        "workflow_id": "nacke",
-        "run_date": report_data.get("date", ""),
-        "mode": report_data.get("mode", "unknown"),
-        "status": report_data.get("status", "unknown"),
-        "duration_seconds": duration,
-        "total_orders": steps.get("export_pre", {}).get("rows", 0),
-        "amendments_calculated": oc.get("amendments_calculated", 0),
-        "amendments_applied": oc.get("amendments_applied", 0),
-        "picklists_generated": steps.get("picklists", {}).get("generated", 0),
-        "plausibility_ok": steps.get("report", {}).get("plausibility_ok", None),
-    }
-
-    # ERKLAERUNG: Erfolgsrate berechnen
-    total = metrics["total_orders"]
-    errors = report_data.get("error_count", 0)
-    if total > 0:
-        metrics["success_rate"] = round((total - errors) / total * 100, 1)
-
-    # An Supabase senden
-    sb_url = os.environ.get("SUPABASE_URL", "")
-    sb_key = os.environ.get("SUPABASE_SERVICE_KEY", "")
-
-    if sb_url and sb_key:
-        req = urllib.request.Request(
-            f"{sb_url}/rest/v1/agent_metrics",
-            data=json.dumps(metrics).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "apikey": sb_key,
-                "Authorization": f"Bearer {sb_key}",
-                "Prefer": "return=minimal"
-            },
-            method="POST"
-        )
-        try:
-            urllib.request.urlopen(req, timeout=10)
-            print(f"[Metrics] Gespeichert: {duration:.0f}s, {total} Auftraege")
-        except Exception as e:
-            print(f"[Metrics] FEHLER: {e}")
-
-    return metrics`
-}
-
-};
-
+// Legacy MODULES removed — data now served from modules/registry.json
+const MODULES = {};
 // ═══════════════════════════════════════════════════════════════
 // THEME TOGGLE (Dark/Light)
 // ═══════════════════════════════════════════════════════════════
@@ -1862,40 +763,210 @@ function updateWorkflowMeta(wfId) {
 wfSelect.addEventListener('change', () => switchWorkflow(wfSelect.value));
 
 // ═══════════════════════════════════════════════════════════════
-// HEARTBEAT — Live Supabase Ping (optional, wenn online)
+// SUPABASE CONFIG (anon key — read-only via RLS)
+// ═══════════════════════════════════════════════════════════════
+const SB_URL = 'https://crslpxgwxjmovrhyxiim.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyc2xweGd3eGptb3ZyaHl4aWltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMjAyNTQsImV4cCI6MjA4NTg5NjI1NH0.qXPC6jR3b62DDTUIZYNHFETyJk5JkvpzuBYJLk-E1iU';
+const SB_HEADERS = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+
+async function sbFetch(path) {
+  const res = await fetch(SB_URL + '/rest/v1/' + path, { headers: SB_HEADERS });
+  if (!res.ok) throw new Error('Supabase ' + res.status);
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HEARTBEAT — Live Supabase Ping
 // ═══════════════════════════════════════════════════════════════
 async function checkHeartbeat() {
-  // Nur wenn Supabase-Anbindung konfiguriert
-  const SB_URL = ''; // Wird spaeter per Config gesetzt
-  if (!SB_URL) return;
   try {
     const wfId = wfSelect.value;
-    const res = await fetch(SB_URL + '/rest/v1/agent_metrics?workflow_id=eq.' + wfId + '&order=run_date.desc&limit=1', {
-      headers: { 'apikey': '' } // Placeholder
-    });
-    const data = await res.json();
+    const data = await sbFetch('workflow_runs?workflow_id=eq.' + wfId + '&order=started_at.desc&limit=1');
     if (data.length > 0) {
       const last = data[0];
-      const age = Date.now() - new Date(last.run_date).getTime();
+      const startedAt = new Date(last.started_at);
+      const age = Date.now() - startedAt.getTime();
       const dot = document.getElementById('heartbeatDot');
       const text = document.getElementById('heartbeatText');
       const hoursAgo = Math.round(age / 3600000);
-      if (last.error_count > 0) {
+      const timeLabel = hoursAgo < 1 ? 'vor <1h' : 'vor ' + hoursAgo + 'h';
+
+      if (last.status === 'error' || last.status === 'failed') {
         dot.className = 'pulse dead';
-        text.textContent = 'Fehler vor ' + hoursAgo + 'h';
+        text.textContent = 'Fehler ' + timeLabel;
+      } else if (last.status === 'running') {
+        dot.className = 'pulse alive';
+        text.textContent = 'Laeuft gerade...';
       } else if (age < 86400000) {
         dot.className = 'pulse alive';
-        text.textContent = 'OK vor ' + hoursAgo + 'h';
+        text.textContent = 'OK ' + timeLabel;
       } else {
         dot.className = 'pulse unknown';
         text.textContent = 'Kein Lauf seit ' + hoursAgo + 'h';
       }
+    } else {
+      document.getElementById('heartbeatDot').className = 'pulse unknown';
+      document.getElementById('heartbeatText').textContent = 'Keine Daten';
     }
-  } catch(e) { /* offline mode - keep static data */ }
+  } catch(e) {
+    // Offline mode — keep static meta data from WF_META
+    console.warn('Heartbeat offline:', e.message);
+  }
 }
 // Initial check + every 5 minutes
 checkHeartbeat();
 setInterval(checkHeartbeat, 300000);
+
+// ═══════════════════════════════════════════════════════════════
+// HISTORY — Last 20 runs from workflow_runs
+// ═══════════════════════════════════════════════════════════════
+function formatDuration(startedAt, finishedAt) {
+  if (!finishedAt) return '--';
+  const ms = new Date(finishedAt) - new Date(startedAt);
+  if (ms < 1000) return ms + 'ms';
+  if (ms < 60000) return Math.round(ms / 1000) + 's';
+  return Math.round(ms / 60000) + 'min';
+}
+
+function formatDate(isoStr) {
+  if (!isoStr) return '--';
+  const d = new Date(isoStr);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return dd + '.' + mm + '.' + d.getFullYear() + ' ' + hh + ':' + mi;
+}
+
+function statusDotClass(status) {
+  if (status === 'success' || status === 'completed') return 'ok';
+  if (status === 'error' || status === 'failed') return 'err';
+  if (status === 'running') return 'ok';
+  return 'dry';
+}
+
+async function loadHistory(wfId) {
+  const tbody = document.getElementById('historyBody');
+  const indicator = document.getElementById('historyLiveIndicator');
+  if (!tbody) return;
+
+  try {
+    const runs = await sbFetch(
+      'workflow_runs?workflow_id=eq.' + wfId +
+      '&order=started_at.desc&limit=20' +
+      '&select=id,workflow_id,status,started_at,finished_at,step_current,step_log,metrics,agent_id,vm,trigger,error_message'
+    );
+
+    if (indicator) indicator.textContent = 'Live — ' + new Date().toLocaleTimeString('de-DE');
+
+    if (runs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">Keine Laeufe fuer diesen Workflow gefunden.</td></tr>';
+      document.getElementById('statAvgDuration').textContent = '--';
+      document.getElementById('statSuccessRate').textContent = '--';
+      document.getElementById('statTotalRuns').textContent = '0';
+      document.getElementById('statLastRun').textContent = '--';
+      return;
+    }
+
+    // Compute stats
+    const successful = runs.filter(r => r.status === 'success' || r.status === 'completed');
+    const withDuration = runs.filter(r => r.finished_at && r.started_at);
+    const avgMs = withDuration.length > 0
+      ? withDuration.reduce((sum, r) => sum + (new Date(r.finished_at) - new Date(r.started_at)), 0) / withDuration.length
+      : 0;
+    const successRate = runs.length > 0 ? Math.round((successful.length / runs.length) * 100) : 0;
+
+    document.getElementById('statAvgDuration').textContent = avgMs < 1000 ? Math.round(avgMs) + 'ms'
+      : avgMs < 60000 ? Math.round(avgMs / 1000) + 's'
+      : Math.round(avgMs / 60000) + 'min';
+    document.getElementById('statSuccessRate').textContent = successRate + '%';
+    document.getElementById('statTotalRuns').textContent = String(runs.length);
+    document.getElementById('statLastRun').textContent = formatDate(runs[0].started_at);
+
+    // Render rows
+    let html = '';
+    for (const run of runs) {
+      const isError = run.status === 'error' || run.status === 'failed';
+      const rowCls = isError ? ' class="incident"' : '';
+      const dotCls = statusDotClass(run.status);
+      const duration = formatDuration(run.started_at, run.finished_at);
+      const remark = run.error_message || '';
+      const step = run.step_current || '--';
+      const vm = run.vm || '--';
+      const trigger = run.trigger || '--';
+
+      html += '<tr' + rowCls + '>'
+        + '<td>' + formatDate(run.started_at) + '</td>'
+        + '<td><span class="status-dot ' + dotCls + '"></span> ' + (run.status || '--') + '</td>'
+        + '<td>' + step + '</td>'
+        + '<td>' + duration + '</td>'
+        + '<td>' + vm + '</td>'
+        + '<td>' + trigger + '</td>'
+        + '<td title="' + remark.replace(/"/g, '&quot;') + '">' + (remark.length > 60 ? remark.substring(0, 57) + '...' : remark) + '</td>'
+        + '</tr>';
+    }
+    tbody.innerHTML = html;
+
+  } catch(e) {
+    console.warn('History offline:', e.message);
+    if (indicator) indicator.textContent = 'Offline — keine Live-Daten';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">Offline — keine Live-Daten verfuegbar</td></tr>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INCIDENTS — from workflow_incidents table
+// ═══════════════════════════════════════════════════════════════
+function severityClass(severity) {
+  if (severity === 'critical' || severity === 'high') return 'severity-high';
+  if (severity === 'medium' || severity === 'warning') return 'severity-med';
+  return 'severity-low';
+}
+
+async function loadIncidents(wfId) {
+  const container = document.getElementById('incidentTimeline');
+  if (!container) return;
+
+  try {
+    const incidents = await sbFetch(
+      'workflow_incidents?workflow_id=eq.' + wfId +
+      '&order=id.desc&limit=15' +
+      '&select=id,workflow_id,run_id,step_id,severity,message,recommendation,resolved,resolved_at,resolved_by'
+    );
+
+    if (incidents.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Keine Incidents fuer diesen Workflow.</div>';
+      return;
+    }
+
+    let html = '';
+    for (const inc of incidents) {
+      const sevCls = severityClass(inc.severity);
+      const resolvedTag = inc.resolved
+        ? '<span class="inc-tag resolved">Resolved' + (inc.resolved_by ? ' (' + inc.resolved_by + ')' : '') + '</span>'
+        : '<span class="inc-tag p0">Open</span>';
+      const recTag = inc.recommendation
+        ? '<span class="inc-tag learning">' + inc.recommendation.substring(0, 40) + (inc.recommendation.length > 40 ? '...' : '') + '</span>'
+        : '';
+      const resolvedDate = inc.resolved_at ? ' — resolved ' + formatDate(inc.resolved_at) : '';
+      const stepLabel = inc.step_id ? ' [Step: ' + inc.step_id + ']' : '';
+
+      html += '<div class="incident-item ' + sevCls + '">'
+        + '<div class="inc-date">' + (inc.severity || 'info').toUpperCase() + stepLabel + resolvedDate + '</div>'
+        + '<div class="inc-title">' + (inc.message || 'Kein Titel') + '</div>'
+        + '<div class="inc-desc">' + (inc.recommendation || '') + '</div>'
+        + '<span class="inc-tag p0">' + (inc.severity || 'info') + '</span>'
+        + resolvedTag
+        + recTag
+        + '</div>';
+    }
+    container.innerHTML = html;
+
+  } catch(e) {
+    console.warn('Incidents offline:', e.message);
+    container.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Offline — keine Incident-Daten verfuegbar</div>';
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════
 // BOOT — Alles laden und rendern
