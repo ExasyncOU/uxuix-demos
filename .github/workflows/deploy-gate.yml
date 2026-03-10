@@ -1,0 +1,46 @@
+name: Deploy Gate Validation
+
+on:
+  push:
+    paths: ['workflows/**']
+  pull_request:
+    paths: ['workflows/**']
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate all workflows
+        run: |
+          cd workflows
+          echo '=== Workflow Validation ==='
+          for wf in workflows/*.workflow.json; do
+            echo "Validating: $wf"
+            node lib/workflow-engine.mjs validate "$(basename $wf)"
+          done
+
+      - name: Integrity check frozen modules
+        run: |
+          cd workflows
+          node lib/workflow-engine.mjs check
+
+      - name: Check registry health
+        run: |
+          cd workflows
+          node -e "
+            const reg = JSON.parse(require('fs').readFileSync('modules/registry.json','utf-8'));
+            const mods = Object.values(reg.modules);
+            const frozen = mods.filter(m => m.status === 'frozen').length;
+            const draft = mods.filter(m => m.status === 'draft').length;
+            const broken = mods.filter(m => m.status === 'broken').length;
+            console.log('Registry: ' + mods.length + ' modules (' + frozen + ' frozen, ' + draft + ' draft, ' + broken + ' broken)');
+            if (broken > 0) {
+              console.log('WARNING: ' + broken + ' broken modules');
+              process.exit(1);
+            }
+          "

@@ -1,0 +1,46 @@
+name: Log Deployment to Supabase
+
+on:
+  push:
+    branches: [main]
+    paths: ['workflows/**']
+
+jobs:
+  log-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Log deployment event
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo 'SUPABASE_URL not set — skipping log'
+            exit 0
+          fi
+
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          CHANGED=$(git diff --name-only HEAD~1 -- workflows/ 2>/dev/null | tr '\n' ', ' || echo 'initial')
+
+          curl -sf -X POST "${SUPABASE_URL}/rest/v1/workflow_runs" \
+            -H "apikey: ${SUPABASE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d "{
+              \"workflow_id\": \"deploy\",
+              \"status\": \"success\",
+              \"trigger\": \"github-actions\",
+              \"agent_id\": \"ci-cd\",
+              \"vm\": \"github-runner\",
+              \"metrics\": {
+                \"commit\": \"${COMMIT_SHA}\",
+                \"message\": \"${COMMIT_MSG}\",
+                \"changed_files\": \"${CHANGED}\"
+              }
+            }" && echo "Deployment logged: ${COMMIT_SHA}" || echo "Supabase log failed (non-critical)"
