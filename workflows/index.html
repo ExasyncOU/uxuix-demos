@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exasync Workflow Monitor v2.1</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #1a1a2e; --panel: #16213e; --accent: #0f3460;
+  --green: #00d4aa; --yellow: #ffd93d; --red: #ff6b6b;
+  --blue: #4fc3f7; --purple: #b388ff; --orange: #ffab40;
+  --text: #e0e0e0; --text-muted: #8892a0; --border: #2a3a5e;
+  --code-bg: #0d1b2a; --card-bg: #1e2d4a; --hover-glow: rgba(0,212,170,0.15);
+  --lane-orch: #00d4aa; --lane-data: #4fc3f7; --lane-idis: #ffd93d; --lane-mail: #b388ff;
+}
+html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+code, pre, .mono { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+
+/* ─── Header ─── */
+.header { display: flex; align-items: center; gap: 16px; padding: 14px 24px; background: var(--panel); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.header h1 { font-size: 20px; font-weight: 600; white-space: nowrap; }
+.header h1 span { color: var(--green); }
+.header-meta { display: flex; gap: 18px; font-size: 12px; color: var(--text-muted); align-items: center; }
+.header-meta .tag { background: var(--accent); padding: 3px 10px; border-radius: 4px; border: 1px solid var(--border); }
+.header-meta .tag.ok { border-color: var(--green); color: var(--green); }
+.header-meta .tag.warn { border-color: var(--yellow); color: var(--yellow); }
+.header-actions { margin-left: auto; display: flex; gap: 10px; }
+
+/* ─── Tabs ─── */
+.tabs { display: flex; gap: 0; background: var(--panel); border-bottom: 2px solid var(--border); padding: 0 24px; }
+.tab { padding: 10px 22px; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; color: var(--text-muted); transition: all .15s; user-select: none; }
+.tab:hover { color: var(--text); background: rgba(255,255,255,.03); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* ─── Panel container ─── */
+.panels { flex: 1; overflow: auto; position: relative; }
+.panel { display: none; padding: 24px; height: 100%; overflow: auto; }
+.panel.active { display: block; }
+
+/* ─── Swimlane Grid ─── */
+.swimlane-wrapper { overflow-x: auto; padding-bottom: 16px; }
+.swimlane-grid {
+  display: grid;
+  grid-template-columns: 140px repeat(8, minmax(160px, 1fr));
+  grid-template-rows: auto repeat(4, 1fr);
+  gap: 6px;
+  min-width: 1500px;
+}
+.time-header {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--text-muted); text-align: center; padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.time-header:first-child { text-align: left; }
+.lane-label {
+  display: flex; align-items: center; gap: 8px; padding: 12px 8px;
+  font-weight: 600; font-size: 13px; position: sticky; left: 0;
+  background: var(--bg); z-index: 2; border-right: 1px solid var(--border);
+}
+.lane-label .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.lane-cell {
+  min-height: 80px; border: 1px dashed rgba(255,255,255,.06);
+  border-radius: 6px; display: flex; align-items: stretch; padding: 4px;
+}
+.lane-cell.empty { }
+.module-card {
+  flex: 1; background: var(--card-bg); border-radius: 8px;
+  border: 1px solid var(--border); padding: 12px; cursor: pointer;
+  transition: all .2s; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.module-card:hover { border-color: var(--green); box-shadow: 0 0 20px var(--hover-glow); transform: translateY(-2px); }
+.module-card .step-num { position: absolute; top: 6px; right: 8px; font-size: 10px; color: var(--text-muted); opacity: .6; }
+.module-card h3 { font-size: 13px; margin-bottom: 4px; }
+.module-card .sub { font-size: 11px; color: var(--text-muted); }
+.module-card .file-tag { font-size: 10px; color: var(--blue); margin-top: 6px; font-family: 'Cascadia Code', monospace; }
+.module-card .lane-stripe { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 8px 0 0 8px; }
+
+/* Lane colors */
+.card-orch .lane-stripe { background: var(--lane-orch); }
+.card-data .lane-stripe { background: var(--lane-data); }
+.card-idis .lane-stripe { background: var(--lane-idis); }
+.card-mail .lane-stripe { background: var(--lane-mail); }
+.card-orch { border-left: 3px solid var(--lane-orch); }
+.card-data { border-left: 3px solid var(--lane-data); }
+.card-idis { border-left: 3px solid var(--lane-idis); }
+.card-mail { border-left: 3px solid var(--lane-mail); }
+
+/* ─── Legend ─── */
+.legend { display: flex; gap: 20px; margin-top: 16px; padding: 12px 16px; background: var(--panel); border-radius: 8px; flex-wrap: wrap; align-items: center; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.legend-title { font-size: 12px; font-weight: 600; color: var(--text); margin-right: 8px; }
+
+/* ─── Guardrails ─── */
+.guardrails-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.guard-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.guard-card h3 { font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.guard-card .badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.guard-card .badge.must { background: rgba(255,107,107,.15); color: var(--red); }
+.guard-card .badge.should { background: rgba(255,217,61,.15); color: var(--yellow); }
+.guard-card ul { list-style: none; font-size: 13px; }
+.guard-card li { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.04); display: flex; align-items: center; gap: 6px; }
+.guard-card li:last-child { border: none; }
+.guard-card li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.guard-card li.ok::before { background: var(--green); }
+.guard-card li.warn::before { background: var(--yellow); }
+.guard-card li.fail::before { background: var(--red); }
+
+/* ─── Integration Map ─── */
+.integration-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.integ-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.integ-card h3 { font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.integ-card .conn-type { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--accent); color: var(--blue); border: 1px solid var(--border); }
+.integ-card .detail { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+.integ-card .detail span { display: block; padding: 2px 0; }
+.integ-card .detail code { font-size: 11px; color: var(--green); }
+
+/* ─── History Table ─── */
+.history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.history-header h2 { font-size: 16px; }
+.history-stats { display: flex; gap: 24px; margin-bottom: 16px; }
+.stat-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px; text-align: center; }
+.stat-box .val { font-size: 24px; font-weight: 700; color: var(--green); }
+.stat-box .label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+table.history { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.history th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+table.history td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.04); }
+table.history tr:hover { background: rgba(255,255,255,.02); }
+table.history .incident { background: rgba(255,107,107,.06); }
+table.history .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+table.history .status-dot.ok { background: var(--green); }
+table.history .status-dot.dry { background: var(--text-muted); }
+table.history .status-dot.err { background: var(--red); }
+
+/* ─── Code Viewer (bottom sheet) ─── */
+.code-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100; display: none; opacity: 0; transition: opacity .2s; }
+.code-overlay.open { display: block; opacity: 1; }
+.code-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 101;
+  background: var(--panel); border-top: 2px solid var(--green);
+  max-height: 75vh; transform: translateY(100%); transition: transform .3s ease;
+  display: flex; flex-direction: column;
+}
+.code-sheet.open { transform: translateY(0); }
+.code-sheet-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.code-sheet-header h2 { font-size: 15px; }
+.code-sheet-header .close-btn { background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 4px 8px; }
+.code-sheet-header .close-btn:hover { color: var(--red); }
+.code-sheet-body { overflow: auto; flex: 1; }
+.code-sheet-body pre {
+  padding: 16px 20px; font-size: 13px; line-height: 1.6;
+  background: var(--code-bg); min-height: 100%; white-space: pre; overflow-x: auto;
+}
+.code-sheet-body pre .cmt { color: #6a9955; }
+.code-sheet-body pre .kw { color: #569cd6; }
+.code-sheet-body pre .str { color: #ce9178; }
+.code-sheet-body pre .fn { color: #dcdcaa; }
+.code-sheet-body pre .cls { color: #4ec9b0; }
+.code-sheet-body pre .num { color: #b5cea8; }
+.code-sheet-body pre .dec { color: #c586c0; }
+.code-sheet-body pre .op { color: #d4d4d4; }
+.code-sheet-body pre .ann { color: #00d4aa; font-style: italic; background: rgba(0,212,170,.06); display: inline; padding: 0 4px; border-radius: 3px; }
+
+/* ─── Utilities ─── */
+.btn { padding: 7px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--accent); color: var(--text); cursor: pointer; font-size: 13px; transition: all .15s; }
+.btn:hover { border-color: var(--green); background: #163a6e; }
+.btn.active { border-color: var(--green); background: rgba(0,212,170,0.12); color: var(--green); }
+.main { display: flex; flex-direction: column; height: calc(100vh - 56px); }
+.section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.section-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; max-width: 800px; }
+
+/* ─── Light Theme ─── */
+[data-theme="light"] {
+  --bg: #f0f2f5; --panel: #ffffff; --accent: #e3eaf3;
+  --green: #0a8f6c; --yellow: #b8860b; --red: #c0392b;
+  --blue: #2577b5; --purple: #7c3aed; --orange: #d97706;
+  --text: #1a1a2e; --text-muted: #5a6577; --border: #d0d5dd;
+  --code-bg: #f8f9fa; --card-bg: #ffffff; --hover-glow: rgba(10,143,108,0.1);
+  --lane-orch: #0a8f6c; --lane-data: #2577b5; --lane-idis: #b8860b; --lane-mail: #7c3aed;
+}
+
+/* ─── Heartbeat Pulse ─── */
+.heartbeat { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.heartbeat .pulse { width: 10px; height: 10px; border-radius: 50%; position: relative; }
+.heartbeat .pulse.alive { background: var(--green); }
+.heartbeat .pulse.alive::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid var(--green); animation: pulse-ring 2s ease-out infinite; }
+.heartbeat .pulse.dead { background: var(--red); }
+.heartbeat .pulse.unknown { background: var(--text-muted); }
+@keyframes pulse-ring { 0% { opacity: .6; transform: scale(1); } 100% { opacity: 0; transform: scale(1.8); } }
+
+/* ─── Theme Toggle ─── */
+.theme-toggle { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all .15s; }
+.theme-toggle:hover { border-color: var(--green); color: var(--text); }
+
+/* ─── Workflow Selector ─── */
+.wf-select { background: var(--accent); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.wf-select:hover { border-color: var(--green); }
+.wf-select option { background: var(--panel); color: var(--text); }
+
+/* ─── Incident Timeline ─── */
+.incident-timeline { margin-top: 24px; position: relative; padding-left: 28px; }
+.incident-timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+.incident-item { position: relative; margin-bottom: 20px; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; }
+.incident-item::before { content: ''; position: absolute; left: -22px; top: 16px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--border); background: var(--bg); }
+.incident-item.severity-high::before { background: var(--red); border-color: var(--red); }
+.incident-item.severity-med::before { background: var(--yellow); border-color: var(--yellow); }
+.incident-item.severity-low::before { background: var(--green); border-color: var(--green); }
+.incident-item .inc-date { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.incident-item .inc-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.incident-item .inc-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.incident-item .inc-tag { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 6px; margin-right: 4px; }
+.inc-tag.p0 { background: rgba(255,107,107,.15); color: var(--red); }
+.inc-tag.resolved { background: rgba(0,212,170,.12); color: var(--green); }
+.inc-tag.learning { background: rgba(79,195,247,.12); color: var(--blue); }
+
+/* ─── Mobile Responsive ─── */
+@media (max-width: 900px) {
+  .header { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
+  .header h1 { font-size: 16px; }
+  .header-meta { gap: 8px; flex-wrap: wrap; }
+  .header-meta .tag { font-size: 10px; padding: 2px 6px; }
+  .header-actions { width: 100%; justify-content: flex-end; }
+  .tabs { padding: 0 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { padding: 8px 14px; font-size: 12px; white-space: nowrap; }
+  .panel { padding: 14px; }
+  .swimlane-grid { min-width: 1200px; }
+  .guardrails-grid { grid-template-columns: 1fr; }
+  .integration-grid { grid-template-columns: 1fr; }
+  .history-stats { flex-wrap: wrap; gap: 10px; }
+  .stat-box { flex: 1; min-width: 80px; padding: 10px 12px; }
+  .stat-box .val { font-size: 18px; }
+  .code-sheet { max-height: 85vh; }
+}
+@media (max-width: 500px) {
+  .header h1 { font-size: 14px; }
+  .header-meta { display: none; }
+  .tab { padding: 8px 10px; font-size: 11px; }
+  table.history { font-size: 11px; }
+  table.history th, table.history td { padding: 6px 4px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+  <h1>Exasync <span>Workflow Monitor</span></h1>
+  <div class="header-meta" id="headerMeta">
+    <span class="tag" id="metaVersion">NackeScript v4.2</span>
+    <span class="tag" id="metaVM">VM: UXUIX-VM</span>
+    <span class="tag" id="metaSchedule">Schedule: Mo-Do 07:00</span>
+    <div class="heartbeat" id="heartbeat">
+      <div class="pulse alive" id="heartbeatDot"></div>
+      <span id="heartbeatText">Letzter Lauf: 09.03 OK</span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <select class="wf-select" id="wfSelect" title="Workflow waehlen">
+      <option value="nacke">NackeScript</option>
+      <option value="maut">Mautberechnung</option>
+      <option value="linkedin">LinkedIn Connect</option>
+      <option value="fleetboard">Fleetboard</option>
+    </select>
+    <button class="theme-toggle" id="themeToggle" title="Dark/Light umschalten">&#9790;</button>
+  </div>
+</div>
+
+<!-- ═══ TABS ═══ -->
+<div class="tabs">
+  <div class="tab active" data-tab="workflow">Workflow</div>
+  <div class="tab" data-tab="guardrails">Guardrails</div>
+  <div class="tab" data-tab="integration">Integration</div>
+  <div class="tab" data-tab="history">Historie</div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+<div class="panels">
+
+<!-- ════════════════════════════════════════════════════════════
+     TAB 1: WORKFLOW — TIME-BASED SWIMLANE
+     ════════════════════════════════════════════════════════════ -->
+<div class="panel active" id="panel-workflow">
+  <div class="section-desc">
+    Zeitbasiertes Swimlane-Diagramm der NackeScript Pipeline. Jede Spalte = ein Zeitschritt.
+    Klicke auf einen Block um den zugehoerigen Production Code zu sehen.
+  </div>
+
+  <div class="swimlane-wrapper">
+    <div class="swimlane-grid">
+      <!-- Row 0: Time headers -->
+      <div class="time-header"></div>
+      <div class="time-header">Schritt 1</div>
+      <div class="time-header">Schritt 2</div>
+      <div class="time-header">Schritt 3</div>
+      <div class="time-header">Schritt 4</div>
+      <div class="time-header">Schritt 5</div>
+      <div class="time-header">Schritt 6</div>
+      <div class="time-header">Schritt 7</div>
+      <div class="time-header">Schritt 8</div>
+
+      <!-- Row 1: Orchestrator lane -->
+      <div class="lane-label"><div class="dot" style="background:var(--lane-orch)"></div> Orchestrator</div>
+      <div class="lane-cell">
+        <div class="module-card card-orch" data-module="config">
+          <span class="step-num">#1</span>
+          <h3>Config laden</h3>
+          <div class="sub">Pfade, Schedule, IDIS-Settings</div>
+          <div class="file-tag">orchestrator.py</div>
+        </div>
+      </div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell">
+        <div class="module-card card-orch" data-module="metrics">
+          <span class="step-num">#10</span>
+          <h3>Metriken loggen</h3>
+          <div class="sub">Supabase agent_metrics</div>
+          <div class="file-tag">orchestrator.py</div>
+        </div>
+      </div>
+
+      <!-- Row 2: Data lane -->
+      <div class="lane-label"><div class="dot" style="background:var(--lane-data)"></div> Daten</div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell">
+        <div class="module-card card-data" data-module="masterdata">
+          <span class="step-num">#2</span>
+          <h3>Stammdaten</h3>
+          <div class="sub">Excel Masterdatei + OL Sheet</div>
+          <div class="file-tag">master_data.py</div>
+        </div>
+      </div>
+      <div class="lane-cell">
+        <div class="module-card card-data" data-module="export">
+          <span class="step-num">#3</span>
+          <h3>Auftraege abrufen</h3>
+          <div class="sub">CSV Pre-Export aus IDIS</div>
+          <div class="file-tag">idis_browser.py</div>
+        </div>
+      </div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell">
+        <div class="module-card card-data" data-module="postexport">
+          <span class="step-num">#7</span>
+          <h3>Ergebnis speichern</h3>
+          <div class="sub">Post-Export + Vergleich</div>
+          <div class="file-tag">orchestrator.py</div>
+        </div>
+      </div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+
+      <!-- Row 3: IDIS lane -->
+      <div class="lane-label"><div class="dot" style="background:var(--lane-idis)"></div> IDIS Browser</div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell">
+        <div class="module-card card-idis" data-module="login">
+          <span class="step-num">#4</span>
+          <h3>IDIS Login</h3>
+          <div class="sub">CDP Port 9222 + Credentials</div>
+          <div class="file-tag">idis_browser.py</div>
+        </div>
+      </div>
+      <div class="lane-cell">
+        <div class="module-card card-idis" data-module="navigate">
+          <span class="step-num">#5</span>
+          <h3>Seite navigieren</h3>
+          <div class="sub">JSF Selektoren + Filter</div>
+          <div class="file-tag">idis_browser.py</div>
+        </div>
+      </div>
+      <div class="lane-cell">
+        <div class="module-card card-idis" data-module="overconfirm">
+          <span class="step-num">#6</span>
+          <h3>Auftraege bestaetigen</h3>
+          <div class="sub">Hochsetzung + Amendment</div>
+          <div class="file-tag">overconfirmation.py</div>
+        </div>
+      </div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+
+      <!-- Row 4: Mail/Report lane -->
+      <div class="lane-label"><div class="dot" style="background:var(--lane-mail)"></div> Reporting</div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell empty"></div>
+      <div class="lane-cell">
+        <div class="module-card card-mail" data-module="report">
+          <span class="step-num">#8</span>
+          <h3>Report erstellen</h3>
+          <div class="sub">Plausibilitaetspruefung</div>
+          <div class="file-tag">daily_report.py</div>
+        </div>
+      </div>
+      <div class="lane-cell">
+        <div class="module-card card-mail" data-module="email">
+          <span class="step-num">#9</span>
+          <h3>Email senden</h3>
+          <div class="sub">Edge Function nacke-report</div>
+          <div class="file-tag">orchestrator.py</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span class="legend-title">Swimlanes:</span>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--lane-orch)"></div> Orchestrator</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--lane-data)"></div> Daten (Excel/CSV)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--lane-idis)"></div> IDIS Browser</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--lane-mail)"></div> Reporting/Email</div>
+    <span style="margin-left:auto; font-size:11px; color:var(--text-muted);">Klick auf Block = Code anzeigen</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     TAB 2: GUARDRAILS
+     ════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-guardrails">
+  <div class="section-title">Deploy Gate + Guardrails</div>
+  <div class="section-desc">
+    11-Punkte Deploy Gate Checkliste. KEIN Deploy ohne bestandenes Gate. Hotfix (P0): G1+G9+G10+G11 Minimum.
+  </div>
+
+  <div class="guardrails-grid">
+    <div class="guard-card">
+      <h3>Deploy Gate <span class="badge must">PFLICHT</span></h3>
+      <ul>
+        <li class="ok">G1: PROD-Script existiert und ist lesbar</li>
+        <li class="ok">G2: TEST-Script existiert (Dual-Script-Pflicht)</li>
+        <li class="ok">G3: Testdaten-Snapshot vorhanden (data/snapshots/)</li>
+        <li class="ok">G4: Mailverteiler: PROD=Kunde, TEST=nur Bodo</li>
+        <li class="ok">G5: Config hat config_version + Changelog</li>
+        <li class="ok">G6: Backup erstellt (data/backups/)</li>
+        <li class="ok">G7: Metriken-Sammlung im Code</li>
+        <li class="ok">G8: Max 200 Zeilen/Script (Module max 300)</li>
+        <li class="ok">G9: Keine silent exceptions</li>
+        <li class="ok">G10: Keine hardcoded User-Pfade</li>
+        <li class="ok">G11: Keine Credentials im Code</li>
+      </ul>
+    </div>
+
+    <div class="guard-card">
+      <h3>Production Safety <span class="badge must">HARTES VERBOT</span></h3>
+      <ul>
+        <li class="fail">NIEMALS Pipeline remote als Production starten</li>
+        <li class="fail">NIEMALS annehmen dass Env-Var Dry-Run ausloest</li>
+        <li class="warn">Fuer DRY-RUN immer dediziertes Script verwenden</li>
+        <li class="ok">Wochentag pruefen (nur Mo-Do)</li>
+        <li class="ok">Bodo fragen ob Production OK ist</li>
+        <li class="fail">Incident 06.03: 702 Amendments produktiv (Freitag!)</li>
+      </ul>
+    </div>
+
+    <div class="guard-card">
+      <h3>Email Geografie <span class="badge should">REGEL</span></h3>
+      <ul>
+        <li class="ok">1 Email = 1 Geografie (Provider sperrt sonst)</li>
+        <li class="ok">uxuix-personal: bodo@ = NUR Estland</li>
+        <li class="ok">uxuix-automation: automation@ = Finnland/Cloud</li>
+        <li class="ok">uxuix-bot: bot@ = Deutschland (Kunden-VMs)</li>
+      </ul>
+    </div>
+
+    <div class="guard-card">
+      <h3>Credential Sync <span class="badge must">PFLICHT</span></h3>
+      <ul>
+        <li class="warn">.env auf ALLEN VMs synchron halten</li>
+        <li class="warn">credential_vault in Supabase aktualisieren</li>
+        <li class="warn">Edge Function Secrets pruefen</li>
+        <li class="warn">Supabase Vault (vault.decrypted_secrets)</li>
+        <li class="fail">Incident 05.03: Passwort geaendert, .env nicht</li>
+      </ul>
+    </div>
+
+    <div class="guard-card">
+      <h3>Multi-Device <span class="badge should">REGEL</span></h3>
+      <ul>
+        <li class="ok">B-Hive = Mr. NexusMind, B-Lab = bodob</li>
+        <li class="ok">Bash: $HOME, $USERPROFILE, ~ (nie hardcoded)</li>
+        <li class="ok">PowerShell: $env:USERPROFILE, $HOME</li>
+        <li class="ok">Config: %USERPROFILE% oder relative Pfade</li>
+      </ul>
+    </div>
+
+    <div class="guard-card">
+      <h3>Autonomie Prinzip <span class="badge should">VISION</span></h3>
+      <ul>
+        <li class="ok">0% Fehlerquote, 0% manuelle Intervention</li>
+        <li class="ok">Jeder Agent sammelt Metriken</li>
+        <li class="ok">PROD + TEST Dual-Script fuer alle Deployments</li>
+        <li class="ok">Historische Daten als Testdaten-Simulation</li>
+        <li class="ok">Config-Versionierung + Rollback</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     TAB 3: INTEGRATION MAP
+     ════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-integration">
+  <div class="section-title">Integration Map</div>
+  <div class="section-desc">
+    Alle externen Systeme, APIs und Datenquellen die NackeScript verbindet.
+  </div>
+
+  <div class="integration-grid">
+    <div class="integ-card">
+      <h3>IDIS Portal <span class="conn-type">CDP / HTTP</span></h3>
+      <div class="detail">
+        <span>JSF Webanwendung (Java Server Faces)</span>
+        <span>URL: <code>https://idis.retail-sc.com</code></span>
+        <span>Mailbox: <code>729</code></span>
+        <span>Chrome Debug Protocol Port <code>9222</code></span>
+        <span>Credentials: <code>$IDIS_USER / $IDIS_PASS</code></span>
+      </div>
+    </div>
+
+    <div class="integ-card">
+      <h3>Supabase <span class="conn-type">REST API</span></h3>
+      <div class="detail">
+        <span>Projekt: <code>crslpxgwxjmovrhyxiim</code></span>
+        <span>Tabellen:</span>
+        <span>&nbsp;&nbsp;<code>agent_configs</code></span>
+        <span>&nbsp;&nbsp;<code>nacke_orders</code></span>
+        <span>&nbsp;&nbsp;<code>agent_metrics</code></span>
+        <span>&nbsp;&nbsp;<code>agent_runs</code></span>
+        <span>&nbsp;&nbsp;<code>credential_vault</code></span>
+        <span>Auth: <code>$SUPABASE_SERVICE_KEY</code></span>
+      </div>
+    </div>
+
+    <div class="integ-card">
+      <h3>Edge Functions <span class="conn-type">HTTPS POST</span></h3>
+      <div class="detail">
+        <span><code>nacke-report</code> - Email Versand</span>
+        <span><code>gvsped-report</code> - GV Berichte</span>
+        <span><code>afk-orchestrator</code> - Remote Tasks</span>
+        <span>Auth: Bearer <code>$SUPABASE_SERVICE_KEY</code></span>
+        <span>SMTP via: <code>automation@uxuix.de</code></span>
+      </div>
+    </div>
+
+    <div class="integ-card">
+      <h3>Excel Masterdatei <span class="conn-type">File (openpyxl)</span></h3>
+      <div class="detail">
+        <span>Pfad: <code>K:\...\Masterdatei.xlsx</code></span>
+        <span>Sheet 1: <code>Orders</code> (Artikel + Bundle)</span>
+        <span>Sheet 2: <code>OL Kartonage</code> (OL Bundles)</span>
+        <span>Key-Spalte: <code>Verketten Raussuchliste</code></span>
+        <span>Bundle Store: Col J, Depot: Col K</span>
+      </div>
+    </div>
+
+    <div class="integ-card">
+      <h3>Windows Task Scheduler <span class="conn-type">Scheduled Task</span></h3>
+      <div class="detail">
+        <span>Task: <code>NackeScript-Production</code></span>
+        <span>Schedule: <code>Mo-Do 07:00</code></span>
+        <span>VM: <code>UXUIX-VM</code></span>
+        <span>Trigger: <code>run_nacke_v2.ps1</code></span>
+        <span>DRY-RUN: separates Script!</span>
+      </div>
+    </div>
+
+    <div class="integ-card">
+      <h3>SMTP (Email) <span class="conn-type">SMTP/SSL</span></h3>
+      <div class="detail">
+        <span>Provider: <code>ALL-INKL / Kasserver</code></span>
+        <span>User: <code>automation@uxuix.de</code></span>
+        <span>Geografie: Finnland + Cloud</span>
+        <span>PROD To: <code>nacke-report@exasync.ai</code></span>
+        <span>TEST To: <code>bodo.buschick@uxuix.de</code></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     TAB 4: HISTORY
+     ════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-history">
+  <div class="history-header">
+    <h2>Laufzeit-Historie</h2>
+    <button class="btn" onclick="alert('Supabase-Anbindung: SELECT * FROM agent_metrics WHERE workflow_id=\'nacke\' ORDER BY run_date DESC')">Connect to Supabase</button>
+  </div>
+
+  <div class="history-stats">
+    <div class="stat-box"><div class="val">267</div><div class="label">Auftraege / Lauf</div></div>
+    <div class="stat-box"><div class="val">39s</div><div class="label">Dauer / Lauf</div></div>
+    <div class="stat-box"><div class="val">94%</div><div class="label">Erfolgsrate</div></div>
+    <div class="stat-box"><div class="val">22</div><div class="label">Amendments / Lauf</div></div>
+  </div>
+
+  <table class="history">
+    <thead>
+      <tr>
+        <th>Datum</th>
+        <th>Modus</th>
+        <th>Auftraege</th>
+        <th>Amendments</th>
+        <th>Dauer</th>
+        <th>Status</th>
+        <th>Bemerkung</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>10.03.2026</td><td>dry-run</td><td>0</td><td>0</td><td>2s</td><td><span class="status-dot dry"></span></td><td>Kein Importdatum</td></tr>
+      <tr><td>09.03.2026</td><td>production</td><td>342</td><td>28</td><td>45s</td><td><span class="status-dot ok"></span></td><td></td></tr>
+      <tr><td>08.03.2026</td><td>-</td><td>-</td><td>-</td><td>-</td><td></td><td>Wochenende (Sa)</td></tr>
+      <tr><td>07.03.2026</td><td>-</td><td>-</td><td>-</td><td>-</td><td></td><td>Wochenende (So)</td></tr>
+      <tr class="incident"><td>06.03.2026</td><td>production</td><td>702</td><td>702</td><td>89s</td><td><span class="status-dot err"></span></td><td>INCIDENT: Freitag, Env-Var Dry-Run ignoriert</td></tr>
+      <tr><td>05.03.2026</td><td>production</td><td>289</td><td>22</td><td>41s</td><td><span class="status-dot ok"></span></td><td></td></tr>
+      <tr><td>04.03.2026</td><td>dry-run</td><td>195</td><td>15</td><td>12s</td><td><span class="status-dot dry"></span></td><td>Test vor Deploy</td></tr>
+      <tr><td>03.03.2026</td><td>production</td><td>421</td><td>35</td><td>52s</td><td><span class="status-dot ok"></span></td><td></td></tr>
+      <tr><td>02.03.2026</td><td>production</td><td>156</td><td>12</td><td>32s</td><td><span class="status-dot ok"></span></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <!-- Incident Timeline -->
+  <h2 style="margin-top:32px; font-size:16px;">Incident Timeline</h2>
+  <p style="font-size:12px; color:var(--text-muted); margin:8px 0 16px;">Alle relevanten Vorfaelle und Learnings chronologisch.</p>
+
+  <div class="incident-timeline">
+    <div class="incident-item severity-high">
+      <div class="inc-date">06.03.2026 — NackeScript</div>
+      <div class="inc-title">702 Amendments produktiv auf IDIS geschrieben (Freitag!)</div>
+      <div class="inc-desc">AFK Task mit $env:NACKE_DRYRUN=1 gestartet, aber run_nacke_v2.ps1 gibt das NICHT als --dry-run an Python weiter. Zweiter Vorfall dieser Art. Ergebnis: HARTES VERBOT fuer Remote-Production-Starts eingefuehrt.</div>
+      <span class="inc-tag p0">P0</span>
+      <span class="inc-tag resolved">Resolved</span>
+      <span class="inc-tag learning">Deploy Gate eingefuehrt</span>
+    </div>
+
+    <div class="incident-item severity-med">
+      <div class="inc-date">05.03.2026 — Fleetboard</div>
+      <div class="inc-title">IMAP-Fetch 3 Tage tot (Passwort nicht synchronisiert)</div>
+      <div class="inc-desc">bodo.buschick@uxuix.de Passwort geaendert, aber .env auf UXUIX-VM und credential_vault in Supabase NICHT aktualisiert. Ergebnis: Credential-Sync-Regel und Email-Geografie-Regel eingefuehrt.</div>
+      <span class="inc-tag p0">P1</span>
+      <span class="inc-tag resolved">Resolved</span>
+      <span class="inc-tag learning">1 Email = 1 Geografie</span>
+    </div>
+
+    <div class="incident-item severity-low">
+      <div class="inc-date">09.03.2026 — NackeScript</div>
+      <div class="inc-title">Deploy Gate v1.0 erfolgreich eingefuehrt</div>
+      <div class="inc-desc">Erster Produktionslauf nach Einfuehrung des 11-Punkte Deploy Gates. Alle Gates bestanden, 342 Auftraege korrekt verarbeitet. Gate-System funktioniert wie geplant.</div>
+      <span class="inc-tag resolved">Milestone</span>
+    </div>
+
+    <div class="incident-item severity-low">
+      <div class="inc-date">10.03.2026 — Workflow Monitor</div>
+      <div class="inc-title">Workflow Monitor v2 Dashboard live</div>
+      <div class="inc-desc">Swimlane-Dashboard mit Code-Viewer, Guardrails, Integration Map und Historie. Module-Freeze-Mechanismus mit SHA-256 Integrity. CLI Tool workflow-engine.mjs.</div>
+      <span class="inc-tag resolved">Milestone</span>
+      <span class="inc-tag learning">Quality Pipeline</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- /panels -->
+</div><!-- /main -->
+
+<!-- ═══ CODE VIEWER (Bottom Sheet) ═══ -->
+<div class="code-overlay" id="codeOverlay"></div>
+<div class="code-sheet" id="codeSheet">
+  <div class="code-sheet-header">
+    <h2 id="codeTitle">Module Code</h2>
+    <button class="close-btn" id="codeClose">&times;</button>
+  </div>
+  <div class="code-sheet-body">
+    <pre id="codeContent"></pre>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════════════
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CODE VIEWER
+// ═══════════════════════════════════════════════════════════════
+const overlay = document.getElementById('codeOverlay');
+const sheet = document.getElementById('codeSheet');
+const codeTitle = document.getElementById('codeTitle');
+const codeContent = document.getElementById('codeContent');
+
+function openCode(moduleId) {
+  const mod = MODULES[moduleId];
+  if (!mod) return;
+  codeTitle.textContent = mod.title;
+  codeContent.innerHTML = highlightPython(mod.code);
+  overlay.classList.add('open');
+  requestAnimationFrame(() => sheet.classList.add('open'));
+}
+
+function closeCode() {
+  sheet.classList.remove('open');
+  setTimeout(() => overlay.classList.remove('open'), 300);
+}
+
+overlay.addEventListener('click', closeCode);
+document.getElementById('codeClose').addEventListener('click', closeCode);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCode(); });
+
+document.querySelectorAll('.module-card').forEach(card => {
+  card.addEventListener('click', () => openCode(card.dataset.module));
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SYNTAX HIGHLIGHTING (simple Python highlighter)
+// ═══════════════════════════════════════════════════════════════
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function highlightPython(code) {
+  const lines = code.split('\n');
+  return lines.map(line => {
+    // Preserve indentation
+    const indent = line.match(/^(\s*)/)[1];
+    let rest = line.slice(indent.length);
+
+    // Full-line comments
+    if (/^#/.test(rest)) {
+      // ERKLAERUNG annotation style
+      if (/^# ERKLAERUNG:/.test(rest) || /^#\s*ERKLAERUNG:/.test(rest)) {
+        return indent + '<span class="ann">' + esc(rest) + '</span>';
+      }
+      return indent + '<span class="cmt">' + esc(rest) + '</span>';
+    }
+
+    // Escape HTML first
+    rest = esc(rest);
+
+    // Inline comments
+    rest = rest.replace(/(#\s*ERKLAERUNG:.*)$/, '<span class="ann">$1</span>');
+    rest = rest.replace(/(#(?!\s*ERKLAERUNG).*)$/, '<span class="cmt">$1</span>');
+
+    // Triple-quoted strings (simplified)
+    rest = rest.replace(/(&quot;&quot;&quot;|&apos;&apos;&apos;|""")(.*?)(\1)/g, '<span class="str">$1$2$3</span>');
+    rest = rest.replace(/(""".*)/g, '<span class="str">$1</span>');
+
+    // Strings
+    rest = rest.replace(/(f?"[^"]*")/g, '<span class="str">$1</span>');
+    rest = rest.replace(/(f?'[^']*')/g, '<span class="str">$1</span>');
+
+    // Keywords
+    const kws = ['import','from','class','def','async','await','return','if','elif','else','for','in','not','and','or','try','except','raise','with','as','True','False','None','pass','continue','break','yield','finally','while','is','lambda','del','global','nonlocal','assert'];
+    kws.forEach(kw => {
+      rest = rest.replace(new RegExp('\\b(' + kw + ')\\b', 'g'), '<span class="kw">$1</span>');
+    });
+
+    // Decorators
+    rest = rest.replace(/(@\w+)/g, '<span class="dec">$1</span>');
+
+    // Numbers
+    rest = rest.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+
+    // Function calls
+    rest = rest.replace(/(\w+)(\()/g, '<span class="fn">$1</span>$2');
+
+    // self. prefix
+    rest = rest.replace(/\bself\./g, '<span class="kw">self</span>.');
+
+    return indent + rest;
+  }).join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODULE CODE DATA
+// ═══════════════════════════════════════════════════════════════
+const MODULES = {
+config: {
+  title: "Modul 1: Config laden — orchestrator.py",
+  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# MODUL: Config laden
+# DATEI: orchestrator.py (Zeilen 30-65)
+# ERKLAERUNG: Laedt die Konfiguration aus config.json.
+# Die Config steuert ALLES: Pfade, IDIS-Einstellungen, Zeitplan.
+# Ohne gueltige Config startet die Pipeline NICHT.
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+import json
+import sys
+from datetime import date, datetime
+from pathlib import Path
+
+class Orchestrator:
+    """Hauptsteuerung der NackeScript Pipeline.
+
+    Koordiniert alle Schritte: Config \u2192 Daten \u2192 IDIS \u2192 Report.
+    Kann in 3 Modi laufen:
+      - Production:        Alles ausfuehren inkl. IDIS Amendments
+      - --dry-run:         Nur Export + Berechnung, KEINE Aenderungen
+      - --stop-before-save: Felder ausfuellen aber NICHT speichern
+    """
+
+    def __init__(self, config_path: str = "config.json"):
+        # Config-Datei laden und parsen
+        with open(config_path, "r", encoding="utf-8") as f:
+            self.config = json.load(f)
+
+        # ERKLAERUNG: config_version pruefen!
+        # Ohne Version wissen wir nicht ob die Config aktuell ist.
+        if "config_version" not in self.config:
+            raise ValueError("config.json hat keine config_version!")
+
+        # Pfade aus Config extrahieren
+        paths = self.config["paths"]
+        self.masterdatei_path = Path(paths["masterdatei"])
+        self.exports_dir = Path(paths["exports_dir"])
+        self.output_dir = Path(paths["output_dir"])
+        self.logs_dir = Path(paths["logs_dir"])
+
+        # ERKLAERUNG: Pruefen ob alle Pfade existieren
+        # Wenn ein Pfad fehlt (z.B. Netzlaufwerk nicht verbunden),
+        # brechen wir SOFORT ab statt spaeter kryptische Fehler zu bekommen.
+        for p in [self.masterdatei_path, self.exports_dir, self.output_dir]:
+            if not p.exists():
+                raise FileNotFoundError(f"Pfad nicht gefunden: {p}")
+
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
+
+        # Schedule-Einstellungen
+        self.schedule = self.config.get("schedule", {})
+        self.allowed_days = self.schedule.get("weekdays", ["Mon","Tue","Wed","Thu"])
+        self.retry_count = self.schedule.get("retry_count", 3)
+        self.retry_delay = self.schedule.get("retry_delay_minutes", 20)`
+},
+
+masterdata: {
+  title: "Modul 2: Stammdaten laden — master_data.py",
+  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# MODUL: Stammdaten laden
+# DATEI: master_data.py (Zeilen 1-160)
+# ERKLAERUNG: Laedt die Masterdatei (Excel) mit allen Artikeln.
+# Die Masterdatei enthaelt Bundle-Groessen, Laender-Regeln,
+# und die Zuordnung AROS-Key \u2192 Artikelinfo.
+# Ohne Stammdaten kann KEINE Hochsetzung berechnet werden.
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+import math
+import pandas as pd
+from pathlib import Path
+
+class MasterData:
+    """Verwaltet Nacke Stammdaten aus der Masterdatei Excel.
+
+    Laeddt zwei wichtige Sheets:
+    1. Orders-Sheet: Alle Artikel mit Bundle-Groessen
+    2. OL Kartonage Sheet: Spezielle Bundle-Groessen fuer OL-Auftraege
+
+    Die Daten werden als Dict gespeichert fuer schnellen Zugriff
+    ueber den AROS-Key (z.B. "73066.200.25.180").
+    """
+
+    def __init__(self, config_path: str = "config.json"):
+        import json
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+
+        self.masterdatei_path = Path(config["paths"]["masterdatei"])
+        self.over_matrix_path = Path(config["paths"]["over_matrix"])
+
+        # ERKLAERUNG: Daten werden beim Start einmal geladen
+        # und dann im Speicher gehalten. Das ist schneller als
+        # fuer jeden Auftrag die Excel-Datei neu zu lesen.
+        self._orders = {}        # AROS-Key \u2192 Artikelinfo
+        self._ol_kartonage = {}  # AROS-Key \u2192 OL Bundle Size
+        self._over_matrix = None # Laender \u00d7 Abrufart Matrix
+
+        self._load_masterdatei()
+        self._load_over_matrix()
+
+    def _load_masterdatei(self):
+        """Masterdatei Excel laden und in Dicts umwandeln."""
+        # ERKLAERUNG: openpyxl liest die xlsx-Datei
+        # header=0 = erste Zeile ist die Spaltenueberschrift
+        df = pd.read_excel(
+            self.masterdatei_path,
+            sheet_name="Orders",
+            header=0,
+            engine="openpyxl"
+        )
+
+        # ERKLAERUNG: Spalten fuer den AROS-Key finden
+        # Die Spalte heisst manchmal "Verketten Raussuchliste",
+        # manchmal "Verketten", manchmal "AROS"
+        key_col = None
+        for candidate in ["Verketten Raussuchliste", "Verketten", "AROS"]:
+            if candidate in df.columns:
+                key_col = candidate
+                break
+
+        if not key_col:
+            raise ValueError("Keine AROS-Key Spalte in Masterdatei gefunden!")
+
+        # ERKLAERUNG: Jede Zeile als Dict speichern
+        # Bundle Size Store = Spalte J, Bundle Size Depot = Spalte K
+        for _, row in df.iterrows():
+            aros_key = str(row[key_col]).strip()
+            if not aros_key or aros_key == "nan":
+                continue
+
+            self._orders[aros_key] = {
+                "abrufart": str(row.get("Abrufart", "")).strip(),
+                "picking": str(row.get("Picking", "")).strip(),
+                "bundle_size_store": self._safe_float(row.iloc[9]),  # Col J
+                "bundle_size_depot": self._safe_float(row.iloc[10]), # Col K
+                "artikel": str(row.get("Artikel", "")),
+                "lagerort": str(row.get("Lagerort", "")),
+            }
+
+        # OL Kartonage Sheet laden (separates Sheet)
+        try:
+            ol_df = pd.read_excel(
+                self.masterdatei_path,
+                sheet_name="OL Kartonage",
+                header=0
+            )
+            ol_key_col = None
+            for c in ["Verkettung", "Verketten", "AROS"]:
+                if c in ol_df.columns:
+                    ol_key_col = c
+                    break
+
+            if ol_key_col:
+                for _, row in ol_df.iterrows():
+                    key = str(row[ol_key_col]).strip()
+                    if key and key != "nan":
+                        # ERKLAERUNG: OL Bundle Size steht in einer
+                        # bestimmten Spalte (variiert je nach Version)
+                        self._ol_kartonage[key] = self._safe_float(
+                            row.get("Bundle Size", row.iloc[3])
+                        )
+        except Exception:
+            pass  # OL Sheet ist optional
+
+    @staticmethod
+    def _safe_float(val) -> float:
+        """Sicherer Float-Parser mit NaN/Inf Schutz.
+
+        ERKLAERUNG: pandas gibt manchmal NaN oder Inf zurueck
+        wenn eine Excel-Zelle leer ist oder einen Fehler enthaelt.
+        Wir fangen das ab und geben 0.0 zurueck.
+        """
+        try:
+            result = float(val)
+            if math.isnan(result) or math.isinf(result):
+                return 0.0
+            return result
+        except (ValueError, TypeError):
+            return 0.0
+
+    def get_order_info(self, aros_key: str) -> dict | None:
+        """Artikelinfo fuer einen AROS-Key nachschlagen."""
+        return self._orders.get(aros_key)
+
+    def get_ol_bundle(self, aros_key: str) -> float | None:
+        """OL Bundle Size fuer einen AROS-Key nachschlagen."""
+        return self._ol_kartonage.get(aros_key)`
+},
+
+export: {
+  title: "Modul 3: Auftraege abrufen (Pre-Export) — idis_browser.py",
+  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# MODUL: Auftraege abrufen (Pre-Export)
+# DATEI: idis_browser.py (Zeilen 355-525)
+# ERKLAERUNG: Navigiert in IDIS zur Auftragsseite, setzt Filter,
+# waehlt alle Auftraege aus und exportiert sie als CSV.
+# Das ist der ERSTE Kontakt mit dem IDIS Browser.
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+async def export_orders(self, export_date: date, suffix: str = "pre") -> tuple:
+    """Auftraege aus IDIS exportieren.
+
+    # ERKLAERUNG:
+    # 1. Navigiert zu "Process AROS Orders"
+    # 2. Setzt den Import-Date Filter auf das gewuenschte Datum
+    # 3. Klickt "Show Result" \u2192 Tabelle wird geladen
+    # 4. Waehlt ALLE Auftraege aus (per JavaScript, nicht per Klick!)
+    # 5. Klickt "Export Selected" \u2192 Export-Seite oeffnet sich
+    # 6. Klickt den Export-Button \u2192 CSV wird heruntergeladen
+    # 7. Liest und parst die CSV-Datei
+
+    Args:
+        export_date: Datum fuer den Import-Filter (z.B. heute)
+        suffix: "pre" fuer Vor-Export, "post" fuer Nach-Export
+
+    Returns:
+        (csv_path, list_of_order_dicts)
+    """
+    page = await self._ensure_browser()
+
+    # ERKLAERUNG: Zur Auftragsseite navigieren
+    # "Process AROS Orders" ist der Menue-Punkt in IDIS
+    await page.goto(f"{self.idis_url}/idis/processAROSOrders.faces")
+    await page.wait_for_load_state("networkidle")
+
+    # ERKLAERUNG: Import-Date Filter setzen
+    # Das Dropdown filtert nach dem Importdatum der Auftraege
+    date_str = export_date.strftime("%d.%m.%Y")
+    await page.select_option(
+        'select[name="mainForm:importDateFilter"]',
+        label=date_str
+    )
+
+    # ERKLAERUNG: "Show Result" klicken \u2192 Tabelle laden
+    await page.click('input[name="mainForm:_idJsp49"]')
+    await page.wait_for_selector("table.dataTable", timeout=30000)
+
+    # ERKLAERUNG: ALLE Checkboxen per JavaScript setzen
+    # WICHTIG: Wir benutzen JavaScript statt einzelne Klicks,
+    # weil JSF (Java Server Faces) bei vielen Klick-Events
+    # die Session ueberlasten kann!
+    await page.evaluate("""
+        document.querySelectorAll('input[type="checkbox"]')
+            .forEach(cb => { cb.checked = true; });
+    """)
+
+    # ERKLAERUNG: "Export Selected" klicken
+    # Das navigiert zu orderExport.faces
+    await page.click('input[name="mainForm:_idJsp252"]')
+    await page.wait_for_load_state("networkidle")
+
+    # ERKLAERUNG: Export-Button klicken \u2192 CSV Download
+    # Der Button ist ein Image-Button (kein normaler Submit)
+    async with page.expect_download() as download_info:
+        await page.click('input[name="mainForm:_idJsp129"]')
+
+    download = await download_info.value
+    csv_filename = f"IDIS_EXPORT_{export_date.isoformat()}_{suffix}.csv"
+    csv_path = self.exports_dir / csv_filename
+    await download.save_as(str(csv_path))
+
+    # CSV parsen
+    orders = self._parse_export_csv(str(csv_path))
+    print(f"[Export] {len(orders)} Auftraege exportiert ({suffix})")
+
+    return str(csv_path), orders
+
+def _parse_export_csv(self, csv_path: str) -> list:
+    """IDIS CSV-Export parsen.
+
+    # ERKLAERUNG: Die IDIS CSV-Datei hat KEINE Kopfzeile!
+    # Die Felder sind durch Semikolon getrennt.
+    # Wir muessen die Spalten-Positionen hart kodieren:
+    #   Spalte 2  = Order Number
+    #   Spalte 12 = AROS Number (der wichtige Key!)
+    #   Spalte 26 = Quantity (Menge)
+    #   Spalte 28 = Order Type (S=Store, D=Depot)
+    """
+    import csv
+    orders = []
+
+    # ERKLAERUNG: Verschiedene Encodings probieren
+    # IDIS kann UTF-8 oder Latin-1 exportieren
+    for encoding in ["utf-8-sig", "utf-8", "latin-1"]:
+        try:
+            with open(csv_path, "r", encoding=encoding) as f:
+                reader = csv.reader(f, delimiter=";")
+                for row in reader:
+                    if len(row) < 19:
+                        continue
+                    orders.append({
+                        "order_id": row[2].strip(),
+                        "aros_key": row[12].strip(),
+                        "quantity": int(row[26]) if row[26].strip() else 0,
+                        "order_type": row[28].strip(),  # S or D
+                        "country": row[8].strip(),
+                        "abrufart": row[14].strip(),
+                    })
+            break
+        except UnicodeDecodeError:
+            continue
+
+    return orders`
+},
+
+login: {
+  title: "Modul 4: IDIS Login — idis_browser.py",
+  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# MODUL: IDIS Login
+# DATEI: idis_browser.py (Zeilen 60-180)
+# ERKLAERUNG: Startet den Browser und loggt sich in IDIS ein.
+# Benutzt Chrome Debug Protocol (CDP) um sich an einen
+# bereits laufenden Chrome-Browser anzudocken.
+# So bleibt die Session zwischen Pipeline-Laeufen erhalten.
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+from playwright.async_api import async_playwright
+
+class IdisBrowser:
+    """Browser-Automation fuer das IDIS Portal.
+
+    # ERKLAERUNG: IDIS ist eine Java Server Faces (JSF) Webanwendung.
+    # JSF hat viele Eigenheiten:
+    # - Sessions sind empfindlich (zu viele Requests = Absturz)
+    # - Formular-IDs enthalten Zahlen die sich aendern koennen
+    # - Export-Buttons sind Image-Buttons (kein normaler Submit)
+    #
+    # Deshalb benutzen wir CDP statt normale Browser-Steuerung.
+    # CDP verbindet sich zu einem LAUFENDEN Chrome-Prozess.
+    """
+
+    def __init__(self, config_path: str = "config.json"):
+        import json
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+
+        idis_cfg = config["idis"]
+        self.idis_url = idis_cfg["url"]    # https://idis.retail-sc.com
+        self.mailbox = idis_cfg["mailbox"]  # 729
+        self.timeout = idis_cfg["timeout_ms"]  # 30000
+
+        self.exports_dir = Path(config["paths"]["exports_dir"])
+        self._browser = None
+        self._page = None
+
+    async def _ensure_browser(self):
+        """Browser-Verbindung sicherstellen.
+
+        # ERKLAERUNG:
+        # - Versucht zuerst CDP-Verbindung auf Port 9222
+        # - Wenn kein Chrome laeuft: startet neuen Chrome-Prozess
+        # - Der Browser wird NIEMALS geschlossen (bleibt fuer naechsten Lauf)
+        """
+        if self._page:
+            try:
+                await self._page.title()  # Verbindung testen
+                return self._page
+            except:
+                self._page = None
+
+        pw = await async_playwright().start()
+
+        try:
+            # ERKLAERUNG: An bestehenden Chrome andocken (CDP)
+            self._browser = await pw.chromium.connect_over_cdp(
+                "http://localhost:9222"
+            )
+            contexts = self._browser.contexts
+            if contexts:
+                pages = contexts[0].pages
+                self._page = pages[0] if pages else await contexts[0].new_page()
+            else:
+                ctx = await self._browser.new_context()
+                self._page = await ctx.new_page()
+        except:
+            # ERKLAERUNG: Kein Chrome laeuft \u2192 neuen starten
+            self._browser = await pw.chromium.launch(
+                headless=False,
+                args=[
+                    "--remote-debugging-port=9222",
+                    "--start-maximized"
+                ]
+            )
+            ctx = await self._browser.new_context(no_viewport=True)
+            self._page = await ctx.new_page()
+
+        return self._page
+
+    async def login(self) -> bool:
+        """In IDIS einloggen.
+
+        # ERKLAERUNG: Credentials kommen aus Umgebungsvariablen.
+        # NIEMALS im Code speichern!
+        """
+        import os
+        page = await self._ensure_browser()
+
+        await page.goto(f"{self.idis_url}/idis/login.faces")
+        await page.wait_for_load_state("networkidle")
+
+        # Pruefen ob schon eingeloggt
+        if "login" not in page.url.lower():
+            print("[Login] Bereits eingeloggt")
+            return True
+
+        # ERKLAERUNG: Credentials aus Environment laden
+        username = os.environ.get("IDIS_USER", "")
+        password = os.environ.get("IDIS_PASS", "")
+
+        if not username or not password:
+            raise ValueError("IDIS_USER oder IDIS_PASS nicht gesetzt!")
+
+        await page.fill('input[name="j_username"]', username)
+        await page.fill('input[name="j_password"]', password)
+        await page.click('input[type="submit"]')
+
+        # ERKLAERUNG: Warten bis Login durchgeht
+        # Wenn der URL-Pfad sich aendert, war Login erfolgreich
+        await page.wait_for_url("**/idis/**", timeout=self.timeout)
+
+        if "login" in page.url.lower():
+            raise Exception("Login fehlgeschlagen - falsches Passwort?")
+
+        # Mailbox setzen
+        if self.mailbox:
+            await page.goto(f"{self.idis_url}/idis/selectMailbox.faces")
+            await page.select_option("#mailboxSelect", value=self.mailbox)
+            await page.click("#submitMailbox")
+
+        print("[Login] Erfolgreich eingeloggt")
+        return True`
+},
+
+navigate: {
+  title: "Modul 5: Seite navigieren — idis_browser.py",
+  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# MODUL: Seite navigieren
+# DATEI: idis_browser.py (Zeilen 220-354)
+# ERKLAERUNG: Navigiert innerhalb von IDIS zur richtigen Seite.
+# IDIS hat ein Menue-System mit Unterpunkten.
+# Wir muessen zum Punkt "Process AROS Orders" navigieren
+# und dort die richtigen Filter setzen.
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+# IDIS CSS Selektoren (verifiziert 23.02.2026)
+# ERKLAERUNG: Diese Selektoren identifizieren die HTML-Elemente
+# in der IDIS-Oberflaeche. Sie koennen sich bei IDIS-Updates
+# aendern! Deshalb sind sie hier zentral definiert.
+
+SEL_LOGIN_USER = 'input[name="j_username"]'
+SEL_LOGIN_PASS = 'input[name="j_password"]'
+SEL_FILTER_IMPORT_DATE = 'select[name="mainForm:importDateFilter"]'
+SEL_SHOW_RESULT = 'input[name="mainForm:_idJsp49"]'
+SEL_EXPORT_SELECTED = 'input[name="mainForm:_idJsp252"]'
+SEL_ORDER_EXPORT_BTN = 'input[name="mainForm:_idJsp129"]'
+
+# ERKLAERUNG: Amendment-Selektoren (fuer Hochsetzung)
+# {j} wird durch die Zeilen-Nummer ersetzt (0, 1, 2, ...)
+SEL_AMEND_QTY_TPL = 'input[name="mainForm:_idJsp109:{j}:_idJsp140"]'
+SEL_AMEND_SAVE = 'input[name="mainForm:_idJsp155"]'
+
+# Ergebnis-Tabelle Spalten-Mapping
+COL_CHECKBOX = 0        # Checkbox fuer Auswahl
+COL_ORDER_NUMBER = 2    # Auftragsnummer
+COL_AROS_NUMBER = 12    # AROS-Key (wichtigste Spalte!)
+COL_QUANTITY = 26       # Menge
+COL_ORDER_TYPE = 28     # Typ: S=Store, D=Depot
+
+async def navigate_to_orders(self):
+    """Zur Auftragsbearbeitungs-Seite navigieren.
+
+    # ERKLAERUNG: IDIS ist eine JSF-App (Java Server Faces).
+    # Die Navigation funktioniert ueber HTTP-Posts, nicht ueber
+    # normale Links. Deshalb navigieren wir per URL.
+    """
+    page = await self._ensure_browser()
+
+    # ERKLAERUNG: Direkt zur Seite navigieren
+    await page.goto(
+        f"{self.idis_url}/idis/processAROSOrders.faces"
+    )
+    await page.wait_for_load_state("networkidle")
+
+    # ERKLAERUNG: Pruefen ob die Seite geladen wurde
+    # Wenn wir auf der Login-Seite landen, ist die Session abgelaufen
+    if "login" in page.url.lower():
+        print("[Nav] Session abgelaufen, neu einloggen...")
+        await self.login()
+        await page.goto(
+            f"{self.idis_url}/idis/processAROSOrders.faces"
+        )
+
+    # ERKLAERUNG: Warten bis der Filter sichtbar ist
+    await page.wait_for_selector(
+        SEL_FILTER_IMPORT_DATE,
+        timeout=self.timeout
+    )
+    print("[Nav] Auftragsseite geladen")
+
+async def get_result_table_data(self) -> list:
+    """Ergebnis-Tabelle auslesen.
+
+    # ERKLAERUNG: Liest alle sichtbaren Zeilen aus der IDIS-Tabelle.
+    # Jede Zeile wird als Dict mit den wichtigsten Feldern zurueckgegeben.
+    # Das brauchen wir um die richtigen Zeilen fuer Amendments zu finden.
+    """
+    page = await self._ensure_browser()
+
+    # ERKLAERUNG: Alle Tabellenzeilen per JavaScript auslesen
+    # Das ist schneller als jeden Selektor einzeln abzufragen
+    rows = await page.evaluate("""
+        () => {
+            const rows = document.querySelectorAll('table.dataTable tbody tr');
+            return Array.from(rows).map(tr => {
+                const cells = tr.querySelectorAll('td');
+                return {
+                    order_id: cells[2]?.textContent?.trim() || '',
+                    aros_key: cells[12]?.textContent?.trim() || '',
+                    quantity: parseInt(cells[26]?.textContent?.trim() || '0'),
+                    order_type: cells[28]?.textContent?.trim() || ''
+                };
+            });
+        }
+    """)
+
+    return rows`
+},
+
+overconfirm: {
+  title: "Modul 6: Auftraege bestaetigen (Hochsetzung) — overconfirmation.py",
+  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# MODUL: Auftraege bestaetigen (Hochsetzung)
+# DATEI: overconfirmation.py + idis_browser.py (Zeilen 536-682)
+# ERKLAERUNG: Das HERZSTUECK der Pipeline!
+# 1. Berechnet fuer jeden Auftrag die neue Menge (Hochsetzung)
+# 2. Traegt die neue Menge im IDIS ein
+#
+# HOCHSETZUNG = Menge auf naechstes Vielfaches der Bundle-Groesse
+# aufrunden. Beispiel: Menge 7, Bundle 3 \u2192 Hochsetzung auf 9.
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+import math
+
+class OverconfirmationCalculator:
+    """Berechnet Hochsetzungen (Amendments) fuer IDIS-Auftraege.
+
+    # ERKLAERUNG: "Hochsetzung" bedeutet:
+    # Die bestellte Menge wird auf das naechste Vielfache
+    # der Bundle-Groesse aufgerundet.
+    #
+    # Beispiel: Kunde bestellt 7 Stueck, Bundle = 3
+    # \u2192 Hochsetzung auf 9 (naechstes Vielfaches von 3)
+    #
+    # Faktoren:
+    # - PCS (Pieces): Faktor 1 (normal)
+    # - PPP (Pre-Packed Pallet): Faktor 3 (groessere Einheiten)
+    """
+
+    def __init__(self, master: 'MasterData', config_path: str = "config.json"):
+        self.master = master
+        import json
+        with open(config_path) as f:
+            cfg = json.load(f)
+        oc = cfg.get("overconfirmation", {})
+        self.never_countries = oc.get("never_hochsetzen_countries", ["D"])
+        self.factor_pcs = oc.get("factor_pcs", 1)
+        self.factor_ppp = oc.get("factor_ppp", 3)
+
+    def calculate_amendments(self, export_rows: list) -> list:
+        """Amendments fuer alle Export-Zeilen berechnen.
+
+        # ERKLAERUNG:
+        # - Fuer jede Zeile pruefen: Soll hochgesetzt werden?
+        # - Land "D" (Deutschland) wird NICHT hochgesetzt
+        # - Bundle-Groesse aus Masterdatei holen
+        # - Neue Menge berechnen: ceil(menge / bundle) * bundle
+        # - Nur zurueckgeben wenn neue Menge != alte Menge
+        """
+        amendments = []
+
+        for row in export_rows:
+            country = row["country"]
+            aros_key = row["aros_key"]
+            menge = row["quantity"]
+            abrufart = row["abrufart"]
+            order_type = row["order_type"]
+
+            # ERKLAERUNG: Deutschland nie hochsetzen
+            if country in self.never_countries:
+                continue
+
+            # ERKLAERUNG: Artikelinfo aus Stammdaten holen
+            info = self.master.get_order_info(aros_key)
+            if not info:
+                print(f"  [WARN] Kein Stammdatensatz: {aros_key}")
+                continue
+
+            # ERKLAERUNG: Bundle-Groesse bestimmen
+            # Store-Auftraege \u2192 Col J, Depot \u2192 Col K, OL \u2192 OL Sheet
+            bundle = self._get_bundle_size(aros_key, country, order_type, info)
+            if bundle <= 0:
+                continue
+
+            # ERKLAERUNG: Faktor bestimmen (PCS=1, PPP=3)
+            factor = self.factor_ppp if "PPP" in abrufart.upper() else self.factor_pcs
+
+            # ERKLAERUNG: Hochsetzung berechnen
+            # ceil() rundet auf die naechste ganze Zahl auf
+            effective_bundle = bundle * factor
+            neue_menge = math.ceil(menge / effective_bundle) * int(effective_bundle)
+
+            # ERKLAERUNG: Nur wenn sich etwas aendert
+            if neue_menge != menge:
+                amendments.append({
+                    "order_id": row["order_id"],
+                    "aros_key": aros_key,
+                    "land": country,
+                    "abrufart": abrufart,
+                    "order_type": order_type,
+                    "alt_menge": menge,
+                    "neu_menge": int(neue_menge),
+                    "bundle_size": bundle,
+                    "factor": factor,
+                })
+
+        print(f"[Overconfirm] {len(amendments)} Hochsetzungen berechnet")
+        return amendments
+
+    def _get_bundle_size(self, aros_key, country, order_type, info):
+        """Bundle-Groesse fuer einen Auftrag bestimmen.
+
+        # ERKLAERUNG: Die Bundle-Groesse haengt ab von:
+        # - Order Type: "S" (Store) \u2192 Spalte J, "D" (Depot) \u2192 Spalte K
+        # - OL-Auftraege: Separates Sheet "OL Kartonage"
+        """
+        # OL-Auftraege haben eigene Bundle-Groessen
+        ol_bundle = self.master.get_ol_bundle(aros_key)
+        if ol_bundle and ol_bundle > 0:
+            return ol_bundle
+
+        # Store oder Depot?
+        if order_type == "S":
+            return info.get("bundle_size_store", 0)
+        else:
+            return info.get("bundle_size_depot", 0)
+
+# \u2500\u2500\u2500 IDIS Amendment eintragen (idis_browser.py) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+async def apply_amendments(self, amendments: list, stop_before_save=False) -> int:
+    """Amendments im IDIS eintragen.
+
+    # ERKLAERUNG: Fuer jedes Amendment:
+    # 1. Die richtige Zeile in der Ergebnis-Tabelle finden
+    # 2. Den "Amend" Button fuer diese Zeile klicken
+    # 3. Das Mengen-Feld mit der neuen Menge befuellen
+    # 4. "Save" klicken (oder stoppen wenn stop_before_save=True)
+    #
+    # ACHTUNG: Nach jedem Save kann sich die Tabelle aendern
+    # (JSF rendert die Seite neu). Deshalb muessen wir nach
+    # jedem Save die Tabelle neu auslesen!
+    """
+    page = await self._ensure_browser()
+    applied = 0
+
+    for amend in amendments:
+        try:
+            order_id = amend["order_id"]
+            neue_menge = amend["neu_menge"]
+
+            # ERKLAERUNG: Zeile in Ergebnis-Tabelle finden
+            rows = await self.get_result_table_data()
+            row_index = None
+            for i, r in enumerate(rows):
+                if r["order_id"] == order_id:
+                    row_index = i
+                    break
+
+            if row_index is None:
+                print(f"  [SKIP] Zeile nicht gefunden: {order_id}")
+                continue
+
+            # ERKLAERUNG: Mengen-Feld befuellen
+            # Der Selektor enthaelt {j} = Zeilenindex
+            qty_selector = SEL_AMEND_QTY_TPL.replace("{j}", str(row_index))
+            await page.fill(qty_selector, str(neue_menge))
+
+            if stop_before_save:
+                print(f"  [STOP] {order_id}: {amend['alt_menge']} \u2192 {neue_menge} (nicht gespeichert)")
+                continue
+
+            # ERKLAERUNG: Save klicken
+            await page.click(SEL_AMEND_SAVE)
+            await page.wait_for_load_state("networkidle")
+
+            applied += 1
+            print(f"  [OK] {order_id}: {amend['alt_menge']} \u2192 {neue_menge}")
+
+        except Exception as e:
+            print(f"  [ERR] {amend['order_id']}: {e}")
+            # Screenshot bei Fehler
+            await page.screenshot(path=f"error_{amend['order_id']}.png")
+
+    return applied`
+},
+
+postexport: {
+  title: "Modul 7: Ergebnis speichern (Post-Export) — orchestrator.py",
+  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# MODUL: Ergebnis speichern (Post-Export)
+# DATEI: orchestrator.py (Zeilen 200-280)
+# ERKLAERUNG: Nach der Hochsetzung exportieren wir nochmal.
+# Der zweite Export ("post") enthaelt die geaenderten Mengen.
+# Durch Vergleich pre vs post pruefen wir ob alles stimmt.
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+async def _run_idis_steps(self, master, run_date, dry_run=False, stop_before_save=False):
+    """IDIS Schritte ausfuehren (Export \u2192 Amend \u2192 Re-Export).
+
+    # ERKLAERUNG: Dies ist das Herzstueck der Pipeline.
+    # In 3 Phasen:
+    #
+    # Phase 1 - Pre-Export:
+    #   \u2192 Alle Auftraege exportieren (Ist-Zustand)
+    #
+    # Phase 2 - Amendment:
+    #   \u2192 Hochsetzungen berechnen und eintragen
+    #
+    # Phase 3 - Post-Export:
+    #   \u2192 Nochmal exportieren (Soll-Zustand nach Hochsetzung)
+    #   \u2192 Vergleich: Wurden alle Amendments korrekt uebernommen?
+    """
+    from .idis_browser import IdisBrowser
+    from .overconfirmation import OverconfirmationCalculator
+
+    browser = IdisBrowser(self.config_path)
+    calculator = OverconfirmationCalculator(master, self.config_path)
+
+    # PHASE 1: Pre-Export
+    print("=" * 60)
+    print("PHASE 1: Pre-Export")
+    await browser.login()
+    pre_path, pre_rows = await browser.export_orders(run_date, "pre")
+    print(f"  \u2192 {len(pre_rows)} Auftraege exportiert")
+
+    if not pre_rows:
+        print("  \u2192 Keine Auftraege gefunden")
+        return [], [], []
+
+    # PHASE 2: Amendments berechnen und anwenden
+    print("=" * 60)
+    print("PHASE 2: Hochsetzung")
+    amendments = calculator.calculate_amendments(pre_rows)
+
+    if amendments and not dry_run:
+        applied = await browser.apply_amendments(amendments, stop_before_save)
+        print(f"  \u2192 {applied}/{len(amendments)} Amendments angewendet")
+    elif dry_run:
+        print(f"  \u2192 DRY-RUN: {len(amendments)} Amendments berechnet (nicht angewendet)")
+
+    # PHASE 3: Post-Export (nur wenn Amendments angewendet wurden)
+    post_rows = []
+    if amendments and not dry_run and not stop_before_save:
+        print("=" * 60)
+        print("PHASE 3: Post-Export")
+        post_path, post_rows = await browser.export_orders(run_date, "post")
+        print(f"  \u2192 {len(post_rows)} Auftraege re-exportiert")
+
+        # ERKLAERUNG: Vergleich Pre vs Post
+        # Pruefen ob die Amendments korrekt uebernommen wurden
+        mismatches = 0
+        for amend in amendments:
+            post_row = next(
+                (r for r in post_rows if r["order_id"] == amend["order_id"]),
+                None
+            )
+            if post_row and post_row["quantity"] != amend["neu_menge"]:
+                print(f"  [WARN] Mismatch: {amend['order_id']} "
+                      f"erwartet={amend['neu_menge']}, "
+                      f"ist={post_row['quantity']}")
+                mismatches += 1
+
+        if mismatches:
+            print(f"  [ALERT] {mismatches} Mismatches gefunden!")
+
+    return pre_rows, amendments, post_rows`
+},
+
+report: {
+  title: "Modul 8: Report erstellen — daily_report.py",
+  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# MODUL: Report erstellen
+# DATEI: daily_report.py (Zeilen 1-180)
+# ERKLAERUNG: Erstellt den Tagesreport mit Zusammenfassung
+# und Plausibilitaetspruefungen. Der Report entscheidet
+# ob gedruckt werden darf oder nicht!
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+from datetime import date, datetime
+from pathlib import Path
+
+class DailyReport:
+    """Tagesreport mit Plausibilitaetspruefung.
+
+    # ERKLAERUNG: Der Report macht 3 wichtige Checks:
+    # 1. Quersumme: Stimmt die Gesamtmenge ueberein?
+    # 2. Anzahl: Stimmt die Anzahl der Listen?
+    # 3. Missing Keys: Fehlen Stammdaten fuer Auftraege?
+    #
+    # Wenn ein Check fehlschlaegt, wird NICHT gedruckt!
+    # Das verhindert fehlerhafte Raussuchlisten.
+    """
+
+    def __init__(self, config_path: str = "config.json"):
+        import json
+        with open(config_path) as f:
+            config = json.load(f)
+        self.logs_dir = Path(config["paths"]["logs_dir"])
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
+
+    def generate_report(
+        self,
+        run_date: date,
+        start_time: datetime,
+        end_time: datetime,
+        export_rows: list,
+        generated_lists: list,
+        missing_keys: list,
+        amendments: list | None = None,
+    ) -> tuple:
+        """Tagesreport generieren.
+
+        Returns:
+            (plausibility_ok: bool, report_path: str)
+
+        # ERKLAERUNG:
+        # plausibility_ok = True  \u2192 Alles OK, drucken erlaubt
+        # plausibility_ok = False \u2192 Fehler, NICHT drucken!
+        """
+        duration = (end_time - start_time).total_seconds()
+
+        # ERKLAERUNG: Metriken berechnen
+        total_orders = len(export_rows)
+        total_lists = len(generated_lists)
+        unique_aros = len(set(r["aros_key"] for r in export_rows))
+        total_qty_export = sum(r["quantity"] for r in export_rows)
+        total_qty_lists = sum(pl.get("total_qty", 0) for pl in generated_lists)
+
+        # \u2550\u2550\u2550 PLAUSIBILITAETSPRUEFUNGEN \u2550\u2550\u2550
+        checks = {}
+
+        # Check 1: Quersumme (Gesamtmenge Export == Gesamtmenge Listen)
+        checks["quersumme"] = total_qty_export == total_qty_lists
+
+        # Check 2: Anzahl (unique AROS Keys == Anzahl Listen)
+        checks["anzahl"] = unique_aros == total_lists
+
+        # Check 3: Missing Keys (sollte leer sein)
+        checks["missing_keys"] = len(missing_keys) == 0
+
+        plausibility_ok = all(checks.values())
+
+        # ERKLAERUNG: Report-Text zusammenbauen
+        lines = []
+        lines.append(f"\u2550\u2550\u2550 NackeScript Tagesreport {run_date} \u2550\u2550\u2550")
+        lines.append(f"")
+        lines.append(f"Laufzeit:       {start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')} ({duration:.0f}s)")
+        lines.append(f"Auftraege:      {total_orders}")
+        lines.append(f"Raussuchlisten: {total_lists}")
+        lines.append(f"")
+
+        if amendments:
+            lines.append(f"Hochsetzungen:  {len(amendments)}")
+            for a in amendments[:10]:  # Max 10 anzeigen
+                lines.append(f"  {a['aros_key']}: {a['alt_menge']} \u2192 {a['neu_menge']} (Bundle {a['bundle_size']})")
+            if len(amendments) > 10:
+                lines.append(f"  ... und {len(amendments) - 10} weitere")
+            lines.append(f"")
+
+        # ERKLAERUNG: Plausibilitaetsergebnis anzeigen
+        lines.append(f"\u2550\u2550\u2550 Plausibilitaet \u2550\u2550\u2550")
+        for name, ok in checks.items():
+            status = "OK" if ok else "FEHLER"
+            lines.append(f"  [{status}] {name}")
+
+        if not plausibility_ok:
+            lines.append(f"")
+            lines.append(f"WARNUNG: Plausibilitaet NICHT bestanden!")
+            lines.append(f"         Drucken ist GESPERRT bis Fehler behoben.")
+
+        # Report speichern
+        report_text = "\\n".join(lines)
+        report_path = self.logs_dir / f"report_{run_date}.txt"
+        report_path.write_text(report_text, encoding="utf-8")
+
+        print(f"[Report] Gespeichert: {report_path}")
+        print(f"[Report] Plausibilitaet: {'OK' if plausibility_ok else 'FEHLER'}")
+
+        return plausibility_ok, str(report_path)`
+},
+
+email: {
+  title: "Modul 9: Email senden — orchestrator.py (Edge Function)",
+  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# MODUL: Email senden (via Edge Function)
+# DATEI: orchestrator.py (Zeilen 65-106)
+# ERKLAERUNG: Sendet den Report an die Supabase Edge Function
+# "nacke-report". Die Edge Function formatiert die Email
+# und sendet sie ueber SMTP.
+#
+# SUPABASE EDGE FUNCTION: nacke-report
+# URL: https://crslpxgwxjmovrhyxiim.supabase.co/functions/v1/nacke-report
+# SMTP: automation@uxuix.de (Geografie: Finnland/Cloud)
+# PROD: nacke-report@exasync.ai
+# TEST: bodo.buschick@uxuix.de
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+import os
+import json
+import urllib.request
+
+def send_report_to_edge(report_data: dict, config: dict) -> bool:
+    """Report an nacke-report Edge Function senden.
+
+    # ERKLAERUNG:
+    # Die Edge Function macht den eigentlichen Email-Versand.
+    # Wir senden nur die Daten als JSON hin.
+    #
+    # Warum Edge Function statt direkt SMTP?
+    # \u2192 SMTP-Credentials liegen sicher im Supabase Vault
+    # \u2192 Die Edge Function kann die Email formatieren
+    # \u2192 Zentrales Logging aller gesendeten Reports
+    """
+    edge_url = config.get("reporting", {}).get(
+        "edge_function_url",
+        "https://crslpxgwxjmovrhyxiim.supabase.co/functions/v1/nacke-report"
+    )
+
+    # ERKLAERUNG: Supabase Service Key fuer Authentifizierung
+    service_key = os.environ.get("SUPABASE_SERVICE_KEY", "")
+    if not service_key:
+        print("[Email] WARNUNG: Kein SUPABASE_SERVICE_KEY, Report nicht gesendet")
+        return False
+
+    # ERKLAERUNG: JSON Payload zusammenbauen
+    payload = {
+        "workflow_id": "nacke",
+        "report": report_data,
+        "run_date": report_data.get("date", ""),
+        "mode": report_data.get("mode", "production"),
+        "status": report_data.get("status", "unknown"),
+    }
+
+    # ERKLAERUNG: HTTP POST an die Edge Function
+    req = urllib.request.Request(
+        edge_url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {service_key}",
+        },
+        method="POST"
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read())
+            print(f"[Email] Report gesendet: {result.get('message', 'OK')}")
+            return True
+    except Exception as e:
+        print(f"[Email] FEHLER beim Senden: {e}")
+        return False`
+},
+
+metrics: {
+  title: "Modul 10: Metriken loggen — orchestrator.py",
+  code: `# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+# MODUL: Metriken loggen
+# DATEI: orchestrator.py (Zeilen 107-150)
+# ERKLAERUNG: Sammelt alle Laufzeit-Metriken und schreibt sie
+# nach Supabase in die agent_metrics Tabelle.
+# Diese Daten nutzen wir fuer:
+# - Dashboard: Wie lange laeuft die Pipeline?
+# - Alerts: Fehlerrate > 5%?
+# - Historie: Trends ueber Wochen/Monate
+#
+# SUPABASE TABELLE: agent_metrics
+# \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+
+import time
+import json
+import os
+import urllib.request
+
+def log_metrics(report_data: dict, start_time: float) -> dict:
+    """Pipeline-Metriken in Supabase speichern.
+
+    # ERKLAERUNG:
+    # Wir speichern fuer JEDEN Lauf:
+    # - Laufzeit in Sekunden
+    # - Anzahl Auftraege (total, bestaetigt, Fehler)
+    # - Erfolgsrate in Prozent
+    # - Modus (production/dry-run/stop-before-save)
+    # - Status (completed/error/no_orders)
+    #
+    # So koennen wir im Dashboard sehen:
+    # "Heute 342 Auftraege in 45 Sekunden, 99.7% Erfolgsrate"
+    """
+    duration = round(time.time() - start_time, 2)
+
+    steps = report_data.get("steps", {})
+    oc = steps.get("overconfirmation", {})
+
+    metrics = {
+        "workflow_id": "nacke",
+        "run_date": report_data.get("date", ""),
+        "mode": report_data.get("mode", "unknown"),
+        "status": report_data.get("status", "unknown"),
+        "duration_seconds": duration,
+        "total_orders": steps.get("export_pre", {}).get("rows", 0),
+        "amendments_calculated": oc.get("amendments_calculated", 0),
+        "amendments_applied": oc.get("amendments_applied", 0),
+        "picklists_generated": steps.get("picklists", {}).get("generated", 0),
+        "plausibility_ok": steps.get("report", {}).get("plausibility_ok", None),
+    }
+
+    # ERKLAERUNG: Erfolgsrate berechnen
+    total = metrics["total_orders"]
+    errors = report_data.get("error_count", 0)
+    if total > 0:
+        metrics["success_rate"] = round((total - errors) / total * 100, 1)
+
+    # An Supabase senden
+    sb_url = os.environ.get("SUPABASE_URL", "")
+    sb_key = os.environ.get("SUPABASE_SERVICE_KEY", "")
+
+    if sb_url and sb_key:
+        req = urllib.request.Request(
+            f"{sb_url}/rest/v1/agent_metrics",
+            data=json.dumps(metrics).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "apikey": sb_key,
+                "Authorization": f"Bearer {sb_key}",
+                "Prefer": "return=minimal"
+            },
+            method="POST"
+        )
+        try:
+            urllib.request.urlopen(req, timeout=10)
+            print(f"[Metrics] Gespeichert: {duration:.0f}s, {total} Auftraege")
+        except Exception as e:
+            print(f"[Metrics] FEHLER: {e}")
+
+    return metrics`
+}
+
+};
+
+// ═══════════════════════════════════════════════════════════════
+// THEME TOGGLE (Dark/Light)
+// ═══════════════════════════════════════════════════════════════
+const themeToggle = document.getElementById('themeToggle');
+const savedTheme = localStorage.getItem('wf-theme');
+if (savedTheme === 'light') {
+  document.documentElement.setAttribute('data-theme', 'light');
+  themeToggle.textContent = '\u2600'; // sun
+}
+themeToggle.addEventListener('click', () => {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  if (isLight) {
+    document.documentElement.removeAttribute('data-theme');
+    themeToggle.textContent = '\u263E'; // moon
+    localStorage.setItem('wf-theme', 'dark');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    themeToggle.textContent = '\u2600'; // sun
+    localStorage.setItem('wf-theme', 'light');
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// WORKFLOW SELECTOR
+// ═══════════════════════════════════════════════════════════════
+const wfSelect = document.getElementById('wfSelect');
+const WF_META = {
+  nacke:      { name: 'NackeScript v4.2',      vm: 'UXUIX-VM',  schedule: 'Mo-Do 07:00',    lastRun: '09.03 OK',     status: 'alive' },
+  maut:       { name: 'Mautberechnung v2.0',    vm: 'UXUIX-VM',  schedule: 'Mo 08:00',        lastRun: '09.03 OK',     status: 'alive' },
+  linkedin:   { name: 'LinkedIn Connect v1.5',  vm: 'B-Hive',    schedule: 'Mo-Fr 09:30-17',  lastRun: '10.03 OK',     status: 'alive' },
+  fleetboard: { name: 'Fleetboard v3.1',        vm: 'UXUIX-VM',  schedule: '24/7 alle 5min',  lastRun: '10.03 WARN',   status: 'unknown' }
+};
+
+// Set initial from URL parameter
+const urlWf = new URLSearchParams(window.location.search).get('workflow');
+if (urlWf && WF_META[urlWf]) wfSelect.value = urlWf;
+
+function updateWorkflowMeta(wfId) {
+  const meta = WF_META[wfId];
+  if (!meta) return;
+  document.getElementById('metaVersion').textContent = meta.name;
+  document.getElementById('metaVM').textContent = 'VM: ' + meta.vm;
+  document.getElementById('metaSchedule').textContent = 'Schedule: ' + meta.schedule;
+  document.getElementById('heartbeatText').textContent = 'Letzter Lauf: ' + meta.lastRun;
+  const dot = document.getElementById('heartbeatDot');
+  dot.className = 'pulse ' + meta.status;
+  // Update URL without reload
+  const url = new URL(window.location);
+  url.searchParams.set('workflow', wfId);
+  history.replaceState(null, '', url);
+}
+
+wfSelect.addEventListener('change', () => updateWorkflowMeta(wfSelect.value));
+updateWorkflowMeta(wfSelect.value);
+
+// ═══════════════════════════════════════════════════════════════
+// HEARTBEAT — Live Supabase Ping (optional, wenn online)
+// ═══════════════════════════════════════════════════════════════
+async function checkHeartbeat() {
+  // Nur wenn Supabase-Anbindung konfiguriert
+  const SB_URL = ''; // Wird spaeter per Config gesetzt
+  if (!SB_URL) return;
+  try {
+    const wfId = wfSelect.value;
+    const res = await fetch(SB_URL + '/rest/v1/agent_metrics?workflow_id=eq.' + wfId + '&order=run_date.desc&limit=1', {
+      headers: { 'apikey': '' } // Placeholder
+    });
+    const data = await res.json();
+    if (data.length > 0) {
+      const last = data[0];
+      const age = Date.now() - new Date(last.run_date).getTime();
+      const dot = document.getElementById('heartbeatDot');
+      const text = document.getElementById('heartbeatText');
+      const hoursAgo = Math.round(age / 3600000);
+      if (last.error_count > 0) {
+        dot.className = 'pulse dead';
+        text.textContent = 'Fehler vor ' + hoursAgo + 'h';
+      } else if (age < 86400000) {
+        dot.className = 'pulse alive';
+        text.textContent = 'OK vor ' + hoursAgo + 'h';
+      } else {
+        dot.className = 'pulse unknown';
+        text.textContent = 'Kein Lauf seit ' + hoursAgo + 'h';
+      }
+    }
+  } catch(e) { /* offline mode - keep static data */ }
+}
+// Initial check + every 5 minutes
+checkHeartbeat();
+setInterval(checkHeartbeat, 300000);
+
+</script>
+</body>
+</html>

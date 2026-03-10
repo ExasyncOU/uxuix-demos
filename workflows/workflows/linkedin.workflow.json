@@ -1,0 +1,107 @@
+{
+  "$schema": "workflow-v1",
+  "id": "linkedin",
+  "name": "LinkedIn Smart Connect",
+  "version": "2.0.0",
+  "description": "Multi-Account LinkedIn Vernetzung mit Rate-Limiting und Ban-Schutz",
+  "owner": "linkedin-agent",
+  "vm": "B-Hive",
+  "schedule": {
+    "cron": "*/30 8-20 * * 1-5",
+    "human": "Alle 30min, Mo-Fr 08:00-20:00 Uhr",
+    "timezone": "Europe/Berlin"
+  },
+  "guardrails": {
+    "constraints": {
+      "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "allowedHours": { "start": "08:00", "end": "20:00" },
+      "maxConcurrentRuns": 1,
+      "timeoutMinutes": 45,
+      "maxConnectionsPerDay": 25,
+      "maxConnectionsPerHour": 8,
+      "sessionDurationMinutes": { "min": 25, "max": 45 },
+      "browseOnlyProbability": 0.12,
+      "hardRules": [
+        "7-Tage Rolling Window: Max 100 Verbindungsanfragen",
+        "Bei Ban-Verdacht: Sofort Session beenden",
+        "Humanisierte Delays mit Gauss-Verteilung",
+        "12% Browse-Only Sessions (kein Connect)"
+      ]
+    },
+    "variables": [
+      { "name": "ACCOUNT_ID", "type": "string", "default": "from_supabase", "description": "LinkedIn Account aus linkedin_accounts Tabelle" },
+      { "name": "MAX_CONNECTS_PER_RUN", "type": "number", "default": 8, "min": 1, "max": 15, "description": "Max Connects pro Session" },
+      { "name": "TARGET_GEO", "type": "string", "default": "DACH", "description": "Zielregion (DACH, Nordics, etc.)" },
+      { "name": "SEARCH_KEYWORDS", "type": "string[]", "default": ["CEO", "CTO", "Managing Director"], "description": "Suchbegriffe fuer Zielgruppe" },
+      { "name": "MIN_DELAY_MS", "type": "number", "default": 3000, "min": 2000, "max": 10000, "description": "Minimale Verzoegerung zwischen Aktionen (ms)" }
+    ]
+  },
+  "lanes": [
+    { "id": "orchestrator", "label": "Orchestrator", "icon": "🎯", "color": "#4A90D9" },
+    { "id": "guard", "label": "Account Guard", "icon": "🛡️", "color": "#E74C3C" },
+    { "id": "browser", "label": "LinkedIn Browser", "icon": "🔗", "color": "#0077B5" },
+    { "id": "data", "label": "Daten", "icon": "📊", "color": "#27AE60" }
+  ],
+  "steps": [
+    {
+      "id": "load-accounts",
+      "lane": "data",
+      "module": "linkedin/load-accounts",
+      "label": "Accounts laden",
+      "description": "Aktive LinkedIn-Accounts aus Supabase laden",
+      "next": ["check-limits"],
+      "inputs": ["supabase:linkedin_accounts"],
+      "outputs": ["accounts[]"]
+    },
+    {
+      "id": "check-limits",
+      "lane": "guard",
+      "module": "linkedin/account-guard",
+      "label": "Rate Limits pruefen",
+      "description": "7-Tage Rolling Window, Ban-Status, Session-Cooldown pruefen",
+      "next": ["start-session"],
+      "inputs": ["accounts[]"],
+      "outputs": ["eligible_account"]
+    },
+    {
+      "id": "start-session",
+      "lane": "browser",
+      "module": "linkedin/start-session",
+      "label": "Session starten",
+      "description": "Playwright Session mit Cookies + humanisiertem Browserprofil",
+      "next": ["search-targets"],
+      "inputs": ["eligible_account"],
+      "outputs": ["browser_session"]
+    },
+    {
+      "id": "search-targets",
+      "lane": "browser",
+      "module": "linkedin/search-targets",
+      "label": "Ziele suchen",
+      "description": "LinkedIn Search mit Keywords und Geo-Filter",
+      "next": ["send-connects"],
+      "inputs": ["browser_session", "SEARCH_KEYWORDS", "TARGET_GEO"],
+      "outputs": ["targets[]"]
+    },
+    {
+      "id": "send-connects",
+      "lane": "browser",
+      "module": "linkedin/send-connects",
+      "label": "Connects senden",
+      "description": "Verbindungsanfragen mit humanisierten Delays senden",
+      "next": ["log-activity"],
+      "inputs": ["targets[]", "MAX_CONNECTS_PER_RUN", "MIN_DELAY_MS"],
+      "outputs": ["sent_connects[]"]
+    },
+    {
+      "id": "log-activity",
+      "lane": "data",
+      "module": "linkedin/log-activity",
+      "label": "Aktivitaet loggen",
+      "description": "Alle Aktionen in linkedin_activity Tabelle loggen",
+      "next": [],
+      "inputs": ["sent_connects[]"],
+      "outputs": ["logged"]
+    }
+  ]
+}

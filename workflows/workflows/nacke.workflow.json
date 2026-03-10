@@ -1,0 +1,152 @@
+{
+  "$schema": "workflow-v1",
+  "id": "nacke",
+  "name": "NackeScript IDIS Auftragsbestätigung",
+  "version": "3.1.0",
+  "description": "Automatische Auftragsbestaetigung in IDIS fuer Nacke Spedition",
+  "owner": "nacke-agent",
+  "vm": "B-Drone",
+  "schedule": {
+    "cron": "0 7 * * 1-4",
+    "human": "Montag-Donnerstag um 07:00 Uhr",
+    "timezone": "Europe/Berlin"
+  },
+  "guardrails": {
+    "constraints": {
+      "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday"],
+      "blockedDays": ["Friday", "Saturday", "Sunday"],
+      "blockedReason": "Freitag-Sonntag: IDIS Wartungsfenster + Wochenabschluss",
+      "allowedHours": { "start": "07:00", "end": "18:00" },
+      "maxConcurrentRuns": 1,
+      "timeoutMinutes": 120,
+      "maxOrdersPerRun": 200,
+      "dryRunDefault": true,
+      "hardRules": [
+        "NIEMALS Production remote via AFK Task starten (Incident 06.03.2026)",
+        "NIEMALS annehmen dass Env-Variable Dry-Run ausloest ohne Aufrufpfad-Verifikation",
+        "Fuer DRY-RUN IMMER dediziertes Dryrun-Script verwenden"
+      ]
+    },
+    "variables": [
+      { "name": "NACKE_DRYRUN", "type": "boolean", "default": true, "description": "Dry-Run Modus (keine echten Bestaetigungen)", "locked": true, "lockReason": "Sicherheitskritisch - nur manuell aenderbar" },
+      { "name": "NACKE_MAX_ORDERS", "type": "number", "default": 50, "min": 1, "max": 200, "description": "Max Auftraege pro Lauf" },
+      { "name": "IDIS_URL", "type": "string", "default": "https://idis.nacke.de", "locked": true, "description": "IDIS Server URL" },
+      { "name": "IDIS_USER", "type": "string", "default": "from_vault", "locked": true, "description": "IDIS Login (aus credential_vault)" },
+      { "name": "REPORT_RECIPIENTS", "type": "string[]", "default": ["nacke-report@exasync.ai"], "description": "Email-Empfaenger fuer Reports" },
+      { "name": "SMTP_USER", "type": "string", "default": "automation@uxuix.de", "locked": true, "description": "SMTP Absender" }
+    ]
+  },
+  "lanes": [
+    { "id": "orchestrator", "label": "Orchestrator", "icon": "🎯", "color": "#4A90D9", "description": "Steuert den Ablauf, Config, Error Handling" },
+    { "id": "data", "label": "Daten / Supabase", "icon": "📊", "color": "#27AE60", "description": "Datenbank-Operationen, Stammdaten, Auftraege" },
+    { "id": "idis", "label": "IDIS Browser", "icon": "🌐", "color": "#E67E22", "description": "Playwright Browser-Automation in IDIS" },
+    { "id": "reporting", "label": "Reporting", "icon": "📧", "color": "#8E44AD", "description": "Email-Reports, Metriken, Logging" }
+  ],
+  "steps": [
+    {
+      "id": "config-load",
+      "lane": "orchestrator",
+      "module": "nacke/config-loader",
+      "label": "Config laden",
+      "description": "Config aus Supabase laden, validieren, config_version pruefen",
+      "next": ["master-data"],
+      "inputs": ["supabase:agent_configs"],
+      "outputs": ["config{}"]
+    },
+    {
+      "id": "master-data",
+      "lane": "data",
+      "module": "nacke/master-data",
+      "label": "Stammdaten laden",
+      "description": "Kundenstammdaten und Zuordnungstabellen aus Supabase",
+      "next": ["fetch-orders"],
+      "inputs": ["config.flow_name"],
+      "outputs": ["masterData{}"]
+    },
+    {
+      "id": "fetch-orders",
+      "lane": "data",
+      "module": "nacke/fetch-orders",
+      "label": "Auftraege abrufen",
+      "description": "Offene Auftraege aus nacke_orders Tabelle laden",
+      "next": ["idis-login"],
+      "inputs": ["config", "masterData"],
+      "outputs": ["orders[]"]
+    },
+    {
+      "id": "idis-login",
+      "lane": "idis",
+      "module": "nacke/idis-login",
+      "label": "IDIS Login",
+      "description": "Playwright startet Browser, navigiert zu IDIS, Login mit Credentials aus Vault",
+      "next": ["navigate-page"],
+      "inputs": ["config.idis_url", "vault:idis_credentials"],
+      "outputs": ["browser_session"]
+    },
+    {
+      "id": "navigate-page",
+      "lane": "idis",
+      "module": "nacke/navigate-page",
+      "label": "Seite navigieren",
+      "description": "Zur Auftragsbestaetigung-Seite navigieren, Selektoren pruefen",
+      "next": ["confirm-orders"],
+      "inputs": ["browser_session"],
+      "outputs": ["page_ready"]
+    },
+    {
+      "id": "confirm-orders",
+      "lane": "idis",
+      "module": "nacke/confirm-orders",
+      "label": "Auftraege bestaetigen",
+      "description": "Schleife: Jeden Auftrag im IDIS bestaetigen (oder Dry-Run loggen)",
+      "next": ["save-results"],
+      "inputs": ["orders[]", "page_ready", "NACKE_DRYRUN"],
+      "outputs": ["results[]"]
+    },
+    {
+      "id": "save-results",
+      "lane": "data",
+      "module": "nacke/save-results",
+      "label": "Ergebnis speichern",
+      "description": "Bestaetigungsergebnisse zurueck nach Supabase schreiben",
+      "next": ["generate-report"],
+      "inputs": ["results[]"],
+      "outputs": ["saved_count"]
+    },
+    {
+      "id": "generate-report",
+      "lane": "reporting",
+      "module": "nacke/generate-report",
+      "label": "Report erstellen",
+      "description": "Tagesreport als HTML generieren mit Zusammenfassung",
+      "next": ["send-email"],
+      "inputs": ["results[]", "config"],
+      "outputs": ["report_html"]
+    },
+    {
+      "id": "send-email",
+      "lane": "reporting",
+      "module": "nacke/send-email",
+      "label": "Email senden",
+      "description": "Report per SMTP an konfigurierte Empfaenger senden",
+      "next": ["log-metrics"],
+      "inputs": ["report_html", "REPORT_RECIPIENTS", "SMTP_USER"],
+      "outputs": ["email_sent"]
+    },
+    {
+      "id": "log-metrics",
+      "lane": "orchestrator",
+      "module": "core/metrics-collector",
+      "label": "Metriken loggen",
+      "description": "Laufzeit, Anzahl Auftraege, Fehler nach agent_metrics schreiben",
+      "next": [],
+      "inputs": ["results[]", "timing"],
+      "outputs": ["metrics_logged"]
+    }
+  ],
+  "errorHandling": {
+    "module": "core/error-handler",
+    "strategy": "log-and-report",
+    "escalation": "email-to-bodo"
+  }
+}

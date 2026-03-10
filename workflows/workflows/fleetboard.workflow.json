@@ -1,0 +1,91 @@
+{
+  "$schema": "workflow-v1",
+  "id": "fleetboard",
+  "name": "Fleetboard Tourenabfrage",
+  "version": "1.5.0",
+  "description": "IMAP-Fetch von Fleetboard-Emails, Tour-Matching, Kontrollzentrum-Update",
+  "owner": "fleetboard-agent",
+  "vm": "B-Drone",
+  "schedule": {
+    "cron": "*/5 * * * *",
+    "human": "Alle 5 Minuten (24/7)",
+    "timezone": "Europe/Berlin"
+  },
+  "guardrails": {
+    "constraints": {
+      "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      "allowedHours": { "start": "00:00", "end": "23:59" },
+      "maxConcurrentRuns": 1,
+      "timeoutMinutes": 4,
+      "hardRules": [
+        "Darf NICHT laenger als 4 Minuten laufen (5-Min-Cron-Takt)",
+        "IMAP Email: automation@uxuix.de (NUR Finnland/Cloud)",
+        "Bei IMAP Lock: NICHT loeschen, Prozess pruefen"
+      ]
+    },
+    "variables": [
+      { "name": "IMAP_USER", "type": "string", "default": "automation@uxuix.de", "locked": true, "description": "IMAP Email-Konto" },
+      { "name": "IMAP_SERVER", "type": "string", "default": "w0192bee.kasserver.com", "locked": true, "description": "IMAP Server" },
+      { "name": "MATCH_TOLERANCE_KM", "type": "number", "default": 5, "min": 1, "max": 20, "description": "Toleranz fuer Geo-Matching in km" },
+      { "name": "HEIMAT_DEPOT", "type": "string", "default": "auto", "description": "Heimat-Depot fuer Zuordnung" }
+    ]
+  },
+  "lanes": [
+    { "id": "scheduler", "label": "Scheduler", "icon": "⏰", "color": "#4A90D9" },
+    { "id": "imap", "label": "IMAP / Email", "icon": "📬", "color": "#E67E22" },
+    { "id": "matcher", "label": "Matcher", "icon": "🔄", "color": "#27AE60" },
+    { "id": "data", "label": "Supabase", "icon": "📊", "color": "#8E44AD" }
+  ],
+  "steps": [
+    {
+      "id": "check-schedule",
+      "lane": "scheduler",
+      "module": "fleetboard/check-schedule",
+      "label": "Cron Check",
+      "description": "Pruefen ob ein Lauf faellig ist, Lock-Datei checken",
+      "next": ["fetch-emails"],
+      "inputs": ["cron_schedule"],
+      "outputs": ["should_run"]
+    },
+    {
+      "id": "fetch-emails",
+      "lane": "imap",
+      "module": "fleetboard/imap-fetch",
+      "label": "Emails abholen",
+      "description": "Neue Fleetboard-Emails per IMAP abholen",
+      "next": ["parse-tours"],
+      "inputs": ["IMAP_USER", "IMAP_SERVER"],
+      "outputs": ["raw_emails[]"]
+    },
+    {
+      "id": "parse-tours",
+      "lane": "imap",
+      "module": "fleetboard/parse-tours",
+      "label": "Touren parsen",
+      "description": "Email-Inhalt parsen: Fahrzeug, Route, Zeiten extrahieren",
+      "next": ["match-vehicles"],
+      "inputs": ["raw_emails[]"],
+      "outputs": ["parsed_tours[]"]
+    },
+    {
+      "id": "match-vehicles",
+      "lane": "matcher",
+      "module": "fleetboard/match-vehicles",
+      "label": "Fahrzeuge zuordnen",
+      "description": "Kennzeichen mit Fahrzeugliste matchen, Heimat-Depot zuordnen",
+      "next": ["push-to-db"],
+      "inputs": ["parsed_tours[]", "MATCH_TOLERANCE_KM", "HEIMAT_DEPOT"],
+      "outputs": ["matched_tours[]"]
+    },
+    {
+      "id": "push-to-db",
+      "lane": "data",
+      "module": "fleetboard/push-to-supabase",
+      "label": "DB Update",
+      "description": "Gematchte Touren in Supabase schreiben",
+      "next": [],
+      "inputs": ["matched_tours[]"],
+      "outputs": ["rows_inserted"]
+    }
+  ]
+}

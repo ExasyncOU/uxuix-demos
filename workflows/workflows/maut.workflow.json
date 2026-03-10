@@ -1,0 +1,113 @@
+{
+  "$schema": "workflow-v1",
+  "id": "maut",
+  "name": "Mautberechnung Shell Fleet Hub",
+  "version": "1.2.0",
+  "description": "Toll4Europe Mautdaten aus Shell Fleet Hub herunterladen, berechnen, Report senden",
+  "owner": "maut-agent",
+  "vm": "B-Drone",
+  "schedule": {
+    "cron": "0 8 * * 1",
+    "human": "Jeden Montag um 08:00 Uhr",
+    "timezone": "Europe/Berlin"
+  },
+  "guardrails": {
+    "constraints": {
+      "allowedDays": ["Monday"],
+      "allowedHours": { "start": "07:00", "end": "12:00" },
+      "maxConcurrentRuns": 1,
+      "timeoutMinutes": 30,
+      "hardRules": [
+        "TOTP wird dynamisch generiert - NIEMALS cachen",
+        "Account (M) DE26731323 ist der einzige aktive Account"
+      ]
+    },
+    "variables": [
+      { "name": "SHELL_EMAIL", "type": "string", "default": "from_vault", "locked": true, "description": "Shell Fleet Hub Login Email" },
+      { "name": "SHELL_PASSWORD", "type": "string", "default": "from_vault", "locked": true, "description": "Shell Fleet Hub Passwort" },
+      { "name": "TOTP_SECRET", "type": "string", "default": "from_vault", "locked": true, "description": "TOTP Secret fuer 2FA" },
+      { "name": "DATE_RANGE_START_OFFSET", "type": "number", "default": -9, "min": -30, "max": -1, "description": "Start-Offset in Tagen (heute -9)" },
+      { "name": "DATE_RANGE_END_OFFSET", "type": "number", "default": -3, "min": -30, "max": -1, "description": "End-Offset in Tagen (heute -3)" },
+      { "name": "REPORT_RECIPIENTS", "type": "string[]", "default": ["gvsped-report@exasync.ai"], "description": "Email-Empfaenger" },
+      { "name": "SKIP_EMAIL", "type": "boolean", "default": false, "description": "Email-Versand ueberspringen (Test)" }
+    ]
+  },
+  "lanes": [
+    { "id": "orchestrator", "label": "Orchestrator", "icon": "🎯", "color": "#4A90D9" },
+    { "id": "browser", "label": "Shell Fleet Hub", "icon": "🌐", "color": "#E67E22" },
+    { "id": "calc", "label": "Berechnung", "icon": "🔢", "color": "#27AE60" },
+    { "id": "reporting", "label": "Reporting", "icon": "📧", "color": "#8E44AD" }
+  ],
+  "steps": [
+    {
+      "id": "date-calc",
+      "lane": "orchestrator",
+      "module": "maut/date-calculator",
+      "label": "Zeitraum berechnen",
+      "description": "Start = heute -9 Tage, Ende = heute -3 Tage",
+      "next": ["shell-login"],
+      "inputs": ["DATE_RANGE_START_OFFSET", "DATE_RANGE_END_OFFSET"],
+      "outputs": ["date_start", "date_end"]
+    },
+    {
+      "id": "shell-login",
+      "lane": "browser",
+      "module": "maut/shell-login",
+      "label": "Shell Fleet Hub Login",
+      "description": "Playwright: Email + Passwort + TOTP eingeben",
+      "next": ["select-account"],
+      "inputs": ["SHELL_EMAIL", "SHELL_PASSWORD", "TOTP_SECRET"],
+      "outputs": ["browser_session"]
+    },
+    {
+      "id": "select-account",
+      "lane": "browser",
+      "module": "maut/select-account",
+      "label": "Account waehlen",
+      "description": "Account (M) DE26731323 auswaehlen",
+      "next": ["download-maut"],
+      "inputs": ["browser_session"],
+      "outputs": ["account_selected"]
+    },
+    {
+      "id": "download-maut",
+      "lane": "browser",
+      "module": "maut/download-data",
+      "label": "Mautdaten laden",
+      "description": "Toll4Europe Mautliste als Excel herunterladen",
+      "next": ["calculate"],
+      "inputs": ["account_selected", "date_start", "date_end"],
+      "outputs": ["excel_file"]
+    },
+    {
+      "id": "calculate",
+      "lane": "calc",
+      "module": "maut/calculate-tolls",
+      "label": "Maut berechnen",
+      "description": "Maut/km berechnen, Anomalien erkennen",
+      "next": ["upload-results"],
+      "inputs": ["excel_file"],
+      "outputs": ["calculations", "anomalies"]
+    },
+    {
+      "id": "upload-results",
+      "lane": "calc",
+      "module": "maut/upload-results",
+      "label": "Ergebnis hochladen",
+      "description": "Berechnungen nach Supabase schreiben",
+      "next": ["send-report"],
+      "inputs": ["calculations"],
+      "outputs": ["uploaded"]
+    },
+    {
+      "id": "send-report",
+      "lane": "reporting",
+      "module": "maut/send-report",
+      "label": "Report senden",
+      "description": "Maut-Report per Email an Empfaenger senden",
+      "next": [],
+      "inputs": ["calculations", "anomalies", "REPORT_RECIPIENTS"],
+      "outputs": ["email_sent"]
+    }
+  ]
+}
