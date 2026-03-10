@@ -286,149 +286,9 @@ table.history .status-dot.err { background: var(--red); }
      TAB 1: WORKFLOW — TIME-BASED SWIMLANE
      ════════════════════════════════════════════════════════════ -->
 <div class="panel active" id="panel-workflow">
-  <div class="section-desc">
-    Zeitbasiertes Swimlane-Diagramm der NackeScript Pipeline. Jede Spalte = ein Zeitschritt.
-    Klicke auf einen Block um den zugehoerigen Production Code zu sehen.
-  </div>
-
-  <div class="swimlane-wrapper">
-    <div class="swimlane-grid">
-      <!-- Row 0: Time headers -->
-      <div class="time-header"></div>
-      <div class="time-header">Schritt 1</div>
-      <div class="time-header">Schritt 2</div>
-      <div class="time-header">Schritt 3</div>
-      <div class="time-header">Schritt 4</div>
-      <div class="time-header">Schritt 5</div>
-      <div class="time-header">Schritt 6</div>
-      <div class="time-header">Schritt 7</div>
-      <div class="time-header">Schritt 8</div>
-
-      <!-- Row 1: Orchestrator lane -->
-      <div class="lane-label"><div class="dot" style="background:var(--lane-orch)"></div> Orchestrator</div>
-      <div class="lane-cell">
-        <div class="module-card card-orch" data-module="config">
-          <span class="step-num">#1</span>
-          <h3>Config laden</h3>
-          <div class="sub">Pfade, Schedule, IDIS-Settings</div>
-          <div class="file-tag">orchestrator.py</div>
-        </div>
-      </div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell">
-        <div class="module-card card-orch" data-module="metrics">
-          <span class="step-num">#10</span>
-          <h3>Metriken loggen</h3>
-          <div class="sub">Supabase agent_metrics</div>
-          <div class="file-tag">orchestrator.py</div>
-        </div>
-      </div>
-
-      <!-- Row 2: Data lane -->
-      <div class="lane-label"><div class="dot" style="background:var(--lane-data)"></div> Daten</div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell">
-        <div class="module-card card-data" data-module="masterdata">
-          <span class="step-num">#2</span>
-          <h3>Stammdaten</h3>
-          <div class="sub">Excel Masterdatei + OL Sheet</div>
-          <div class="file-tag">master_data.py</div>
-        </div>
-      </div>
-      <div class="lane-cell">
-        <div class="module-card card-data" data-module="export">
-          <span class="step-num">#3</span>
-          <h3>Auftraege abrufen</h3>
-          <div class="sub">CSV Pre-Export aus IDIS</div>
-          <div class="file-tag">idis_browser.py</div>
-        </div>
-      </div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell">
-        <div class="module-card card-data" data-module="postexport">
-          <span class="step-num">#7</span>
-          <h3>Ergebnis speichern</h3>
-          <div class="sub">Post-Export + Vergleich</div>
-          <div class="file-tag">orchestrator.py</div>
-        </div>
-      </div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-
-      <!-- Row 3: IDIS lane -->
-      <div class="lane-label"><div class="dot" style="background:var(--lane-idis)"></div> IDIS Browser</div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell">
-        <div class="module-card card-idis" data-module="login">
-          <span class="step-num">#4</span>
-          <h3>IDIS Login</h3>
-          <div class="sub">CDP Port 9222 + Credentials</div>
-          <div class="file-tag">idis_browser.py</div>
-        </div>
-      </div>
-      <div class="lane-cell">
-        <div class="module-card card-idis" data-module="navigate">
-          <span class="step-num">#5</span>
-          <h3>Seite navigieren</h3>
-          <div class="sub">JSF Selektoren + Filter</div>
-          <div class="file-tag">idis_browser.py</div>
-        </div>
-      </div>
-      <div class="lane-cell">
-        <div class="module-card card-idis" data-module="overconfirm">
-          <span class="step-num">#6</span>
-          <h3>Auftraege bestaetigen</h3>
-          <div class="sub">Hochsetzung + Amendment</div>
-          <div class="file-tag">overconfirmation.py</div>
-        </div>
-      </div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-
-      <!-- Row 4: Mail/Report lane -->
-      <div class="lane-label"><div class="dot" style="background:var(--lane-mail)"></div> Reporting</div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell empty"></div>
-      <div class="lane-cell">
-        <div class="module-card card-mail" data-module="report">
-          <span class="step-num">#8</span>
-          <h3>Report erstellen</h3>
-          <div class="sub">Plausibilitaetspruefung</div>
-          <div class="file-tag">daily_report.py</div>
-        </div>
-      </div>
-      <div class="lane-cell">
-        <div class="module-card card-mail" data-module="email">
-          <span class="step-num">#9</span>
-          <h3>Email senden</h3>
-          <div class="sub">Edge Function nacke-report</div>
-          <div class="file-tag">orchestrator.py</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Legend -->
-  <div class="legend">
-    <span class="legend-title">Swimlanes:</span>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--lane-orch)"></div> Orchestrator</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--lane-data)"></div> Daten (Excel/CSV)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--lane-idis)"></div> IDIS Browser</div>
-    <div class="legend-item"><div class="legend-dot" style="background:var(--lane-mail)"></div> Reporting/Email</div>
-    <span style="margin-left:auto; font-size:11px; color:var(--text-muted);">Klick auf Block = Code anzeigen</span>
-  </div>
+  <div class="section-desc" id="wfDesc">Lade Workflow...</div>
+  <div id="swimlane-render"></div>
+  <div id="legend-render"></div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════════
@@ -436,82 +296,8 @@ table.history .status-dot.err { background: var(--red); }
      ════════════════════════════════════════════════════════════ -->
 <div class="panel" id="panel-guardrails">
   <div class="section-title">Deploy Gate + Guardrails</div>
-  <div class="section-desc">
-    11-Punkte Deploy Gate Checkliste. KEIN Deploy ohne bestandenes Gate. Hotfix (P0): G1+G9+G10+G11 Minimum.
-  </div>
-
-  <div class="guardrails-grid">
-    <div class="guard-card">
-      <h3>Deploy Gate <span class="badge must">PFLICHT</span></h3>
-      <ul>
-        <li class="ok">G1: PROD-Script existiert und ist lesbar</li>
-        <li class="ok">G2: TEST-Script existiert (Dual-Script-Pflicht)</li>
-        <li class="ok">G3: Testdaten-Snapshot vorhanden (data/snapshots/)</li>
-        <li class="ok">G4: Mailverteiler: PROD=Kunde, TEST=nur Bodo</li>
-        <li class="ok">G5: Config hat config_version + Changelog</li>
-        <li class="ok">G6: Backup erstellt (data/backups/)</li>
-        <li class="ok">G7: Metriken-Sammlung im Code</li>
-        <li class="ok">G8: Max 200 Zeilen/Script (Module max 300)</li>
-        <li class="ok">G9: Keine silent exceptions</li>
-        <li class="ok">G10: Keine hardcoded User-Pfade</li>
-        <li class="ok">G11: Keine Credentials im Code</li>
-      </ul>
-    </div>
-
-    <div class="guard-card">
-      <h3>Production Safety <span class="badge must">HARTES VERBOT</span></h3>
-      <ul>
-        <li class="fail">NIEMALS Pipeline remote als Production starten</li>
-        <li class="fail">NIEMALS annehmen dass Env-Var Dry-Run ausloest</li>
-        <li class="warn">Fuer DRY-RUN immer dediziertes Script verwenden</li>
-        <li class="ok">Wochentag pruefen (nur Mo-Do)</li>
-        <li class="ok">Bodo fragen ob Production OK ist</li>
-        <li class="fail">Incident 06.03: 702 Amendments produktiv (Freitag!)</li>
-      </ul>
-    </div>
-
-    <div class="guard-card">
-      <h3>Email Geografie <span class="badge should">REGEL</span></h3>
-      <ul>
-        <li class="ok">1 Email = 1 Geografie (Provider sperrt sonst)</li>
-        <li class="ok">uxuix-personal: bodo@ = NUR Estland</li>
-        <li class="ok">uxuix-automation: automation@ = Finnland/Cloud</li>
-        <li class="ok">uxuix-bot: bot@ = Deutschland (Kunden-VMs)</li>
-      </ul>
-    </div>
-
-    <div class="guard-card">
-      <h3>Credential Sync <span class="badge must">PFLICHT</span></h3>
-      <ul>
-        <li class="warn">.env auf ALLEN VMs synchron halten</li>
-        <li class="warn">credential_vault in Supabase aktualisieren</li>
-        <li class="warn">Edge Function Secrets pruefen</li>
-        <li class="warn">Supabase Vault (vault.decrypted_secrets)</li>
-        <li class="fail">Incident 05.03: Passwort geaendert, .env nicht</li>
-      </ul>
-    </div>
-
-    <div class="guard-card">
-      <h3>Multi-Device <span class="badge should">REGEL</span></h3>
-      <ul>
-        <li class="ok">B-Hive = Mr. NexusMind, B-Lab = bodob</li>
-        <li class="ok">Bash: $HOME, $USERPROFILE, ~ (nie hardcoded)</li>
-        <li class="ok">PowerShell: $env:USERPROFILE, $HOME</li>
-        <li class="ok">Config: %USERPROFILE% oder relative Pfade</li>
-      </ul>
-    </div>
-
-    <div class="guard-card">
-      <h3>Autonomie Prinzip <span class="badge should">VISION</span></h3>
-      <ul>
-        <li class="ok">0% Fehlerquote, 0% manuelle Intervention</li>
-        <li class="ok">Jeder Agent sammelt Metriken</li>
-        <li class="ok">PROD + TEST Dual-Script fuer alle Deployments</li>
-        <li class="ok">Historische Daten als Testdaten-Simulation</li>
-        <li class="ok">Config-Versionierung + Rollback</li>
-      </ul>
-    </div>
-  </div>
+  <div class="section-desc">11-Punkte Deploy Gate + workflow-spezifische Guardrails. KEIN Deploy ohne bestandenes Gate.</div>
+  <div id="guardrails-render" class="guardrails-grid"></div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════════
@@ -519,80 +305,8 @@ table.history .status-dot.err { background: var(--red); }
      ════════════════════════════════════════════════════════════ -->
 <div class="panel" id="panel-integration">
   <div class="section-title">Integration Map</div>
-  <div class="section-desc">
-    Alle externen Systeme, APIs und Datenquellen die NackeScript verbindet.
-  </div>
-
-  <div class="integration-grid">
-    <div class="integ-card">
-      <h3>IDIS Portal <span class="conn-type">CDP / HTTP</span></h3>
-      <div class="detail">
-        <span>JSF Webanwendung (Java Server Faces)</span>
-        <span>URL: <code>https://idis.retail-sc.com</code></span>
-        <span>Mailbox: <code>729</code></span>
-        <span>Chrome Debug Protocol Port <code>9222</code></span>
-        <span>Credentials: <code>$IDIS_USER / $IDIS_PASS</code></span>
-      </div>
-    </div>
-
-    <div class="integ-card">
-      <h3>Supabase <span class="conn-type">REST API</span></h3>
-      <div class="detail">
-        <span>Projekt: <code>crslpxgwxjmovrhyxiim</code></span>
-        <span>Tabellen:</span>
-        <span>&nbsp;&nbsp;<code>agent_configs</code></span>
-        <span>&nbsp;&nbsp;<code>nacke_orders</code></span>
-        <span>&nbsp;&nbsp;<code>agent_metrics</code></span>
-        <span>&nbsp;&nbsp;<code>agent_runs</code></span>
-        <span>&nbsp;&nbsp;<code>credential_vault</code></span>
-        <span>Auth: <code>$SUPABASE_SERVICE_KEY</code></span>
-      </div>
-    </div>
-
-    <div class="integ-card">
-      <h3>Edge Functions <span class="conn-type">HTTPS POST</span></h3>
-      <div class="detail">
-        <span><code>nacke-report</code> - Email Versand</span>
-        <span><code>gvsped-report</code> - GV Berichte</span>
-        <span><code>afk-orchestrator</code> - Remote Tasks</span>
-        <span>Auth: Bearer <code>$SUPABASE_SERVICE_KEY</code></span>
-        <span>SMTP via: <code>automation@uxuix.de</code></span>
-      </div>
-    </div>
-
-    <div class="integ-card">
-      <h3>Excel Masterdatei <span class="conn-type">File (openpyxl)</span></h3>
-      <div class="detail">
-        <span>Pfad: <code>K:\...\Masterdatei.xlsx</code></span>
-        <span>Sheet 1: <code>Orders</code> (Artikel + Bundle)</span>
-        <span>Sheet 2: <code>OL Kartonage</code> (OL Bundles)</span>
-        <span>Key-Spalte: <code>Verketten Raussuchliste</code></span>
-        <span>Bundle Store: Col J, Depot: Col K</span>
-      </div>
-    </div>
-
-    <div class="integ-card">
-      <h3>Windows Task Scheduler <span class="conn-type">Scheduled Task</span></h3>
-      <div class="detail">
-        <span>Task: <code>NackeScript-Production</code></span>
-        <span>Schedule: <code>Mo-Do 07:00</code></span>
-        <span>VM: <code>UXUIX-VM</code></span>
-        <span>Trigger: <code>run_nacke_v2.ps1</code></span>
-        <span>DRY-RUN: separates Script!</span>
-      </div>
-    </div>
-
-    <div class="integ-card">
-      <h3>SMTP (Email) <span class="conn-type">SMTP/SSL</span></h3>
-      <div class="detail">
-        <span>Provider: <code>ALL-INKL / Kasserver</code></span>
-        <span>User: <code>automation@uxuix.de</code></span>
-        <span>Geografie: Finnland + Cloud</span>
-        <span>PROD To: <code>nacke-report@exasync.ai</code></span>
-        <span>TEST To: <code>bodo.buschick@uxuix.de</code></span>
-      </div>
-    </div>
-  </div>
+  <div class="section-desc" id="integDesc">Alle externen Systeme, APIs und Datenquellen dieses Workflows.</div>
+  <div id="integration-render" class="integration-grid"></div>
 </div>
 
 <!-- ════════════════════════════════════════════════════════════
@@ -705,6 +419,233 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// DATA STORE — Workflows + Registry werden hier gecacht
+// ═══════════════════════════════════════════════════════════════
+const STORE = { workflows: {}, registry: {}, currentWf: null };
+
+// ═══════════════════════════════════════════════════════════════
+// INTEGRATION DATA — Pro Workflow die externen Systeme
+// ═══════════════════════════════════════════════════════════════
+const INTEGRATIONS = {
+  nacke: [
+    { name: 'IDIS Portal', type: 'CDP / HTTP', details: ['JSF Webanwendung (Java Server Faces)', 'URL: <code>https://idis.retail-sc.com</code>', 'Chrome Debug Protocol Port <code>9222</code>', 'Credentials: <code>$IDIS_USER / $IDIS_PASS</code>'] },
+    { name: 'Supabase', type: 'REST API', details: ['Projekt: <code>crslpxgwxjmovrhyxiim</code>', 'Tabellen: <code>agent_configs</code>, <code>nacke_orders</code>', '<code>agent_metrics</code>, <code>agent_runs</code>', 'Auth: <code>$SUPABASE_SERVICE_KEY</code>'] },
+    { name: 'Edge Functions', type: 'HTTPS POST', details: ['<code>nacke-report</code> — Email Versand', '<code>afk-orchestrator</code> — Remote Tasks', 'SMTP via: <code>automation@uxuix.de</code>'] },
+    { name: 'Excel Masterdatei', type: 'File (openpyxl)', details: ['Pfad: <code>K:\\...\\Masterdatei.xlsx</code>', 'Sheet: <code>Orders</code> + <code>OL Kartonage</code>', 'Key: <code>Verketten Raussuchliste</code>'] },
+    { name: 'Windows Task Scheduler', type: 'Scheduled Task', details: ['Task: <code>NackeScript-Production</code>', 'Schedule: <code>Mo-Do 07:00</code>', 'VM: <code>UXUIX-VM</code>'] },
+    { name: 'SMTP (Email)', type: 'SMTP/SSL', details: ['Provider: <code>ALL-INKL / Kasserver</code>', 'User: <code>automation@uxuix.de</code>', 'PROD To: <code>nacke-report@exasync.ai</code>'] }
+  ],
+  maut: [
+    { name: 'Shell Fleet Hub', type: 'Playwright / HTTP', details: ['URL: <code>https://shellfleet.shell.com</code>', 'Account: <code>(M) DE26731323</code>', '2FA: TOTP dynamisch generiert', 'Credentials: <code>from_vault</code>'] },
+    { name: 'Toll4Europe', type: 'Excel Download', details: ['Mautlisten als Excel-Export', 'Zeitraum: heute -9d bis heute -3d', 'Nur Montags abgerufen'] },
+    { name: 'Supabase', type: 'REST API', details: ['Tabellen: <code>maut_calculations</code>', '<code>agent_metrics</code>, <code>agent_configs</code>', 'Auth: <code>$SUPABASE_SERVICE_KEY</code>'] },
+    { name: 'Edge Functions', type: 'HTTPS POST', details: ['<code>gvsped-report</code> — Maut-Report Email', 'SMTP via: <code>automation@uxuix.de</code>'] },
+    { name: 'Windows Task Scheduler', type: 'Scheduled Task', details: ['Schedule: <code>Mo 08:00</code>', 'VM: <code>UXUIX-VM</code>'] }
+  ],
+  linkedin: [
+    { name: 'LinkedIn', type: 'Playwright CDP', details: ['Multi-Account Automation', 'Rate Limits: 25/Tag, 8/Stunde', '12% Browse-Only Sessions', 'Humanisierte Gauss-Delays'] },
+    { name: 'Supabase', type: 'REST API', details: ['Tabellen: <code>linkedin_accounts</code>', '<code>automation_tasks</code>, <code>connection_log</code>', '<code>error_log</code>'] },
+    { name: 'Cookie Store', type: 'File / Vault', details: ['Session Cookies pro Account', 'Browser-Profile persistent', '4h Session Cooldown'] },
+    { name: 'Claude API', type: 'HTTPS', details: ['Nachrichten-Personalisierung', 'Profil-Analyse fuer Targeting'] }
+  ],
+  fleetboard: [
+    { name: 'IMAP Mailbox', type: 'IMAP/SSL', details: ['Server: <code>w0192bee.kasserver.com</code>', 'User: <code>automation@uxuix.de</code>', 'Geografie: Finnland + Cloud', 'Polling: alle 5 Minuten'] },
+    { name: 'Fleetboard API', type: 'Email-basiert', details: ['Tour-Benachrichtigungen per Email', 'Fahrzeug + Route + Zeiten', 'Automatisches Parsing'] },
+    { name: 'Supabase', type: 'REST API', details: ['Tabellen: <code>fleetboard_tours</code>', '<code>vehicle_registry</code>', 'Geo-Matching: <code>5km Toleranz</code>'] },
+    { name: 'Kontrollzentrum', type: 'Teams Bot', details: ['Pipeline-Status Dashboard', 'Approval Workflows', 'Port: <code>3980</code>'] }
+  ]
+};
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER: SWIMLANE — generiert Grid aus workflow.json
+// ═══════════════════════════════════════════════════════════════
+const LANE_COLORS = ['var(--lane-orch)', 'var(--lane-data)', 'var(--lane-idis)', 'var(--lane-mail)'];
+const LANE_CLASSES = ['card-orch', 'card-data', 'card-idis', 'card-mail'];
+
+function renderSwimlane(wf) {
+  if (!wf || !wf.steps) return;
+  const lanes = wf.lanes || [];
+  const steps = wf.steps || [];
+  const maxCols = steps.length;
+  const cols = Math.max(maxCols, 4);
+
+  // Ordne Steps den Lanes zu
+  const laneMap = {};
+  lanes.forEach(l => { laneMap[l.id] = []; });
+  steps.forEach((s, i) => {
+    if (!laneMap[s.lane]) laneMap[s.lane] = [];
+    laneMap[s.lane].push({ ...s, order: i + 1 });
+  });
+
+  // Grid: cols+1 Spalten (Label + Steps)
+  let html = '<div class="swimlane-wrapper"><div class="swimlane-grid" style="grid-template-columns: 140px repeat(' + cols + ', minmax(160px, 1fr)); grid-template-rows: auto repeat(' + lanes.length + ', 1fr);">';
+
+  // Header row
+  html += '<div class="time-header"></div>';
+  for (let i = 0; i < cols; i++) html += '<div class="time-header">Schritt ' + (i + 1) + '</div>';
+
+  // Lane rows
+  lanes.forEach((lane, li) => {
+    const color = LANE_COLORS[li % LANE_COLORS.length];
+    const cls = LANE_CLASSES[li % LANE_CLASSES.length];
+    const laneName = lane.name || lane.label || lane.id;
+    html += '<div class="lane-label"><div class="dot" style="background:' + color + '"></div> ' + laneName + '</div>';
+
+    // Fuelle Zellen — leere Zellen wo kein Step ist
+    for (let col = 0; col < cols; col++) {
+      const step = laneMap[lane.id] ? laneMap[lane.id].find(s => s.order === col + 1) : null;
+      if (step) {
+        const mod = STORE.registry[step.module] || {};
+        const modFile = (step.module || '').split('/').pop();
+        html += '<div class="lane-cell"><div class="module-card ' + cls + '" data-module="' + (step.module || step.id) + '">';
+        html += '<span class="step-num">#' + step.order + '</span>';
+        html += '<h3>' + (step.label || step.id) + '</h3>';
+        html += '<div class="sub">' + (step.description || '').slice(0, 60) + '</div>';
+        html += '<div class="file-tag">' + (mod.language || '') + ' / ' + modFile + '</div>';
+        html += '</div></div>';
+      } else {
+        html += '<div class="lane-cell empty"></div>';
+      }
+    }
+  });
+
+  html += '</div></div>';
+
+  // Legend
+  let legend = '<div class="legend"><span class="legend-title">Swimlanes:</span>';
+  lanes.forEach((lane, li) => {
+    const color = LANE_COLORS[li % LANE_COLORS.length];
+    const laneName = lane.name || lane.label || lane.id;
+    legend += '<div class="legend-item"><div class="legend-dot" style="background:' + color + '"></div> ' + laneName + '</div>';
+  });
+  legend += '<span style="margin-left:auto; font-size:11px; color:var(--text-muted);">Klick auf Block = Code anzeigen</span></div>';
+
+  document.getElementById('swimlane-render').innerHTML = html;
+  document.getElementById('legend-render').innerHTML = legend;
+  document.getElementById('wfDesc').textContent = wf.description + ' — ' + (wf.schedule ? wf.schedule.human : '') + '. Klicke auf einen Block um den Code zu sehen.';
+
+  // Re-bind click events
+  document.querySelectorAll('.module-card').forEach(card => {
+    card.addEventListener('click', () => openCode(card.dataset.module));
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER: GUARDRAILS — aus workflow.json guardrails + Deploy Gate
+// ═══════════════════════════════════════════════════════════════
+function renderGuardrails(wf) {
+  const g = wf.guardrails || {};
+  const c = g.constraints || {};
+  const vars = g.variables || [];
+  let html = '';
+
+  // Deploy Gate (immer gleich)
+  html += '<div class="guard-card"><h3>Deploy Gate <span class="badge must">PFLICHT</span></h3><ul>';
+  ['G1: PROD-Script existiert','G2: TEST-Script existiert','G3: Testdaten-Snapshot vorhanden','G4: Mailverteiler korrekt','G5: Config hat config_version','G6: Backup erstellt','G7: Metriken-Sammlung im Code','G8: Max 200 Zeilen/Script','G9: Keine silent exceptions','G10: Keine hardcoded Pfade','G11: Keine Credentials im Code'].forEach(g => {
+    html += '<li class="ok">' + g + '</li>';
+  });
+  html += '</ul></div>';
+
+  // Schedule + Constraints
+  if (c.allowedDays || c.allowedHours) {
+    html += '<div class="guard-card"><h3>Schedule <span class="badge must">CONSTRAINT</span></h3><ul>';
+    if (c.allowedDays) html += '<li class="ok">Erlaubte Tage: ' + c.allowedDays.join(', ') + '</li>';
+    if (c.blockedDays) html += '<li class="fail">Gesperrt: ' + c.blockedDays.join(', ') + (c.blockedReason ? ' — ' + c.blockedReason : '') + '</li>';
+    if (c.allowedHours) html += '<li class="ok">Zeitfenster: ' + c.allowedHours.start + ' - ' + c.allowedHours.end + '</li>';
+    if (c.timeoutMinutes) html += '<li class="ok">Timeout: ' + c.timeoutMinutes + ' Minuten</li>';
+    if (c.maxConcurrentRuns) html += '<li class="ok">Max parallele Laeufe: ' + c.maxConcurrentRuns + '</li>';
+    if (c.maxOrdersPerRun) html += '<li class="ok">Max Auftraege/Lauf: ' + c.maxOrdersPerRun + '</li>';
+    if (c.maxConnectionsPerDay) html += '<li class="ok">Max Connects/Tag: ' + c.maxConnectionsPerDay + '</li>';
+    if (c.maxConnectionsPerHour) html += '<li class="ok">Max Connects/Stunde: ' + c.maxConnectionsPerHour + '</li>';
+    html += '</ul></div>';
+  }
+
+  // Hard Rules
+  if (c.hardRules && c.hardRules.length > 0) {
+    html += '<div class="guard-card"><h3>Hard Rules <span class="badge must">VERBOT</span></h3><ul>';
+    c.hardRules.forEach(r => { html += '<li class="fail">' + r + '</li>'; });
+    html += '</ul></div>';
+  }
+
+  // Variables
+  if (vars.length > 0) {
+    html += '<div class="guard-card"><h3>Variablen <span class="badge should">CONFIG</span></h3><ul>';
+    vars.forEach(v => {
+      const lockIcon = v.locked ? ' 🔒' : '';
+      const cls = v.locked ? 'warn' : 'ok';
+      html += '<li class="' + cls + '"><code>' + v.name + '</code> = ' + JSON.stringify(v.default) + lockIcon;
+      if (v.locked && v.lockReason) html += ' <small>(' + v.lockReason + ')</small>';
+      html += '</li>';
+    });
+    html += '</ul></div>';
+  }
+
+  document.getElementById('guardrails-render').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER: INTEGRATION MAP — aus INTEGRATIONS dict
+// ═══════════════════════════════════════════════════════════════
+function renderIntegration(wfId) {
+  const integ = INTEGRATIONS[wfId] || [];
+  if (integ.length === 0) {
+    document.getElementById('integration-render').innerHTML = '<p style="color:var(--text-muted)">Keine Integrations-Daten fuer diesen Workflow.</p>';
+    return;
+  }
+  let html = '';
+  integ.forEach(i => {
+    html += '<div class="integ-card"><h3>' + i.name + ' <span class="conn-type">' + i.type + '</span></h3><div class="detail">';
+    i.details.forEach(d => { html += '<span>' + d + '</span>'; });
+    html += '</div></div>';
+  });
+  document.getElementById('integration-render').innerHTML = html;
+  document.getElementById('integDesc').textContent = 'Alle externen Systeme, APIs und Datenquellen fuer ' + (STORE.currentWf ? STORE.currentWf.name : wfId) + '.';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOAD + INIT — Workflows und Registry laden
+// ═══════════════════════════════════════════════════════════════
+async function loadAllData() {
+  try {
+    // Liste laden
+    const listRes = await fetch('workflows/list.json');
+    const list = await listRes.json();
+
+    // Registry laden
+    const regRes = await fetch('modules/registry.json');
+    const regData = await regRes.json();
+    const mods = regData.modules || regData;
+    Object.values(mods).forEach(m => { STORE.registry[m.id] = m; });
+
+    // Alle Workflows laden
+    for (const name of list) {
+      try {
+        const wfRes = await fetch('workflows/' + name + '.workflow.json');
+        STORE.workflows[name] = await wfRes.json();
+      } catch(e) { console.warn('Workflow nicht geladen: ' + name, e); }
+    }
+
+    // Initial rendern
+    const initial = new URLSearchParams(window.location.search).get('workflow') || list[0] || 'nacke';
+    if (document.getElementById('wfSelect')) document.getElementById('wfSelect').value = initial;
+    switchWorkflow(initial);
+  } catch(e) {
+    console.error('Daten laden fehlgeschlagen:', e);
+    document.getElementById('wfDesc').textContent = 'Fehler beim Laden der Workflow-Daten. Starte den Server mit: node lib/workflow-engine.mjs serve';
+  }
+}
+
+function switchWorkflow(wfId) {
+  const wf = STORE.workflows[wfId];
+  if (!wf) return;
+  STORE.currentWf = wf;
+  renderSwimlane(wf);
+  renderGuardrails(wf);
+  renderIntegration(wfId);
+  updateWorkflowMeta(wfId);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // CODE VIEWER
 // ═══════════════════════════════════════════════════════════════
 const overlay = document.getElementById('codeOverlay');
@@ -713,10 +654,20 @@ const codeTitle = document.getElementById('codeTitle');
 const codeContent = document.getElementById('codeContent');
 
 function openCode(moduleId) {
-  const mod = MODULES[moduleId];
-  if (!mod) return;
-  codeTitle.textContent = mod.title;
-  codeContent.innerHTML = highlightPython(mod.code);
+  // Zuerst in Registry schauen (dynamisch), dann Fallback auf altes MODULES dict
+  const regMod = STORE.registry[moduleId];
+  const legacyMod = MODULES[moduleId];
+
+  if (regMod && regMod.code) {
+    codeTitle.textContent = regMod.name + ' — ' + moduleId + ' v' + regMod.version + (regMod.status === 'frozen' ? ' (frozen)' : ' (' + regMod.status + ')');
+    codeContent.innerHTML = highlightPython(regMod.code);
+  } else if (legacyMod) {
+    codeTitle.textContent = legacyMod.title;
+    codeContent.innerHTML = highlightPython(legacyMod.code);
+  } else {
+    codeTitle.textContent = moduleId;
+    codeContent.innerHTML = '<span class="cmt"># Kein Code in der Registry hinterlegt fuer: ' + moduleId + '</span>';
+  }
   overlay.classList.add('open');
   requestAnimationFrame(() => sheet.classList.add('open'));
 }
@@ -1908,8 +1859,7 @@ function updateWorkflowMeta(wfId) {
   history.replaceState(null, '', url);
 }
 
-wfSelect.addEventListener('change', () => updateWorkflowMeta(wfSelect.value));
-updateWorkflowMeta(wfSelect.value);
+wfSelect.addEventListener('change', () => switchWorkflow(wfSelect.value));
 
 // ═══════════════════════════════════════════════════════════════
 // HEARTBEAT — Live Supabase Ping (optional, wenn online)
@@ -1946,6 +1896,22 @@ async function checkHeartbeat() {
 // Initial check + every 5 minutes
 checkHeartbeat();
 setInterval(checkHeartbeat, 300000);
+
+// ═══════════════════════════════════════════════════════════════
+// BOOT — Alles laden und rendern
+// ═══════════════════════════════════════════════════════════════
+(async function boot() {
+  await loadAllData();
+  // Fallback: wenn nach loadAllData kein Inhalt gerendert wurde, nochmal forcen
+  const sr = document.getElementById('swimlane-render');
+  if (sr && (!sr.innerHTML || sr.innerHTML.includes('Lade'))) {
+    const keys = Object.keys(STORE.workflows);
+    if (keys.length > 0) {
+      const wfId = wfSelect.value || keys[0];
+      switchWorkflow(wfId);
+    }
+  }
+})();
 
 </script>
 </body>
