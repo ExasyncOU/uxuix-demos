@@ -266,6 +266,7 @@ table.history .status-dot.err { background: var(--red); }
       <option value="linkedin">LinkedIn Connect</option>
       <option value="fleetboard">Fleetboard</option>
     </select>
+    <button class="theme-toggle" id="btnReport" title="Report per Email senden" style="background:var(--accent);border:1px solid var(--border);color:var(--text);padding:5px 14px;border-radius:4px;cursor:pointer;font-size:13px;">Report senden</button>
     <button class="theme-toggle" id="themeToggle" title="Dark/Light umschalten">&#9790;</button>
   </div>
 </div>
@@ -883,9 +884,13 @@ async function loadHistory(wfId) {
     document.getElementById('statTotalRuns').textContent = String(runs.length);
     document.getElementById('statLastRun').textContent = formatDate(runs[0].started_at);
 
+    // Store runs for detail modal
+    STORE.lastRuns = runs;
+
     // Render rows
     let html = '';
-    for (const run of runs) {
+    for (let i = 0; i < runs.length; i++) {
+      const run = runs[i];
       const isError = run.status === 'error' || run.status === 'failed';
       const rowCls = isError ? ' class="incident"' : '';
       const dotCls = statusDotClass(run.status);
@@ -895,7 +900,7 @@ async function loadHistory(wfId) {
       const vm = run.vm || '--';
       const trigger = run.trigger || '--';
 
-      html += '<tr' + rowCls + '>'
+      html += '<tr' + rowCls + ' data-run-idx="' + i + '" style="cursor:pointer;" title="Doppelklick fuer Details">'
         + '<td>' + formatDate(run.started_at) + '</td>'
         + '<td><span class="status-dot ' + dotCls + '"></span> ' + (run.status || '--') + '</td>'
         + '<td>' + step + '</td>'
@@ -906,6 +911,14 @@ async function loadHistory(wfId) {
         + '</tr>';
     }
     tbody.innerHTML = html;
+
+    // Attach dblclick handlers
+    tbody.querySelectorAll('tr[data-run-idx]').forEach(tr => {
+      tr.addEventListener('dblclick', () => {
+        const idx = parseInt(tr.getAttribute('data-run-idx'), 10);
+        if (STORE.lastRuns && STORE.lastRuns[idx]) openRunDetail(STORE.lastRuns[idx]);
+      });
+    });
 
   } catch(e) {
     console.warn('History offline:', e.message);
@@ -967,6 +980,123 @@ async function loadIncidents(wfId) {
     container.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Offline — keine Incident-Daten verfuegbar</div>';
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// RUN DETAIL MODAL (dblclick on history row)
+// ═══════════════════════════════════════════════════════════════
+function openRunDetail(run) {
+  const duration = formatDuration(run.started_at, run.finished_at);
+  const metrics = run.metrics || {};
+  const stepLog = run.step_log || [];
+  const orders = Array.isArray(stepLog) ? stepLog : (typeof stepLog === 'string' ? JSON.parse(stepLog) : []);
+
+  let html = '<div style="padding:20px;font-family:inherit;color:var(--text);">';
+  // Run metadata
+  html += '<h3 style="color:var(--green);margin-bottom:12px;">Lauf-Details</h3>';
+  html += '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px;">';
+  html += '<tr><td style="padding:6px 12px;color:var(--text-muted);width:140px;">Datum</td><td style="padding:6px 12px;">' + formatDate(run.started_at) + '</td></tr>';
+  html += '<tr><td style="padding:6px 12px;color:var(--text-muted);">Status</td><td style="padding:6px 12px;">' + (run.status || '--') + '</td></tr>';
+  html += '<tr><td style="padding:6px 12px;color:var(--text-muted);">Dauer</td><td style="padding:6px 12px;">' + duration + '</td></tr>';
+  html += '<tr><td style="padding:6px 12px;color:var(--text-muted);">VM</td><td style="padding:6px 12px;">' + (run.vm || '--') + '</td></tr>';
+  html += '<tr><td style="padding:6px 12px;color:var(--text-muted);">Trigger</td><td style="padding:6px 12px;">' + (run.trigger || '--') + '</td></tr>';
+  if (run.error_message) {
+    html += '<tr><td style="padding:6px 12px;color:var(--text-muted);">Fehler</td><td style="padding:6px 12px;color:var(--red);">' + run.error_message + '</td></tr>';
+  }
+  html += '</table>';
+
+  // Metrics
+  if (metrics && Object.keys(metrics).length > 0) {
+    html += '<h3 style="color:var(--blue);margin-bottom:8px;">Metriken</h3>';
+    html += '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px;">';
+    const metricLabels = { amendments: 'Amendments', orders_checked: 'Orders geprueft', duration_s: 'Dauer (s)' };
+    for (const [k, v] of Object.entries(metrics)) {
+      html += '<tr><td style="padding:5px 12px;color:var(--text-muted);width:140px;">' + (metricLabels[k] || k) + '</td><td style="padding:5px 12px;">' + v + '</td></tr>';
+    }
+    html += '</table>';
+  }
+
+  // Order details from step_log
+  if (orders.length > 0) {
+    // Group by country
+    const byCountry = {};
+    for (const o of orders) {
+      const land = o.land || 'Unbekannt';
+      if (!byCountry[land]) byCountry[land] = [];
+      byCountry[land].push(o);
+    }
+    html += '<h3 style="color:var(--yellow);margin-bottom:8px;">Order-Details (' + orders.length + ' Amendments)</h3>';
+    html += '<div style="max-height:400px;overflow:auto;">';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+    html += '<thead><tr style="background:var(--accent);position:sticky;top:0;">'
+      + '<th style="padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);">Order-ID</th>'
+      + '<th style="padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);">Land</th>'
+      + '<th style="padding:6px 10px;text-align:right;border-bottom:1px solid var(--border);">Alt Menge</th>'
+      + '<th style="padding:6px 10px;text-align:right;border-bottom:1px solid var(--border);">Neu Menge</th>'
+      + '</tr></thead><tbody>';
+
+    const sortedCountries = Object.keys(byCountry).sort();
+    for (const land of sortedCountries) {
+      const group = byCountry[land];
+      for (const o of group) {
+        html += '<tr style="border-bottom:1px solid rgba(42,58,94,0.4);">'
+          + '<td style="padding:4px 10px;font-family:monospace;">' + (o.order_id || '--') + '</td>'
+          + '<td style="padding:4px 10px;">' + land + '</td>'
+          + '<td style="padding:4px 10px;text-align:right;">' + (o.alt_menge != null ? o.alt_menge : '--') + '</td>'
+          + '<td style="padding:4px 10px;text-align:right;">' + (o.neu_menge != null ? o.neu_menge : '--') + '</td>'
+          + '</tr>';
+      }
+      // Subtotal row
+      const sumAlt = group.reduce((s, o) => s + (Number(o.alt_menge) || 0), 0);
+      const sumNeu = group.reduce((s, o) => s + (Number(o.neu_menge) || 0), 0);
+      html += '<tr style="background:rgba(0,212,170,0.08);font-weight:600;">'
+        + '<td style="padding:4px 10px;" colspan="2">' + land + ' Summe (' + group.length + ')</td>'
+        + '<td style="padding:4px 10px;text-align:right;">' + sumAlt + '</td>'
+        + '<td style="padding:4px 10px;text-align:right;">' + sumNeu + '</td>'
+        + '</tr>';
+    }
+    html += '</tbody></table></div>';
+  } else {
+    html += '<div style="color:var(--text-muted);font-size:13px;padding:16px 0;">Keine Order-Details verfuegbar (aelterer Lauf)</div>';
+  }
+
+  html += '</div>';
+
+  codeTitle.textContent = 'Lauf ' + formatDate(run.started_at) + ' — ' + (run.status || 'unknown');
+  codeContent.innerHTML = html;
+  overlay.classList.add('open');
+  requestAnimationFrame(() => sheet.classList.add('open'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REPORT BUTTON
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('btnReport').addEventListener('click', async function() {
+  const btn = this;
+  const wfId = document.getElementById('wfSelect').value;
+  btn.textContent = 'Wird gesendet...';
+  btn.disabled = true;
+  try {
+    const resp = await fetch('https://crslpxgwxjmovrhyxiim.supabase.co/functions/v1/pipeline-monitor?action=report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workflow_id: wfId })
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    btn.textContent = 'Report gesendet!';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+  } catch(e) {
+    btn.textContent = 'Fehler: ' + e.message;
+    btn.style.borderColor = 'var(--red)';
+    btn.style.color = 'var(--red)';
+  }
+  setTimeout(() => {
+    btn.textContent = 'Report senden';
+    btn.disabled = false;
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }, 3000);
+});
 
 // ═══════════════════════════════════════════════════════════════
 // BOOT — Alles laden und rendern
