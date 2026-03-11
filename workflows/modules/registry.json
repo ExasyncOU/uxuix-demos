@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-03-10T12:00:00Z",
+  "generatedAt": "2026-03-11T08:00:00Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
 
@@ -31,121 +31,180 @@
       "code": "import traceback\nimport logging\nfrom datetime import datetime, timezone\n\nlogger = logging.getLogger('exasync')\n\nclass WorkflowError(Exception):\n    \"\"\"Basis-Fehler fuer alle Workflow-Probleme.\"\"\"\n    def __init__(self, message, step_id=None, recoverable=True):\n        super().__init__(message)\n        self.step_id = step_id\n        self.recoverable = recoverable\n\ndef handle_error(error: Exception, workflow_id: str, step_id: str, sb=None):\n    \"\"\"Fehler behandeln: loggen, speichern, ggf. eskalieren.\n    \n    Strategie:\n    - recoverable=True  -> loggen + weitermachen (skip item)\n    - recoverable=False -> loggen + Workflow abbrechen + Email an Bodo\n    \"\"\"\n    is_recoverable = getattr(error, 'recoverable', True)\n    \n    error_record = {\n        'workflow_id': workflow_id,\n        'step_id': step_id,\n        'error_type': type(error).__name__,\n        'error_message': str(error),\n        'traceback': traceback.format_exc(),\n        'recoverable': is_recoverable,\n        'timestamp': datetime.now(timezone.utc).isoformat()\n    }\n    \n    logger.error(f'[{workflow_id}/{step_id}] {error}', exc_info=True)\n    \n    # In DB speichern wenn Supabase verfuegbar\n    if sb:\n        sb.table('agent_errors').insert(error_record).execute()\n    \n    if not is_recoverable:\n        raise WorkflowError(f'Fataler Fehler in {step_id}: {error}', step_id, False)"
     },
 
-    "nacke/config-loader": {
-      "id": "nacke/config-loader",
-      "name": "NackeScript Config Loader",
-      "version": "3.0.1",
+    "nacke/orchestrator": {
+      "id": "nacke/orchestrator",
+      "name": "NackeScript Orchestrator",
+      "version": "5.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Laedt die Nacke-Konfiguration aus der agent_configs Tabelle in Supabase. Validiert config_version und stellt sicher, dass keine veraltete Config verwendet wird.",
+      "description": "Pipeline-Controller: 8 Schritte (Config, Masterdaten, Export, Picklists, Overconfirmation, Amend, Report, Print). Retry-Logik, Fehlerbehandlung, Metriken-Sammlung.",
       "usedBy": ["nacke"],
-      "dependencies": ["supabase-py"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-07" },
-      "code": "from supabase import Client\n\ndef load_config(sb: Client, flow_name: str = 'nacke') -> dict:\n    \"\"\"Config aus Supabase laden und validieren.\n    \n    Wichtig: config_version wird geprueft!\n    Wenn die Version nicht passt, wirft das einen Fehler.\n    So verhindern wir, dass veraltete Einstellungen genutzt werden.\n    \"\"\"\n    # Config-Zeile aus agent_configs holen\n    # .single() gibt genau EINE Zeile zurueck oder wirft einen Fehler\n    result = sb.table('agent_configs') \\\n        .select('*') \\\n        .eq('flow_name', flow_name) \\\n        .single() \\\n        .execute()\n    \n    config = result.data\n    \n    # Pflichtfelder pruefen\n    required = ['flow_name', 'config_version', 'idis_url', 'max_orders']\n    missing = [f for f in required if f not in config]\n    if missing:\n        raise ValueError(f'Config unvollstaendig, fehlende Felder: {missing}')\n    \n    # Version muss mindestens 3.0 sein (nach dem grossen Refactoring)\n    version = config.get('config_version', '0.0')\n    major = int(version.split('.')[0])\n    if major < 3:\n        raise ValueError(f'Config-Version {version} zu alt, mindestens 3.0 noetig')\n    \n    return config"
+      "dependencies": ["nacke/config", "nacke/master-data", "nacke/idis-browser", "nacke/picklist-generator", "nacke/overconfirmation", "nacke/daily-report", "nacke/printer"],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "orchestrator.py",
+        "sha": "bc4474db83a23278e2a091ad994e295373fdd3f1",
+        "lines": 920,
+        "size": 37510
+      },
+      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "frozenAt": "2026-03-11T08:00:00Z"
+    },
+
+    "nacke/idis-browser": {
+      "id": "nacke/idis-browser",
+      "name": "IDIS Browser Automation",
+      "version": "5.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Playwright CDP Browser-Automation fuer IDIS: Login, Export-Seite navigieren, Auftraege exportieren, Amendments durchfuehren. Frischer Browser pro Land (sequentiell).",
+      "usedBy": ["nacke"],
+      "dependencies": ["playwright", "nacke/config"],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_browser.py",
+        "sha": "bc4474db83a23278e2a091ad994e295373fdd3f1",
+        "lines": 916,
+        "size": 38612
+      },
+      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "frozenAt": "2026-03-11T08:00:00Z"
+    },
+
+    "nacke/picklist-generator": {
+      "id": "nacke/picklist-generator",
+      "name": "Picklist Generator (Raussuchlisten)",
+      "version": "5.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Generiert Excel-Raussuchlisten aus exportierten IDIS-Daten. Verarbeitet Masterdatei-Zuordnungen, Bundle-Sizes aus Col K (Einstellung RPR Kartonage).",
+      "usedBy": ["nacke"],
+      "dependencies": ["openpyxl", "nacke/config", "nacke/master-data"],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "picklist_generator.py",
+        "sha": "bc4474db83a23278e2a091ad994e295373fdd3f1",
+        "lines": 1153,
+        "size": 47104
+      },
+      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "frozenAt": "2026-03-11T08:00:00Z"
     },
 
     "nacke/master-data": {
       "id": "nacke/master-data",
-      "name": "Nacke Stammdaten",
-      "version": "2.1.0",
+      "name": "Masterdatei Loader",
+      "version": "5.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Laedt Kundenstammdaten (Zuordnungstabellen, Fahrzeug-KZ, Depot-Mapping) aus Supabase. Diese Daten braucht der Confirm-Step um zu wissen welche Auftraege zu welchem Kunden gehoeren.",
+      "description": "Laedt die Masterdatei (K:\\Masterdatei Orders.xlsx) mit Kunden-Zuordnungen, Artikel-Mapping und Depot-Konfiguration fuer die Picklist-Generierung.",
       "usedBy": ["nacke"],
-      "dependencies": ["supabase-py"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-07" },
-      "code": "from supabase import Client\n\ndef load_master_data(sb: Client, flow_name: str) -> dict:\n    \"\"\"Stammdaten fuer einen Flow laden.\n    \n    Gibt ein Dict zurueck mit:\n    - vehicles: Liste aller Fahrzeuge mit Kennzeichen\n    - depots: Depot-Zuordnungen (Name -> Geo-Koordinaten)\n    - customers: Kunden-Mapping (Kunden-ID -> Name + Details)\n    \"\"\"\n    # Fahrzeuge laden\n    vehicles = sb.table('nacke_vehicles') \\\n        .select('plate, vehicle_type, depot_id') \\\n        .eq('active', True) \\\n        .execute().data\n    \n    # Depot-Stammdaten laden\n    depots = sb.table('nacke_depots') \\\n        .select('id, name, lat, lon, region') \\\n        .execute().data\n    \n    # Kunden laden\n    customers = sb.table('nacke_customers') \\\n        .select('customer_id, name, contact_email') \\\n        .eq('flow_name', flow_name) \\\n        .execute().data\n    \n    # Als verschachteltes Dict zurueckgeben\n    return {\n        'vehicles': {v['plate']: v for v in vehicles},\n        'depots': {d['id']: d for d in depots},\n        'customers': {c['customer_id']: c for c in customers}\n    }"
+      "dependencies": ["openpyxl", "nacke/config"],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "master_data.py",
+        "sha": "bc4474db83a23278e2a091ad994e295373fdd3f1",
+        "lines": 361,
+        "size": 12530
+      },
+      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "frozenAt": "2026-03-11T08:00:00Z"
     },
 
-    "nacke/fetch-orders": {
-      "id": "nacke/fetch-orders",
-      "name": "Nacke Auftraege Abrufen",
-      "version": "2.0.0",
+    "nacke/overconfirmation": {
+      "id": "nacke/overconfirmation",
+      "name": "Overconfirmation Calculator",
+      "version": "5.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Holt offene (noch nicht bestaetigte) Auftraege aus der nacke_orders Tabelle. Filtert nach Status 'pending' und limitiert auf max_orders aus Config.",
+      "description": "Berechnet Overconfirmation-Mengen: Rundet Bestellmengen auf Bundle-Size auf (Col K). Faktor IMMER 1 (PCS=1, PPP=1). Nur Col K als Bundle-Quelle.",
       "usedBy": ["nacke"],
-      "dependencies": ["supabase-py"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-07" },
-      "code": "from supabase import Client\nimport logging\n\nlogger = logging.getLogger('nacke')\n\ndef fetch_pending_orders(sb: Client, config: dict, master_data: dict) -> list:\n    \"\"\"Offene Auftraege laden die bestaetigt werden muessen.\n    \n    Wichtig: max_orders begrenzt wie viele Auftraege pro Lauf\n    bearbeitet werden. Standard ist 50, Maximum 200.\n    \"\"\"\n    max_orders = min(config.get('max_orders', 50), 200)\n    \n    # Nur Auftraege mit Status 'pending' holen\n    # .order() sortiert nach Erstelldatum (aelteste zuerst)\n    result = sb.table('nacke_orders') \\\n        .select('id, order_number, customer_id, delivery_date, items') \\\n        .eq('status', 'pending') \\\n        .order('created_at', desc=False) \\\n        .limit(max_orders) \\\n        .execute()\n    \n    orders = result.data\n    logger.info(f'{len(orders)} offene Auftraege geladen (Limit: {max_orders})')\n    \n    # Kundennamen anreichern aus Stammdaten\n    for order in orders:\n        cid = order.get('customer_id')\n        if cid in master_data.get('customers', {}):\n            order['customer_name'] = master_data['customers'][cid]['name']\n    \n    return orders"
+      "dependencies": ["nacke/config"],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "overconfirmation.py",
+        "sha": "bc4474db83a23278e2a091ad994e295373fdd3f1",
+        "lines": 249,
+        "size": 8770
+      },
+      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "frozenAt": "2026-03-11T08:00:00Z"
     },
 
-    "nacke/idis-login": {
-      "id": "nacke/idis-login",
-      "name": "IDIS Browser Login",
-      "version": "3.2.0",
+    "nacke/daily-report": {
+      "id": "nacke/daily-report",
+      "name": "Daily Report Generator",
+      "version": "5.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Startet einen Playwright Chromium-Browser und meldet sich bei IDIS an. Credentials kommen aus dem Supabase Vault (credential_vault Tabelle). Wartet auf die Hauptseite als Bestaetigung.",
+      "description": "Generiert JSON- und HTML-Tagesreports mit Zusammenfassung: Auftraege, Amendments, Fehler, Laufzeit. Versand via Edge Function nacke-report (bot@uxuix.de).",
       "usedBy": ["nacke"],
-      "dependencies": ["playwright", "supabase-py"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-08" },
-      "code": "from playwright.sync_api import sync_playwright\nfrom supabase import Client\nimport logging\n\nlogger = logging.getLogger('nacke')\n\ndef idis_login(sb: Client, idis_url: str):\n    \"\"\"IDIS Login mit Playwright.\n    \n    1. Credentials aus Supabase Vault holen (NICHT hardcoden!)\n    2. Chromium starten (headless auf der VM)\n    3. Login-Formular ausfuellen und absenden\n    4. Warten bis die Hauptseite geladen ist\n    \"\"\"\n    # Credentials aus dem Vault holen\n    vault = sb.table('credential_vault') \\\n        .select('username, password') \\\n        .eq('service_key', 'idis-nacke') \\\n        .single().execute().data\n    \n    # Playwright starten\n    pw = sync_playwright().start()\n    browser = pw.chromium.launch(headless=True)\n    page = browser.new_page()\n    \n    # Zur Login-Seite navigieren\n    page.goto(idis_url, wait_until='networkidle')\n    logger.info(f'IDIS Login-Seite geladen: {idis_url}')\n    \n    # Login-Formular ausfuellen\n    # Selektoren aus der IDIS-Doku (siehe .claude/docs/nacke-projekt.md)\n    page.fill('#username', vault['username'])\n    page.fill('#password', vault['password'])\n    page.click('button[type=\"submit\"]')\n    \n    # Warten bis Dashboard sichtbar ist (max 30 Sekunden)\n    page.wait_for_selector('.dashboard-container', timeout=30000)\n    logger.info('IDIS Login erfolgreich')\n    \n    return {'browser': browser, 'page': page, 'playwright': pw}"
+      "dependencies": ["nacke/config"],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "daily_report.py",
+        "sha": "bc4474db83a23278e2a091ad994e295373fdd3f1",
+        "lines": 252,
+        "size": 9549
+      },
+      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "frozenAt": "2026-03-11T08:00:00Z"
     },
 
-    "nacke/navigate-page": {
-      "id": "nacke/navigate-page",
-      "name": "IDIS Seitennavigation",
-      "version": "2.1.0",
+    "nacke/printer": {
+      "id": "nacke/printer",
+      "name": "Windows Printer Integration",
+      "version": "5.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Navigiert zur Auftragsbestaetigung-Seite innerhalb von IDIS. Prueft ob alle erwarteten Selektoren vorhanden sind bevor die Bestaetigung startet.",
+      "description": "Windows-Drucker-Integration: Druckt generierte Picklists auf dem konfigurierten Netzwerkdrucker der Nacke-VM.",
       "usedBy": ["nacke"],
-      "dependencies": ["playwright"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-07" },
-      "code": "import logging\n\nlogger = logging.getLogger('nacke')\n\n# Selektoren fuer IDIS - zentral definiert fuer einfache Wartung\nSELECTORS = {\n    'nav_orders': 'a[href*=\"/orders\"]',\n    'filter_pending': '#status-filter option[value=\"pending\"]',\n    'order_table': 'table.order-list',\n    'confirm_button': 'button.confirm-order',\n    'success_toast': '.toast-success'\n}\n\ndef navigate_to_orders(session: dict) -> dict:\n    \"\"\"Zur Auftrags-Seite navigieren und Selektoren pruefen.\n    \n    Gibt das Session-Dict zurueck, angereichert um die\n    geprueften Selektoren. Wenn ein Selektor fehlt,\n    wirft das einen Fehler (IDIS hat sich geaendert!).\n    \"\"\"\n    page = session['page']\n    \n    # Zum Auftrags-Bereich navigieren\n    page.click(SELECTORS['nav_orders'])\n    page.wait_for_selector(SELECTORS['order_table'], timeout=15000)\n    logger.info('Auftrags-Seite geladen')\n    \n    # Alle Selektoren pruefen (frueh Fehler erkennen)\n    for name, selector in SELECTORS.items():\n        if not page.query_selector(selector):\n            raise RuntimeError(f'Selektor \"{name}\" nicht gefunden: {selector}')\n    \n    logger.info(f'Alle {len(SELECTORS)} Selektoren verifiziert')\n    \n    session['selectors'] = SELECTORS\n    return session"
+      "dependencies": ["nacke/config"],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "printer.py",
+        "sha": "bc4474db83a23278e2a091ad994e295373fdd3f1",
+        "lines": 235,
+        "size": 7852
+      },
+      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "frozenAt": "2026-03-11T08:00:00Z"
     },
 
-    "nacke/confirm-orders": {
-      "id": "nacke/confirm-orders",
-      "name": "IDIS Auftragsbestaetigung",
-      "version": "3.1.0",
+    "nacke/config": {
+      "id": "nacke/config",
+      "name": "Pipeline Configuration v5.0",
+      "version": "5.0.0",
       "status": "frozen",
-      "language": "python",
-      "description": "Kern-Modul: Iteriert ueber offene Auftraege und bestaetigt jeden einzelnen im IDIS Browser. Im Dry-Run-Modus wird nur geloggt, NICHT geklickt. SICHERHEITSKRITISCH.",
-      "usedBy": ["nacke"],
-      "dependencies": ["playwright"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-08" },
-      "code": "import time\nimport logging\n\nlogger = logging.getLogger('nacke')\n\ndef confirm_orders(orders: list, session: dict, dry_run: bool = True) -> list:\n    \"\"\"Auftraege im IDIS bestaetigen.\n    \n    ACHTUNG: dry_run=True ist der sichere Standard!\n    Bei dry_run=True wird jeder Auftrag nur geloggt, nicht geklickt.\n    Erst bei dry_run=False werden echte Bestaetigungen gemacht.\n    \n    Args:\n        orders: Liste der zu bestaetigenden Auftraege\n        session: Browser-Session mit page und selectors\n        dry_run: True = nur loggen, False = echt bestaetigen\n    \"\"\"\n    page = session['page']\n    results = []\n    \n    for order in orders:\n        order_id = order['order_number']\n        try:\n            if dry_run:\n                # DRY RUN: Nur loggen, nichts anklicken\n                logger.info(f'[DRY-RUN] Wuerde bestaetigen: {order_id}')\n                results.append({'order': order_id, 'status': 'ok', 'mode': 'dry-run'})\n            else:\n                # PRODUCTION: Auftrag wirklich bestaetigen\n                row = page.query_selector(f'tr[data-order=\"{order_id}\"]')\n                if not row:\n                    raise RuntimeError(f'Auftrag {order_id} nicht in Tabelle gefunden')\n                \n                row.click()  # Zeile auswaehlen\n                page.click(session['selectors']['confirm_button'])\n                page.wait_for_selector(session['selectors']['success_toast'], timeout=10000)\n                \n                logger.info(f'[PROD] Bestaetigt: {order_id}')\n                results.append({'order': order_id, 'status': 'ok', 'mode': 'production'})\n            \n            # Kurze Pause zwischen Auftraegen (nicht zu schnell!)\n            time.sleep(1.5)\n            \n        except Exception as e:\n            logger.error(f'Fehler bei {order_id}: {e}')\n            results.append({'order': order_id, 'status': 'error', 'error': str(e)})\n    \n    return results"
-    },
-
-    "nacke/save-results": {
-      "id": "nacke/save-results",
-      "name": "Nacke Ergebnis Speichern",
-      "version": "1.2.0",
-      "status": "frozen",
-      "language": "python",
-      "description": "Schreibt die Bestaetigungsergebnisse zurueck in die nacke_orders Tabelle. Setzt den Status auf 'confirmed' oder 'error' je nach Ergebnis.",
-      "usedBy": ["nacke"],
-      "dependencies": ["supabase-py"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-07" },
-      "code": "from datetime import datetime, timezone\nfrom supabase import Client\nimport logging\n\nlogger = logging.getLogger('nacke')\n\ndef save_results(sb: Client, results: list) -> int:\n    \"\"\"Ergebnisse in Supabase zurueckschreiben.\n    \n    Fuer jeden Auftrag wird der Status aktualisiert:\n    - 'ok' -> status = 'confirmed', confirmed_at = jetzt\n    - 'error' -> status = 'error', error_message = Fehlertext\n    \n    Returns:\n        Anzahl erfolgreich gespeicherter Datensaetze\n    \"\"\"\n    saved = 0\n    now = datetime.now(timezone.utc).isoformat()\n    \n    for result in results:\n        order_num = result['order']\n        \n        if result['status'] == 'ok':\n            # Erfolg: Status auf 'confirmed' setzen\n            sb.table('nacke_orders') \\\n                .update({'status': 'confirmed', 'confirmed_at': now}) \\\n                .eq('order_number', order_num) \\\n                .execute()\n            saved += 1\n        else:\n            # Fehler: Status auf 'error' + Fehlermeldung speichern\n            sb.table('nacke_orders') \\\n                .update({'status': 'error', 'error_message': result.get('error', 'unknown')}) \\\n                .eq('order_number', order_num) \\\n                .execute()\n    \n    logger.info(f'{saved}/{len(results)} Ergebnisse gespeichert')\n    return saved"
-    },
-
-    "nacke/generate-report": {
-      "id": "nacke/generate-report",
-      "name": "Nacke Report Generator",
-      "version": "2.0.0",
-      "status": "frozen",
-      "language": "python",
-      "description": "Generiert einen HTML-Tagesreport mit Zusammenfassung: Wie viele Auftraege bestaetigt, Fehler, Laufzeit. Der Report wird per Email verschickt.",
+      "language": "json",
+      "description": "Zentrale Pipeline-Konfiguration: IDIS-URLs, Laender, Drucker, Pfade, Feature-Flags, Schedule. Single source of truth fuer alle Nacke-Module.",
       "usedBy": ["nacke"],
       "dependencies": [],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-07" },
-      "code": "from datetime import datetime\n\ndef generate_report(results: list, config: dict) -> str:\n    \"\"\"HTML-Report fuer den Nacke-Tageslauf generieren.\n    \n    Der Report zeigt:\n    - Datum und Uhrzeit des Laufs\n    - Gesamtzahl Auftraege\n    - Erfolgsquote\n    - Liste der Fehler (falls vorhanden)\n    \"\"\"\n    total = len(results)\n    ok = sum(1 for r in results if r['status'] == 'ok')\n    errors = [r for r in results if r['status'] == 'error']\n    mode = results[0].get('mode', 'unknown') if results else 'keine'\n    \n    # Fehler-Zeilen fuer die Tabelle bauen\n    error_rows = ''\n    for e in errors:\n        error_rows += f\"<tr><td>{e['order']}</td><td>{e.get('error', '-')}</td></tr>\"\n    \n    error_section = ''\n    if errors:\n        error_section = f\"\"\"\n        <h3 style=\"color:#e74c3c;\">Fehler ({len(errors)})</h3>\n        <table border=\"1\" cellpadding=\"5\">\n          <tr><th>Auftrag</th><th>Fehler</th></tr>\n          {error_rows}\n        </table>\"\"\"\n    \n    html = f\"\"\"\n    <html><body style=\"font-family:Arial,sans-serif;\">\n      <h2>NackeScript Tagesreport</h2>\n      <p><strong>Datum:</strong> {datetime.now().strftime('%d.%m.%Y %H:%M')}</p>\n      <p><strong>Modus:</strong> {mode}</p>\n      <p><strong>Auftraege:</strong> {ok}/{total} erfolgreich</p>\n      <p><strong>Erfolgsquote:</strong> {round(ok/max(total,1)*100, 1)}%</p>\n      {error_section}\n    </body></html>\"\"\"\n    \n    return html"
-    },
-
-    "nacke/send-email": {
-      "id": "nacke/send-email",
-      "name": "Nacke Email Versand",
-      "version": "1.1.0",
-      "status": "frozen",
-      "language": "python",
-      "description": "Sendet den generierten HTML-Report per SMTP. Verwendet automation@uxuix.de als Absender (Email-Geografie-Regel: nur Finnland/Cloud).",
-      "usedBy": ["nacke", "maut"],
-      "dependencies": ["smtplib", "email"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-07" },
-      "code": "import smtplib\nfrom email.mime.text import MIMEText\nfrom email.mime.multipart import MIMEMultipart\nimport os\nimport logging\n\nlogger = logging.getLogger('nacke')\n\ndef send_report_email(html_body: str, recipients: list, subject: str = 'NackeScript Report'):\n    \"\"\"HTML-Report per SMTP versenden.\n    \n    Absender: automation@uxuix.de (Geografie-Regel: nur Cloud/Finnland)\n    Server: w0192bee.kasserver.com:465 (SSL)\n    Passwort: aus Umgebungsvariable SMTP_PASSWORD\n    \n    WICHTIG: Passwort NIEMALS hardcoden! Immer aus .env oder Vault.\n    \"\"\"\n    smtp_user = os.environ.get('SMTP_USER', 'automation@uxuix.de')\n    smtp_pass = os.environ.get('SMTP_PASSWORD')\n    smtp_host = 'w0192bee.kasserver.com'\n    smtp_port = 465  # SSL\n    \n    if not smtp_pass:\n        raise ValueError('SMTP_PASSWORD nicht in Umgebungsvariablen gesetzt!')\n    \n    # Email zusammenbauen\n    msg = MIMEMultipart('alternative')\n    msg['Subject'] = subject\n    msg['From'] = smtp_user\n    msg['To'] = ', '.join(recipients)\n    msg.attach(MIMEText(html_body, 'html'))\n    \n    # Senden via SSL\n    with smtplib.SMTP_SSL(smtp_host, smtp_port) as server:\n        server.login(smtp_user, smtp_pass)\n        server.sendmail(smtp_user, recipients, msg.as_string())\n    \n    logger.info(f'Report gesendet an: {recipients}')"
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "config.json",
+        "sha": "bc4474db83a23278e2a091ad994e295373fdd3f1",
+        "lines": 118,
+        "size": 2983
+      },
+      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "frozenAt": "2026-03-11T08:00:00Z"
     },
 
     "maut/date-calculator": {
@@ -404,7 +463,7 @@
     "sharedModules": [
       { "id": "core/metrics-collector", "usedBy": ["nacke", "maut", "fleetboard", "linkedin"] },
       { "id": "core/error-handler", "usedBy": ["nacke", "maut"] },
-      { "id": "nacke/send-email", "usedBy": ["nacke", "maut"] }
+      { "id": "nacke/daily-report", "usedBy": ["nacke"] }
     ]
   }
 }
