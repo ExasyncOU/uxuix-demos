@@ -703,9 +703,55 @@
         "owner": "ExasyncOU",
         "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
         "file": "sync-geodata.mjs",
-        "sha": "b9ae21dfe0f69896f88afa1dd052d520d5648f26",
-        "lines": 183,
-        "size": 4800
+        "sha": "3a95df548dd92de8dc268c9ffd3b5b96346fab30",
+        "lines": 82,
+        "size": 2800
+      }
+    },
+    "fleetboard2/lib": {
+      "id": "fleetboard2/lib",
+      "name": "Shared Library",
+      "version": "2.0.0",
+      "status": "active",
+      "language": "javascript",
+      "description": "Supabase-Client, Cache-Pfade, Cache lesen/schreiben. Wird von allen Fleetboard 2.0 Scripts importiert.",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [
+        "@supabase/supabase-js"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
+        "file": "lib.mjs",
+        "sha": "3a95df548dd92de8dc268c9ffd3b5b96346fab30",
+        "lines": 33,
+        "size": 1100
+      }
+    },
+    "fleetboard2/check-refs": {
+      "id": "fleetboard2/check-refs",
+      "name": "Zustellreferenzen pruefen",
+      "version": "2.0.0",
+      "status": "active",
+      "language": "javascript",
+      "description": "Prueft Tourenabfrage-CSV auf unbekannte Zustellreferenzen. Meldet Unbekannte an fleetboard_unknown_refs (Monitor-sichtbar).",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [
+        "fleetboard2/lib"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
+        "file": "check-refs.mjs",
+        "sha": "3a95df548dd92de8dc268c9ffd3b5b96346fab30",
+        "lines": 96,
+        "size": 3200
       }
     }
   },

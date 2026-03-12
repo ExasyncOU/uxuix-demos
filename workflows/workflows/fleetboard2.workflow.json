@@ -49,13 +49,13 @@
     {
       "id": "check-refs",
       "lane": "monitor",
-      "module": "fleetboard2/sync-geodata",
+      "module": "fleetboard2/check-refs",
       "label": "Zustellreferenzen pruefen",
-      "description": "CSV-Refs gegen Mappings pruefen. Unbekannte Refs -> fleetboard_unknown_refs (Monitor-sichtbar).",
+      "description": "CSV-Refs gegen Geodaten-Cache pruefen. Unbekannte Refs -> fleetboard_unknown_refs (Monitor-sichtbar).",
       "next": [],
-      "inputs": ["cache/mappings.json", "csv_file"],
+      "inputs": ["cache/geodata.json", "csv_file"],
       "outputs": ["fleetboard_unknown_refs"],
-      "script": "sync-geodata.mjs --check"
+      "script": "check-refs.mjs"
     }
   ],
   "supabaseTables": [
