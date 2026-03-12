@@ -4,7 +4,6 @@
   "generatedAt": "2026-03-11T08:00:00Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
-
     "core/metrics-collector": {
       "id": "core/metrics-collector",
       "name": "Metrics Collector",
@@ -12,12 +11,22 @@
       "status": "frozen",
       "language": "python",
       "description": "Sammelt Laufzeit-Metriken und schreibt sie in die agent_metrics Tabelle. Wird von allen Workflows am Ende aufgerufen.",
-      "usedBy": ["nacke", "maut", "fleetboard", "linkedin"],
-      "dependencies": ["supabase-py"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-08" },
+      "usedBy": [
+        "nacke",
+        "maut",
+        "fleetboard",
+        "linkedin"
+      ],
+      "dependencies": [
+        "supabase-py"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-08"
+      },
       "code": "import time\nfrom datetime import datetime, timezone\nfrom supabase import Client\n\ndef collect_metrics(sb: Client, workflow_id: str, results: list, start_time: float):\n    \"\"\"Metriken sammeln und in Supabase speichern.\n    \n    Args:\n        sb: Supabase Client-Instanz\n        workflow_id: z.B. 'nacke', 'maut', 'fleetboard'\n        results: Liste der Ergebnis-Dicts aus dem Workflow\n        start_time: Zeitstempel vom Start (time.time())\n    \"\"\"\n    # Laufzeit berechnen\n    duration_sec = round(time.time() - start_time, 2)\n    \n    # Erfolge und Fehler zaehlen\n    success_count = sum(1 for r in results if r.get('status') == 'ok')\n    error_count = sum(1 for r in results if r.get('status') == 'error')\n    \n    # Metrik-Datensatz zusammenbauen\n    metric = {\n        'workflow_id': workflow_id,\n        'run_date': datetime.now(timezone.utc).isoformat(),\n        'duration_seconds': duration_sec,\n        'total_items': len(results),\n        'success_count': success_count,\n        'error_count': error_count,\n        'success_rate': round(success_count / max(len(results), 1) * 100, 1)\n    }\n    \n    # In Supabase einfuegen\n    sb.table('agent_metrics').insert(metric).execute()\n    \n    return metric"
     },
-
     "core/error-handler": {
       "id": "core/error-handler",
       "name": "Error Handler",
@@ -25,12 +34,21 @@
       "status": "frozen",
       "language": "python",
       "description": "Zentraler Error Handler mit Logging, Email-Eskalation und Retry-Logik. Faengt Exceptions ab und entscheidet ob Retry, Skip oder Abbruch.",
-      "usedBy": ["nacke", "maut"],
-      "dependencies": ["supabase-py", "smtplib"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-08" },
+      "usedBy": [
+        "nacke",
+        "maut"
+      ],
+      "dependencies": [
+        "supabase-py",
+        "smtplib"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-08"
+      },
       "code": "import traceback\nimport logging\nfrom datetime import datetime, timezone\n\nlogger = logging.getLogger('exasync')\n\nclass WorkflowError(Exception):\n    \"\"\"Basis-Fehler fuer alle Workflow-Probleme.\"\"\"\n    def __init__(self, message, step_id=None, recoverable=True):\n        super().__init__(message)\n        self.step_id = step_id\n        self.recoverable = recoverable\n\ndef handle_error(error: Exception, workflow_id: str, step_id: str, sb=None):\n    \"\"\"Fehler behandeln: loggen, speichern, ggf. eskalieren.\n    \n    Strategie:\n    - recoverable=True  -> loggen + weitermachen (skip item)\n    - recoverable=False -> loggen + Workflow abbrechen + Email an Bodo\n    \"\"\"\n    is_recoverable = getattr(error, 'recoverable', True)\n    \n    error_record = {\n        'workflow_id': workflow_id,\n        'step_id': step_id,\n        'error_type': type(error).__name__,\n        'error_message': str(error),\n        'traceback': traceback.format_exc(),\n        'recoverable': is_recoverable,\n        'timestamp': datetime.now(timezone.utc).isoformat()\n    }\n    \n    logger.error(f'[{workflow_id}/{step_id}] {error}', exc_info=True)\n    \n    # In DB speichern wenn Supabase verfuegbar\n    if sb:\n        sb.table('agent_errors').insert(error_record).execute()\n    \n    if not is_recoverable:\n        raise WorkflowError(f'Fataler Fehler in {step_id}: {error}', step_id, False)"
     },
-
     "nacke/orchestrator": {
       "id": "nacke/orchestrator",
       "name": "NackeScript Orchestrator",
@@ -38,8 +56,18 @@
       "status": "frozen",
       "language": "python",
       "description": "Pipeline-Controller: 8 Schritte (Config, Masterdaten, Export, Picklists, Overconfirmation, Amend, Report, Print). Retry-Logik, Fehlerbehandlung, Metriken-Sammlung.",
-      "usedBy": ["nacke"],
-      "dependencies": ["nacke/config", "nacke/master-data", "nacke/idis-browser", "nacke/picklist-generator", "nacke/overconfirmation", "nacke/daily-report", "nacke/printer"],
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config",
+        "nacke/master-data",
+        "nacke/idis-browser",
+        "nacke/picklist-generator",
+        "nacke/overconfirmation",
+        "nacke/daily-report",
+        "nacke/printer"
+      ],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
@@ -49,10 +77,13 @@
         "lines": 920,
         "size": 37510
       },
-      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
       "frozenAt": "2026-03-11T08:00:00Z"
     },
-
     "nacke/idis-browser": {
       "id": "nacke/idis-browser",
       "name": "IDIS Browser Automation",
@@ -60,8 +91,13 @@
       "status": "frozen",
       "language": "python",
       "description": "Playwright CDP Browser-Automation fuer IDIS: Login, Export-Seite navigieren, Auftraege exportieren, Amendments durchfuehren. Frischer Browser pro Land (sequentiell).",
-      "usedBy": ["nacke"],
-      "dependencies": ["playwright", "nacke/config"],
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "playwright",
+        "nacke/config"
+      ],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
@@ -71,10 +107,13 @@
         "lines": 916,
         "size": 38612
       },
-      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
       "frozenAt": "2026-03-11T08:00:00Z"
     },
-
     "nacke/picklist-generator": {
       "id": "nacke/picklist-generator",
       "name": "Picklist Generator (Raussuchlisten)",
@@ -82,8 +121,15 @@
       "status": "frozen",
       "language": "python",
       "description": "Generiert Excel+PDF Raussuchlisten aus IDIS-Export. v6: Font 19, PAL, Seitenumbruch vor Summen, Sort by Class, Shipment-Fix.",
-      "usedBy": ["nacke"],
-      "dependencies": ["openpyxl", "fpdf", "nacke/config", "nacke/master-data"],
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "openpyxl",
+        "fpdf",
+        "nacke/config",
+        "nacke/master-data"
+      ],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
@@ -93,10 +139,14 @@
         "lines": 1172,
         "size": 48324
       },
-      "gate": { "passed": true, "score": "8/11", "checkedAt": "2026-03-12T07:15:00Z", "notes": "G2/G3/G8 known exceptions" },
+      "gate": {
+        "passed": true,
+        "score": "8/11",
+        "checkedAt": "2026-03-12T07:15:00Z",
+        "notes": "G2/G3/G8 known exceptions"
+      },
       "frozenAt": "2026-03-12T07:15:00Z"
     },
-
     "nacke/master-data": {
       "id": "nacke/master-data",
       "name": "Masterdatei Loader",
@@ -104,8 +154,13 @@
       "status": "frozen",
       "language": "python",
       "description": "Laedt die Masterdatei (K:\\Masterdatei Orders.xlsx) mit Kunden-Zuordnungen, Artikel-Mapping und Depot-Konfiguration fuer die Picklist-Generierung.",
-      "usedBy": ["nacke"],
-      "dependencies": ["openpyxl", "nacke/config"],
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "openpyxl",
+        "nacke/config"
+      ],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
@@ -115,10 +170,13 @@
         "lines": 361,
         "size": 12530
       },
-      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
       "frozenAt": "2026-03-11T08:00:00Z"
     },
-
     "nacke/overconfirmation": {
       "id": "nacke/overconfirmation",
       "name": "Overconfirmation Calculator",
@@ -126,8 +184,12 @@
       "status": "frozen",
       "language": "python",
       "description": "Berechnet Overconfirmation-Mengen: Rundet Bestellmengen auf Bundle-Size auf (Col K). Faktor IMMER 1 (PCS=1, PPP=1). Nur Col K als Bundle-Quelle.",
-      "usedBy": ["nacke"],
-      "dependencies": ["nacke/config"],
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
@@ -137,10 +199,13 @@
         "lines": 249,
         "size": 8770
       },
-      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
       "frozenAt": "2026-03-11T08:00:00Z"
     },
-
     "nacke/daily-report": {
       "id": "nacke/daily-report",
       "name": "Daily Report Generator",
@@ -148,8 +213,12 @@
       "status": "frozen",
       "language": "python",
       "description": "Generiert JSON- und HTML-Tagesreports mit Zusammenfassung: Auftraege, Amendments, Fehler, Laufzeit. Versand via Edge Function nacke-report (bot@uxuix.de).",
-      "usedBy": ["nacke"],
-      "dependencies": ["nacke/config"],
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
@@ -159,10 +228,13 @@
         "lines": 252,
         "size": 9549
       },
-      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
       "frozenAt": "2026-03-11T08:00:00Z"
     },
-
     "nacke/printer": {
       "id": "nacke/printer",
       "name": "Windows Printer Integration",
@@ -170,8 +242,12 @@
       "status": "frozen",
       "language": "python",
       "description": "Windows-Drucker-Integration: Druckt generierte Picklists auf dem konfigurierten Netzwerkdrucker der Nacke-VM.",
-      "usedBy": ["nacke"],
-      "dependencies": ["nacke/config"],
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
@@ -181,10 +257,13 @@
         "lines": 235,
         "size": 7852
       },
-      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
       "frozenAt": "2026-03-11T08:00:00Z"
     },
-
     "nacke/config": {
       "id": "nacke/config",
       "name": "Pipeline Configuration v6.0",
@@ -192,7 +271,9 @@
       "status": "frozen",
       "language": "json",
       "description": "Zentrale Pipeline-Konfiguration: IDIS-URLs, Laender, Drucker, Pfade, Feature-Flags, Schedule. Single source of truth fuer alle Nacke-Module.",
-      "usedBy": ["nacke"],
+      "usedBy": [
+        "nacke"
+      ],
       "dependencies": [],
       "source": {
         "type": "github-gist",
@@ -203,10 +284,13 @@
         "lines": 118,
         "size": 2983
       },
-      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
       "frozenAt": "2026-03-11T08:00:00Z"
     },
-
     "maut/date-calculator": {
       "id": "maut/date-calculator",
       "name": "Maut Zeitraum-Rechner",
@@ -214,12 +298,17 @@
       "status": "frozen",
       "language": "python",
       "description": "Berechnet den Abfrage-Zeitraum fuer die Mautdaten. Standard: heute -9 bis heute -3 Tage. So werden nur vollstaendig abgerechnete Tage abgefragt.",
-      "usedBy": ["maut"],
+      "usedBy": [
+        "maut"
+      ],
       "dependencies": [],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-05" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
       "code": "from datetime import datetime, timedelta\n\ndef calculate_date_range(start_offset: int = -9, end_offset: int = -3) -> dict:\n    \"\"\"Zeitraum fuer Mautabfrage berechnen.\n    \n    Offsets sind negative Tage ab heute:\n    - start_offset = -9 -> vor 9 Tagen\n    - end_offset = -3   -> vor 3 Tagen\n    \n    Wir nehmen NICHT die letzten 2 Tage, weil Shell Fleet Hub\n    die Daten erst mit 2-3 Tagen Verzoegerung bereitstellt.\n    \n    Returns:\n        Dict mit 'start' und 'end' als formatierte Strings (DD.MM.YYYY)\n    \"\"\"\n    today = datetime.now()\n    \n    date_start = today + timedelta(days=start_offset)\n    date_end = today + timedelta(days=end_offset)\n    \n    # Shell Fleet Hub erwartet deutsches Datumsformat\n    return {\n        'start': date_start.strftime('%d.%m.%Y'),\n        'end': date_end.strftime('%d.%m.%Y'),\n        'start_iso': date_start.strftime('%Y-%m-%d'),\n        'end_iso': date_end.strftime('%Y-%m-%d')\n    }"
     },
-
     "maut/shell-login": {
       "id": "maut/shell-login",
       "name": "Shell Fleet Hub Login",
@@ -227,12 +316,20 @@
       "status": "frozen",
       "language": "python",
       "description": "Login bei Shell Fleet Hub mit Email, Passwort und TOTP (2-Faktor). TOTP wird dynamisch aus dem Secret generiert, NIEMALS gecacht.",
-      "usedBy": ["maut"],
-      "dependencies": ["playwright", "pyotp"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-05" },
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "playwright",
+        "pyotp"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
       "code": "import pyotp\nfrom playwright.sync_api import sync_playwright\nimport logging\n\nlogger = logging.getLogger('maut')\n\ndef shell_login(email: str, password: str, totp_secret: str) -> dict:\n    \"\"\"Login bei Shell Fleet Hub mit 2-Faktor-Authentifizierung.\n    \n    Schritte:\n    1. Email eingeben + Next\n    2. Passwort eingeben + Submit\n    3. TOTP-Code dynamisch generieren + eingeben\n    \n    WICHTIG: TOTP wird JEDES MAL frisch generiert!\n    Niemals den Code cachen - er ist nur 30 Sekunden gueltig.\n    \"\"\"\n    pw = sync_playwright().start()\n    browser = pw.chromium.launch(headless=True)\n    page = browser.new_page()\n    \n    page.goto('https://shell-fleet-hub.shell.com/login')\n    logger.info('Shell Fleet Hub Login-Seite geladen')\n    \n    # Schritt 1: Email\n    page.fill('input[type=\"email\"]', email)\n    page.click('button:has-text(\"Next\")')\n    page.wait_for_timeout(2000)\n    \n    # Schritt 2: Passwort\n    page.fill('input[type=\"password\"]', password)\n    page.click('button:has-text(\"Sign in\")')\n    page.wait_for_timeout(3000)\n    \n    # Schritt 3: TOTP - frisch generieren!\n    totp = pyotp.TOTP(totp_secret)\n    code = totp.now()  # 6-stelliger Code, 30 Sek gueltig\n    page.fill('input[name=\"otp\"]', code)\n    page.click('button:has-text(\"Verify\")')\n    \n    # Warten auf Dashboard\n    page.wait_for_selector('.dashboard', timeout=15000)\n    logger.info('Shell Fleet Hub Login erfolgreich')\n    \n    return {'browser': browser, 'page': page, 'playwright': pw}"
     },
-
     "maut/select-account": {
       "id": "maut/select-account",
       "name": "Maut Account-Auswahl",
@@ -240,12 +337,19 @@
       "status": "frozen",
       "language": "python",
       "description": "Waehlt den richtigen Account im Shell Fleet Hub aus. Aktuell ist nur Account (M) DE26731323 aktiv. Der Selektor klickt auf den Account-Dropdown und waehlt den richtigen.",
-      "usedBy": ["maut"],
-      "dependencies": ["playwright"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-05" },
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
       "code": "import logging\n\nlogger = logging.getLogger('maut')\n\n# Der einzige aktive Account\nACTIVE_ACCOUNT = 'DE26731323'\nACCOUNT_LABEL = 'Account (M)'\n\ndef select_account(session: dict) -> dict:\n    \"\"\"Den richtigen Account im Shell Fleet Hub auswaehlen.\n    \n    Shell Fleet Hub zeigt oben rechts einen Account-Dropdown.\n    Wir muessen Account (M) DE26731323 auswaehlen.\n    \n    ACHTUNG: Es gibt mehrere Accounts. NUR DE26731323 ist aktiv!\n    \"\"\"\n    page = session['page']\n    \n    # Account-Dropdown oeffnen\n    page.click('.account-selector')\n    page.wait_for_timeout(1000)\n    \n    # Den richtigen Account per Text finden und klicken\n    account_option = page.query_selector(f'text={ACTIVE_ACCOUNT}')\n    \n    if not account_option:\n        raise RuntimeError(f'Account {ACTIVE_ACCOUNT} nicht im Dropdown gefunden!')\n    \n    account_option.click()\n    page.wait_for_timeout(2000)\n    \n    # Verifizieren dass der richtige Account aktiv ist\n    selected = page.text_content('.account-selector .selected')\n    if ACTIVE_ACCOUNT not in selected:\n        raise RuntimeError(f'Falscher Account ausgewaehlt: {selected}')\n    \n    logger.info(f'Account {ACCOUNT_LABEL} ({ACTIVE_ACCOUNT}) ausgewaehlt')\n    session['account'] = ACTIVE_ACCOUNT\n    return session"
     },
-
     "maut/download-data": {
       "id": "maut/download-data",
       "name": "Mautdaten Download",
@@ -253,12 +357,23 @@
       "status": "draft",
       "language": "python",
       "description": "Laedt die Toll4Europe Mautliste als Excel-Datei herunter. Setzt den Datumsfilter, wartet auf den Export, und speichert die Datei lokal. DRAFT: Download-Selektor muss nach Shell-Update angepasst werden.",
-      "usedBy": ["maut"],
-      "dependencies": ["playwright"],
-      "gate": { "passed": false, "score": "9/11", "lastCheck": "2026-03-09", "failures": ["G3: Testdaten-Snapshot fehlt noch", "G5: config_version nicht genutzt"] },
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": false,
+        "score": "9/11",
+        "lastCheck": "2026-03-09",
+        "failures": [
+          "G3: Testdaten-Snapshot fehlt noch",
+          "G5: config_version nicht genutzt"
+        ]
+      },
       "code": "import os\nimport logging\n\nlogger = logging.getLogger('maut')\n\ndef download_maut_data(session: dict, date_start: str, date_end: str) -> str:\n    \"\"\"Mautdaten-Excel aus Shell Fleet Hub herunterladen.\n    \n    Schritte:\n    1. Zum Toll4Europe-Bereich navigieren\n    2. Datumsfilter setzen (DD.MM.YYYY Format)\n    3. Export als Excel anstossen\n    4. Download abwarten und Pfad zurueckgeben\n    \n    TODO: Download-Selektor nach Shell-Update pruefen!\n    \"\"\"\n    page = session['page']\n    download_dir = os.path.join(os.environ.get('TEMP', '/tmp'), 'maut_downloads')\n    os.makedirs(download_dir, exist_ok=True)\n    \n    # Zum Maut-Bereich navigieren\n    page.click('a[href*=\"toll\"]')\n    page.wait_for_selector('.toll-data-table', timeout=15000)\n    \n    # Datumsfilter setzen\n    page.fill('#date-from', date_start)\n    page.fill('#date-to', date_end)\n    page.click('button:has-text(\"Apply\")')\n    page.wait_for_timeout(3000)\n    \n    # Excel-Export starten und Download abfangen\n    with page.expect_download() as download_info:\n        page.click('button:has-text(\"Export\")')  # TODO: Selektor pruefen!\n    \n    download = download_info.value\n    filepath = os.path.join(download_dir, download.suggested_filename)\n    download.save_as(filepath)\n    \n    logger.info(f'Mautdaten heruntergeladen: {filepath}')\n    return filepath"
     },
-
     "maut/calculate-tolls": {
       "id": "maut/calculate-tolls",
       "name": "Maut-Berechnung",
@@ -266,12 +381,19 @@
       "status": "frozen",
       "language": "python",
       "description": "Liest die heruntergeladene Excel-Datei, berechnet Maut pro Kilometer fuer jedes Fahrzeug, und erkennt Anomalien (z.B. ungewoehnlich hohe Maut/km). Nutzt openpyxl fuer Excel-Parsing.",
-      "usedBy": ["maut"],
-      "dependencies": ["openpyxl"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-05" },
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "openpyxl"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
       "code": "import openpyxl\nimport logging\n\nlogger = logging.getLogger('maut')\n\n# Schwellwert fuer Anomalie-Erkennung: ueber 0.25 EUR/km ist verdaechtig\nANOMALY_THRESHOLD_EUR_PER_KM = 0.25\n\ndef calculate_tolls(excel_path: str) -> tuple:\n    \"\"\"Maut/km fuer jedes Fahrzeug berechnen.\n    \n    Die Excel-Datei hat Spalten:\n    A=Kennzeichen, B=Strecke, C=km, D=Maut(EUR), E=Datum\n    \n    Returns:\n        Tuple (calculations, anomalies)\n        - calculations: Liste aller Berechnungen\n        - anomalies: Liste verdaechtiger Eintraege\n    \"\"\"\n    wb = openpyxl.load_workbook(excel_path, read_only=True)\n    ws = wb.active\n    \n    calculations = []\n    anomalies = []\n    \n    # Erste Zeile ist Header, ab Zeile 2 kommen die Daten\n    for row in ws.iter_rows(min_row=2, values_only=True):\n        plate, route, km, toll_eur, date = row[0], row[1], row[2], row[3], row[4]\n        \n        if not km or km == 0:\n            continue  # Division durch 0 vermeiden\n        \n        toll_per_km = round(toll_eur / km, 4)\n        \n        entry = {\n            'plate': plate, 'route': route,\n            'km': km, 'toll_eur': toll_eur,\n            'toll_per_km': toll_per_km, 'date': str(date)\n        }\n        calculations.append(entry)\n        \n        # Anomalie erkennen\n        if toll_per_km > ANOMALY_THRESHOLD_EUR_PER_KM:\n            entry['anomaly_reason'] = f'Maut/km {toll_per_km} > {ANOMALY_THRESHOLD_EUR_PER_KM}'\n            anomalies.append(entry)\n    \n    logger.info(f'{len(calculations)} Eintraege berechnet, {len(anomalies)} Anomalien')\n    return calculations, anomalies"
     },
-
     "maut/upload-results": {
       "id": "maut/upload-results",
       "name": "Maut Ergebnis Upload",
@@ -279,12 +401,19 @@
       "status": "frozen",
       "language": "python",
       "description": "Schreibt die berechneten Mautdaten nach Supabase in die maut_calculations Tabelle. Nutzt Upsert um bei erneutem Lauf keine Duplikate zu erzeugen.",
-      "usedBy": ["maut"],
-      "dependencies": ["supabase-py"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-05" },
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "supabase-py"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
       "code": "from supabase import Client\nimport logging\n\nlogger = logging.getLogger('maut')\n\ndef upload_results(sb: Client, calculations: list) -> int:\n    \"\"\"Berechnungsergebnisse in Supabase speichern.\n    \n    Nutzt UPSERT statt INSERT:\n    - Wenn ein Eintrag (plate + date) schon existiert, wird er aktualisiert\n    - Wenn nicht, wird er neu eingefuegt\n    - So koennen wir den Job gefahrlos mehrmals laufen lassen\n    \"\"\"\n    if not calculations:\n        logger.warning('Keine Berechnungen zum Hochladen')\n        return 0\n    \n    # Supabase Upsert mit Conflict-Spalten\n    # on_conflict='plate,date' -> wenn plate+date schon existiert, updaten\n    result = sb.table('maut_calculations') \\\n        .upsert(calculations, on_conflict='plate,date') \\\n        .execute()\n    \n    count = len(result.data)\n    logger.info(f'{count} Maut-Berechnungen in Supabase gespeichert')\n    return count"
     },
-
     "maut/send-report": {
       "id": "maut/send-report",
       "name": "Maut Report Versand",
@@ -292,12 +421,19 @@
       "status": "frozen",
       "language": "python",
       "description": "Generiert einen Maut-Report und sendet ihn per Email. Zeigt Zusammenfassung, Anomalien und eine Tabelle aller Berechnungen. Nutzt das shared nacke/send-email Modul fuer den SMTP-Versand.",
-      "usedBy": ["maut"],
-      "dependencies": ["smtplib"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-05" },
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "smtplib"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
       "code": "import logging\n\nlogger = logging.getLogger('maut')\n\ndef build_maut_report(calculations: list, anomalies: list) -> str:\n    \"\"\"Maut-Report als HTML generieren.\n    \n    Zeigt:\n    - Zusammenfassung (Gesamt-km, Gesamt-Maut, Durchschnitt EUR/km)\n    - Anomalien-Warnung (falls vorhanden)\n    - Tabelle aller Eintraege\n    \"\"\"\n    total_km = sum(c['km'] for c in calculations)\n    total_eur = sum(c['toll_eur'] for c in calculations)\n    avg_per_km = round(total_eur / max(total_km, 1), 4)\n    \n    # Tabellen-Zeilen generieren\n    rows = ''\n    for c in calculations:\n        color = '#e74c3c' if c in anomalies else '#333'\n        rows += f\"\"\"<tr style=\"color:{color}\">\n          <td>{c['plate']}</td><td>{c['route']}</td>\n          <td>{c['km']}</td><td>{c['toll_eur']:.2f}</td>\n          <td>{c['toll_per_km']:.4f}</td><td>{c['date']}</td>\n        </tr>\"\"\"\n    \n    anomaly_warning = ''\n    if anomalies:\n        anomaly_warning = f'<p style=\"color:#e74c3c;\"><strong>{len(anomalies)} Anomalien erkannt!</strong></p>'\n    \n    return f\"\"\"\n    <html><body style=\"font-family:Arial;\">\n      <h2>Mautberechnung Wochenreport</h2>\n      <p>Gesamt: {total_km:.0f} km | {total_eur:.2f} EUR | {avg_per_km:.4f} EUR/km</p>\n      {anomaly_warning}\n      <table border=\"1\" cellpadding=\"4\">\n        <tr><th>KZ</th><th>Strecke</th><th>km</th><th>Maut</th><th>EUR/km</th><th>Datum</th></tr>\n        {rows}\n      </table>\n    </body></html>\"\"\""
     },
-
     "linkedin/load-accounts": {
       "id": "linkedin/load-accounts",
       "name": "LinkedIn Accounts Laden",
@@ -305,12 +441,19 @@
       "status": "frozen",
       "language": "javascript",
       "description": "Laedt aktive LinkedIn-Accounts aus der Supabase linkedin_accounts Tabelle. Filtert nach Status 'active' und prueft ob Cookies vorhanden sind.",
-      "usedBy": ["linkedin"],
-      "dependencies": ["@supabase/supabase-js"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-06" },
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "@supabase/supabase-js"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-06"
+      },
       "code": "import { createClient } from '@supabase/supabase-js';\n\n/**\n * Aktive LinkedIn-Accounts aus Supabase laden.\n * \n * Jeder Account hat:\n * - id, email, display_name\n * - cookies_json: gespeicherte Browser-Cookies (fuer Session-Wiederherstellung)\n * - status: 'active', 'cooldown', 'banned'\n * - last_session_at: wann die letzte Session war\n */\nexport async function loadAccounts(sb) {\n  // Nur aktive Accounts laden (nicht gebannt oder im Cooldown)\n  const { data, error } = await sb\n    .from('linkedin_accounts')\n    .select('id, email, display_name, cookies_json, last_session_at')\n    .eq('status', 'active')\n    .order('last_session_at', { ascending: true }); // Aelteste Session zuerst\n  \n  if (error) throw new Error(`Accounts laden fehlgeschlagen: ${error.message}`);\n  \n  // Accounts ohne Cookies rausfiltern (brauchen manuellen Login)\n  const valid = data.filter(a => a.cookies_json && a.cookies_json.length > 10);\n  \n  console.log(`${valid.length}/${data.length} Accounts mit gueltigem Cookie`);\n  return valid;\n}"
     },
-
     "linkedin/account-guard": {
       "id": "linkedin/account-guard",
       "name": "LinkedIn Account Guard",
@@ -318,12 +461,19 @@
       "status": "frozen",
       "language": "javascript",
       "description": "Prueft Rate Limits und Ban-Risiko bevor eine Session gestartet wird. 7-Tage Rolling Window, Tages-Limit, Stunden-Limit. Verhindert Account-Sperrungen.",
-      "usedBy": ["linkedin"],
-      "dependencies": ["@supabase/supabase-js"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-06" },
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "@supabase/supabase-js"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-06"
+      },
       "code": "/**\n * Rate Limits pruefen und den besten Account fuer diese Session waehlen.\n * \n * Limits:\n * - Max 100 Connects in 7 Tagen (Rolling Window)\n * - Max 25 Connects pro Tag\n * - Max 8 Connects pro Stunde\n * - Min 30 Minuten zwischen Sessions\n * \n * Bei Ueberschreitung: Account wird auf 'cooldown' gesetzt.\n */\nexport async function checkLimits(sb, accounts) {\n  const now = new Date();\n  const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();\n  const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();\n  const oneHourAgo = new Date(now - 60 * 60 * 1000).toISOString();\n  \n  for (const account of accounts) {\n    // Connects der letzten 7 Tage zaehlen\n    const { count: week } = await sb\n      .from('linkedin_activity')\n      .select('*', { count: 'exact', head: true })\n      .eq('account_id', account.id)\n      .eq('action_type', 'connect')\n      .gte('created_at', sevenDaysAgo);\n    \n    // Connects heute zaehlen\n    const { count: today } = await sb\n      .from('linkedin_activity')\n      .select('*', { count: 'exact', head: true })\n      .eq('account_id', account.id)\n      .eq('action_type', 'connect')\n      .gte('created_at', oneDayAgo);\n    \n    // Pruefen ob alle Limits OK sind\n    if (week < 100 && today < 25) {\n      console.log(`Account ${account.display_name}: ${week}/100 Woche, ${today}/25 Tag -> OK`);\n      return { ...account, weekCount: week, dayCount: today };\n    }\n    \n    console.log(`Account ${account.display_name}: Limit erreicht (${week}/100)`);\n  }\n  \n  throw new Error('Alle Accounts am Limit - kein Connect moeglich');\n}"
     },
-
     "linkedin/start-session": {
       "id": "linkedin/start-session",
       "name": "LinkedIn Session Starten",
@@ -331,12 +481,19 @@
       "status": "frozen",
       "language": "javascript",
       "description": "Startet eine humanisierte Playwright-Session mit gespeicherten Cookies. Simuliert menschliches Verhalten: zufaellige Viewport-Groesse, User-Agent, Mausbewegungen.",
-      "usedBy": ["linkedin"],
-      "dependencies": ["playwright"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-06" },
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-06"
+      },
       "code": "import { chromium } from 'playwright';\n\n/**\n * Humanisierte LinkedIn-Session starten.\n * \n * Wichtig fuer Ban-Vermeidung:\n * - Zufaellige Viewport-Groesse (nicht immer 1920x1080)\n * - Gespeicherte Cookies laden (kein Login-Formular)\n * - Gauss-verteilte Delays zwischen Aktionen\n */\nexport async function startSession(account) {\n  // Zufaellige, aber realistische Viewport-Groesse\n  const width = 1280 + Math.floor(Math.random() * 640);  // 1280-1920\n  const height = 720 + Math.floor(Math.random() * 360);  // 720-1080\n  \n  const browser = await chromium.launch({ headless: true });\n  const context = await browser.newContext({\n    viewport: { width, height },\n    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',\n    locale: 'de-DE',\n    timezoneId: 'Europe/Berlin'\n  });\n  \n  // Gespeicherte Cookies laden (vermeidet Login-Seite)\n  const cookies = JSON.parse(account.cookies_json);\n  await context.addCookies(cookies);\n  \n  const page = await context.newPage();\n  await page.goto('https://www.linkedin.com/feed/', { waitUntil: 'domcontentloaded' });\n  \n  // Pruefen ob Login noch gueltig ist\n  const isLoggedIn = await page.$('.feed-identity-module');\n  if (!isLoggedIn) {\n    throw new Error(`Cookies abgelaufen fuer Account ${account.display_name}`);\n  }\n  \n  console.log(`Session gestartet: ${account.display_name} (${width}x${height})`);\n  return { browser, context, page, account };\n}"
     },
-
     "linkedin/search-targets": {
       "id": "linkedin/search-targets",
       "name": "LinkedIn Zielsuche",
@@ -344,12 +501,22 @@
       "status": "draft",
       "language": "javascript",
       "description": "Sucht potenzielle Kontakte auf LinkedIn mit Keywords und Geo-Filter. DRAFT: Geo-Filter-Selektor muss nach LinkedIn UI-Update angepasst werden.",
-      "usedBy": ["linkedin"],
-      "dependencies": ["playwright"],
-      "gate": { "passed": false, "score": "10/11", "lastCheck": "2026-03-09", "failures": ["G3: Testdaten-Snapshot fehlt"] },
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": false,
+        "score": "10/11",
+        "lastCheck": "2026-03-09",
+        "failures": [
+          "G3: Testdaten-Snapshot fehlt"
+        ]
+      },
       "code": "/**\n * Potenzielle Kontakte auf LinkedIn suchen.\n * \n * Nutzt die LinkedIn-Suche mit:\n * - Keywords (z.B. 'CEO', 'CTO')\n * - Geo-Filter (DACH, Nordics, etc.)\n * - 2nd-Degree Filter (nur Kontakte 2. Grades)\n * \n * TODO: Geo-Filter Selektor nach LinkedIn UI-Update pruefen!\n */\nexport async function searchTargets(session, keywords, targetGeo) {\n  const { page } = session;\n  const targets = [];\n  \n  for (const keyword of keywords) {\n    // LinkedIn-Suche aufrufen\n    const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keyword)}&network=%5B%22S%22%5D`;\n    await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });\n    \n    // Humanisierte Wartezeit (2-4 Sekunden, Gauss-verteilt)\n    await page.waitForTimeout(2000 + Math.random() * 2000);\n    \n    // Ergebnis-Cards sammeln\n    const cards = await page.$$('.entity-result__item');\n    \n    for (const card of cards.slice(0, 10)) {\n      const name = await card.$eval('.entity-result__title-text a', el => el.textContent.trim()).catch(() => null);\n      const title = await card.$eval('.entity-result__primary-subtitle', el => el.textContent.trim()).catch(() => null);\n      const profileUrl = await card.$eval('.entity-result__title-text a', el => el.href).catch(() => null);\n      \n      if (name && profileUrl) {\n        targets.push({ name, title, profileUrl, keyword });\n      }\n    }\n    \n    console.log(`Keyword '${keyword}': ${cards.length} Ergebnisse gefunden`);\n  }\n  \n  return targets;\n}"
     },
-
     "linkedin/send-connects": {
       "id": "linkedin/send-connects",
       "name": "LinkedIn Connect Senden",
@@ -357,12 +524,19 @@
       "status": "frozen",
       "language": "javascript",
       "description": "Sendet Verbindungsanfragen mit humanisierten Delays (Gauss-Verteilung). Erkennt Ban-Indikatoren und bricht bei Verdacht sofort ab.",
-      "usedBy": ["linkedin"],
-      "dependencies": ["playwright"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-06" },
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-06"
+      },
       "code": "/**\n * Verbindungsanfragen senden mit menschenaehnlichem Verhalten.\n * \n * Sicherheits-Features:\n * - Gauss-verteilte Delays (nicht gleichmaessig!)\n * - Ban-Erkennung: \"Restrict\" oder Captcha -> sofort stoppen\n * - 12% Browse-Only Wahrscheinlichkeit (Session ohne Connects)\n * - Max Connects pro Run begrenzt\n */\nfunction gaussDelay(minMs, maxMs) {\n  // Box-Muller Transform fuer Gauss-Verteilung\n  const u1 = Math.random();\n  const u2 = Math.random();\n  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);\n  const mean = (minMs + maxMs) / 2;\n  const stddev = (maxMs - minMs) / 6;\n  return Math.max(minMs, Math.min(maxMs, Math.round(mean + z * stddev)));\n}\n\nexport async function sendConnects(session, targets, maxPerRun = 8, minDelay = 3000) {\n  const { page } = session;\n  const results = [];\n  \n  // 12% Chance auf Browse-Only Session\n  if (Math.random() < 0.12) {\n    console.log('Browse-Only Session (kein Connect)');\n    return [{ action: 'browse-only', status: 'ok' }];\n  }\n  \n  const toSend = targets.slice(0, maxPerRun);\n  \n  for (const target of toSend) {\n    await page.goto(target.profileUrl, { waitUntil: 'domcontentloaded' });\n    \n    // Ban-Check: Captcha oder Restriction-Seite?\n    const restricted = await page.$('text=restricted').catch(() => null);\n    if (restricted) {\n      console.error('BAN VERDACHT! Session wird sofort beendet.');\n      break;\n    }\n    \n    const connectBtn = await page.$('button:has-text(\"Connect\")');\n    if (connectBtn) {\n      await connectBtn.click();\n      await page.click('button:has-text(\"Send\")');\n      results.push({ name: target.name, action: 'connect', status: 'ok' });\n    }\n    \n    // Humanisierter Delay zwischen Aktionen\n    await page.waitForTimeout(gaussDelay(minDelay, minDelay * 3));\n  }\n  \n  return results;\n}"
     },
-
     "linkedin/log-activity": {
       "id": "linkedin/log-activity",
       "name": "LinkedIn Activity Logger",
@@ -370,12 +544,19 @@
       "status": "frozen",
       "language": "javascript",
       "description": "Loggt alle LinkedIn-Aktionen in die linkedin_activity Tabelle. Wichtig fuer das 7-Tage Rolling Window und Ban-Analyse.",
-      "usedBy": ["linkedin"],
-      "dependencies": ["@supabase/supabase-js"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-06" },
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "@supabase/supabase-js"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-06"
+      },
       "code": "/**\n * Alle Aktionen einer Session in Supabase loggen.\n * \n * Jede Aktion wird als einzelne Zeile gespeichert:\n * - account_id: welcher Account\n * - action_type: 'connect', 'browse', 'search'\n * - target_name: Name des Kontakts\n * - created_at: Zeitstempel (automatisch von Supabase)\n * \n * Diese Daten nutzt der Account Guard fuer Rate Limit Checks.\n */\nexport async function logActivity(sb, accountId, results) {\n  if (!results || results.length === 0) return;\n  \n  // Alle Ergebnisse in Activity-Records umwandeln\n  const records = results.map(r => ({\n    account_id: accountId,\n    action_type: r.action || 'unknown',\n    target_name: r.name || null,\n    status: r.status,\n    metadata: JSON.stringify(r)\n  }));\n  \n  // Batch-Insert in Supabase\n  const { data, error } = await sb\n    .from('linkedin_activity')\n    .insert(records);\n  \n  if (error) {\n    console.error(`Activity-Log Fehler: ${error.message}`);\n    throw error;\n  }\n  \n  console.log(`${records.length} Aktionen geloggt fuer Account ${accountId}`);\n  return data;\n}"
     },
-
     "fleetboard/scheduler": {
       "id": "fleetboard/scheduler",
       "name": "Fleetboard Scheduler / Orchestrator",
@@ -383,18 +564,27 @@
       "status": "frozen",
       "language": "powershell",
       "description": "run_scheduler.ps1: Orchestriert den gesamten Fleetboard-Lauf (Fetch+Match+Report). Lock-Management, Timeout-Kontrolle, workflow_runs INSERT am Ende.",
-      "usedBy": ["fleetboard"],
-      "dependencies": ["fleetboard/imap-fetch", "fleetboard/matcher", "fleetboard/send-report"],
+      "usedBy": [
+        "fleetboard"
+      ],
+      "dependencies": [
+        "fleetboard/imap-fetch",
+        "fleetboard/matcher",
+        "fleetboard/send-report"
+      ],
       "source": {
         "type": "vm-only",
         "vmPath": "C:\\FleetboardScript\\run_scheduler.ps1",
         "vm": "UXUIX (157.180.78.163)",
         "note": "Nur auf VM vorhanden, nicht im Gist. Muss in Gist hochgeladen werden fuer Live-View."
       },
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-10"
+      },
       "frozenAt": "2026-03-10T12:00:00Z"
     },
-
     "fleetboard/imap-fetch": {
       "id": "fleetboard/imap-fetch",
       "name": "Fleetboard IMAP Fetch",
@@ -402,7 +592,9 @@
       "status": "frozen",
       "language": "powershell",
       "description": "fetch_tours_email.ps1: IMAP-Fetch von automation@uxuix.de (Kasserver, TLS 1.2, Cert-Bypass). Extrahiert Tourenabfrage-CSV aus Email-Anhang. Vault-Support mit .env Fallback.",
-      "usedBy": ["fleetboard"],
+      "usedBy": [
+        "fleetboard"
+      ],
       "dependencies": [],
       "source": {
         "type": "vm-only",
@@ -410,10 +602,13 @@
         "vm": "UXUIX (157.180.78.163)",
         "note": "Nur auf VM vorhanden, nicht im Gist. Muss in Gist hochgeladen werden fuer Live-View."
       },
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-10"
+      },
       "frozenAt": "2026-03-10T12:00:00Z"
     },
-
     "fleetboard/matcher": {
       "id": "fleetboard/matcher",
       "name": "Fleetboard GPS Matcher",
@@ -421,7 +616,9 @@
       "status": "frozen",
       "language": "powershell",
       "description": "FleetboardMatcher_current.ps1 v1.8: CSV parsen, GPS-Traces via SOAP API sammeln (1h-Fenster), in fleetboard_traces akkumulieren, Bounding-Box + Distanz-Fallback (15km) Matching, GVLOGMG 3-fach Validierung, Ergebnisse nach fleetboard_arrivals mit RESTORE-Logik.",
-      "usedBy": ["fleetboard"],
+      "usedBy": [
+        "fleetboard"
+      ],
       "dependencies": [],
       "source": {
         "type": "github-gist",
@@ -431,10 +628,13 @@
         "lines": 1332,
         "size": 56000
       },
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-10"
+      },
       "frozenAt": "2026-03-10T12:00:00Z"
     },
-
     "fleetboard/send-report": {
       "id": "fleetboard/send-report",
       "name": "Fleetboard Report Versand",
@@ -442,7 +642,9 @@
       "status": "frozen",
       "language": "powershell",
       "description": "send_report.ps1 v2.0: HTML-Report via Edge Function fleetboard-email (VM-IP auf DNSBL, kein direkter SMTP). CSV + JSON Output nach C:\\FleetboardScript\\output\\.",
-      "usedBy": ["fleetboard"],
+      "usedBy": [
+        "fleetboard"
+      ],
       "dependencies": [],
       "source": {
         "type": "github-gist",
@@ -452,10 +654,13 @@
         "lines": 180,
         "size": 7200
       },
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-10"
+      },
       "frozenAt": "2026-03-10T12:00:00Z"
     },
-
     "fleetboard/config": {
       "id": "fleetboard/config",
       "name": "Fleetboard Configuration",
@@ -463,7 +668,9 @@
       "status": "frozen",
       "language": "json",
       "description": "config.json: Pfade, Filter, Gebiets-Config, distance_threshold_km (15), schedule.interval_minutes (5), vehicleId-Mapping. Single source of truth auf der VM.",
-      "usedBy": ["fleetboard"],
+      "usedBy": [
+        "fleetboard"
+      ],
       "dependencies": [],
       "source": {
         "type": "vm-only",
@@ -471,10 +678,13 @@
         "vm": "UXUIX (157.180.78.163)",
         "note": "Nur auf VM vorhanden, nicht im Gist. Muss in Gist hochgeladen werden fuer Live-View."
       },
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-10"
+      },
       "frozenAt": "2026-03-10T12:00:00Z"
     },
-
     "fleetboard2/sync-geodata": {
       "id": "fleetboard2/sync-geodata",
       "name": "Geodaten Sync",
@@ -482,18 +692,23 @@
       "status": "active",
       "language": "javascript",
       "description": "Laedt Areas (53 Bounding-Boxes) + Mappings (Zustellreferenz -> Gebiet) aus Supabase, cached lokal als JSON. Prueft CSV-Refs und meldet Unbekannte an fleetboard_unknown_refs (Monitor).",
-      "usedBy": ["fleetboard2"],
-      "dependencies": ["@supabase/supabase-js"],
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [
+        "@supabase/supabase-js"
+      ],
       "source": {
-        "type": "local",
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
         "file": "sync-geodata.mjs",
-        "path": "A.I.D.A/flows/fleetboard2/sync-geodata.mjs",
-        "lines": 183
-      },
-      "code": "#!/usr/bin/env node\n/**\n * Fleetboard 2.0 — Geodaten Sync\n *\n * Liest Areas (inkl. Zustellreferenzen) aus Supabase, cached lokal als JSON.\n * Unbekannte Zustellreferenzen -> fleetboard_unknown_refs (Monitor-sichtbar).\n *\n * Usage:\n *   node sync-geodata.mjs                    # Geodaten laden + cachen\n *   node sync-geodata.mjs --check tour.csv   # CSV pruefen, unbekannte Refs melden\n *   node sync-geodata.mjs --add-ref \"Koch Hamburg\" \"WM Fulda\"  # Ref zu Area hinzufuegen\n */\n\nimport { createClient } from '@supabase/supabase-js';\nimport { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';\nimport { join, dirname } from 'path';\nimport { fileURLToPath } from 'url';\n\nconst __dirname = dirname(fileURLToPath(import.meta.url));\nconst CACHE_DIR = join(__dirname, 'cache');\nconst CACHE_FILE = join(CACHE_DIR, 'geodata.json');\n\n// --- Supabase ---\nconst SB_URL = process.env.SUPABASE_URL || 'https://crslpxgwxjmovrhyxiim.supabase.co';\nconst SB_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;\nif (!SB_KEY) { console.error('SUPABASE_SERVICE_KEY oder SUPABASE_ANON_KEY fehlt'); process.exit(1); }\nconst sb = createClient(SB_URL, SB_KEY);\n\n// --- Areas aus Supabase laden ---\nasync function fetchAreas() {\n  const { data, error } = await sb.from('fleetboard_areas')\n    .select('area_id, name, lat_min, lat_max, lon_min, lon_max, zustellreferenzen, is_heimat')\n    .order('name');\n  if (error) throw new Error('Areas laden: ' + error.message);\n  return data;\n}\n\n// --- Lokal cachen ---\nfunction cacheData(areas) {\n  if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true });\n\n  // Lookup: zustellreferenz -> area (fuer schnelles Matching)\n  const refLookup = {};\n  for (const a of areas) {\n    for (const ref of (a.zustellreferenzen || [])) {\n      refLookup[ref] = {\n        area_id: a.area_id,\n        name: a.name,\n        lat_min: a.lat_min, lat_max: a.lat_max,\n        lon_min: a.lon_min, lon_max: a.lon_max,\n        is_heimat: a.is_heimat || false\n      };\n    }\n  }\n\n  const cache = { areas, refLookup, cached_at: new Date().toISOString() };\n  writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));\n  console.log(`Cache: ${areas.length} Areas, ${Object.keys(refLookup).length} Zustellreferenzen -> ${CACHE_FILE}`);\n  return cache;\n}\n\n// --- Zustellreferenz zu Area hinzufuegen ---\nasync function addRef(zref, areaName) {\n  const { data: area } = await sb.from('fleetboard_areas')\n    .select('area_id, zustellreferenzen')\n    .eq('name', areaName)\n    .single();\n\n  if (!area) { console.error(`Area \"${areaName}\" nicht gefunden`); return false; }\n\n  const refs = area.zustellreferenzen || [];\n  if (refs.includes(zref)) { console.log(`\"${zref}\" ist schon bei \"${areaName}\"`); return true; }\n\n  refs.push(zref);\n  const { error } = await sb.from('fleetboard_areas')\n    .update({ zustellreferenzen: refs, updated_at: new Date().toISOString() })\n    .eq('area_id', area.area_id);\n\n  if (error) { console.error('Update fehlgeschlagen:', error.message); return false; }\n\n  // Falls die Ref vorher als \"unbekannt\" gemeldet war, resolven\n  await sb.from('fleetboard_unknown_refs')\n    .update({ resolved: true, resolved_at: new Date().toISOString(), resolved_to_area: areaName })\n    .eq('zustellreferenz', zref);\n\n  console.log(`\"${zref}\" -> \"${areaName}\" hinzugefuegt`);\n  return true;\n}\n\n// --- CSV pruefen ---\nfunction checkCsvRefs(csvPath, refLookup) {\n  const raw = readFileSync(csvPath, 'latin1');\n  const lines = raw.split('\\n').filter(l => l.trim());\n  if (lines.length < 2) return [];\n\n  const headers = lines[0].replace(/;$/, '').split(';').map(h => h.trim().replace(/\\\"/g, ''));\n  const zrefIdx = headers.findIndex(h => /zustellref/i.test(h));\n  const tourIdx = headers.findIndex(h => /tour/i.test(h));\n  const kzIdx = headers.findIndex(h => /kennzeichen|kz/i.test(h));\n\n  if (zrefIdx === -1) { console.error('Spalte \"Zustellreferenz\" nicht in CSV'); return []; }\n\n  const unknown = [];\n  const seen = new Set();\n\n  for (let i = 1; i < lines.length; i++) {\n    const cols = lines[i].replace(/;$/, '').split(';').map(c => c.trim().replace(/\\\"/g, ''));\n    const zref = cols[zrefIdx];\n    if (!zref || seen.has(zref)) continue;\n    seen.add(zref);\n\n    if (!refLookup[zref]) {\n      unknown.push({\n        zustellreferenz: zref,\n        tour_nr: tourIdx >= 0 ? cols[tourIdx] : null,\n        kennzeichen: kzIdx >= 0 ? cols[kzIdx] : null\n      });\n    }\n  }\n  return unknown;\n}\n\n// --- Unbekannte Refs melden ---\nasync function reportUnknown(refs) {\n  if (!refs.length) { console.log('Alle Zustellreferenzen bekannt.'); return; }\n  console.log(`\\n${refs.length} UNBEKANNTE Zustellreferenzen:`);\n\n  for (const r of refs) {\n    console.log(`  - ${r.zustellreferenz} (Tour: ${r.tour_nr || '?'})`);\n    await sb.from('fleetboard_unknown_refs').upsert({\n      zustellreferenz: r.zustellreferenz,\n      last_seen_at: new Date().toISOString(),\n      seen_count: 1,\n      tour_nr: r.tour_nr,\n      kennzeichen: r.kennzeichen,\n      resolved: false\n    }, { onConflict: 'zustellreferenz' });\n  }\n  console.log('\\n-> Sichtbar im Monitor: fleetboard_unknown_refs');\n}\n\n// --- Main ---\nasync function main() {\n  const args = process.argv.slice(2);\n  console.log('=== Fleetboard 2.0 — Geodaten Sync ===\\n');\n\n  // --add-ref \"Koch Hamburg\" \"WM Fulda\"\n  if (args[0] === '--add-ref' && args[1] && args[2]) {\n    await addRef(args[1], args[2]);\n    const areas = await fetchAreas();\n    cacheData(areas);\n    return;\n  }\n\n  // 1. Areas laden + cachen\n  const areas = await fetchAreas();\n  const { refLookup } = cacheData(areas);\n\n  // 2. --check tour.csv\n  if (args[0] === '--check' && args[1]) {\n    console.log(`\\nCSV pruefen: ${args[1]}`);\n    const unknown = checkCsvRefs(args[1], refLookup);\n    await reportUnknown(unknown);\n  }\n\n  // 3. Offene Unknown Refs anzeigen\n  const { data: open } = await sb.from('fleetboard_unknown_refs')\n    .select('zustellreferenz, seen_count, last_seen_at')\n    .eq('resolved', false)\n    .order('last_seen_at', { ascending: false })\n    .limit(10);\n\n  if (open?.length) {\n    console.log(`\\n--- ${open.length} offene unbekannte Refs ---`);\n    open.forEach(r => console.log(`  ${r.zustellreferenz} (${r.seen_count}x)`));\n  }\n\n  console.log('\\nDone.');\n}\n\nmain().catch(e => { console.error('FATAL:', e.message); process.exit(1); });"
+        "sha": "b9ae21dfe0f69896f88afa1dd052d520d5648f26",
+        "lines": 183,
+        "size": 4800
+      }
     }
   },
-
   "summary": {
     "totalModules": 25,
     "byStatus": {
@@ -514,8 +729,22 @@
       "fleetboard": 5
     },
     "sharedModules": [
-      { "id": "core/metrics-collector", "usedBy": ["nacke", "maut", "fleetboard", "linkedin"] },
-      { "id": "core/error-handler", "usedBy": ["nacke", "maut"] }
+      {
+        "id": "core/metrics-collector",
+        "usedBy": [
+          "nacke",
+          "maut",
+          "fleetboard",
+          "linkedin"
+        ]
+      },
+      {
+        "id": "core/error-handler",
+        "usedBy": [
+          "nacke",
+          "maut"
+        ]
+      }
     ]
   }
 }
