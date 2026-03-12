@@ -134,6 +134,22 @@ table.history .status-dot.ok { background: var(--green); }
 table.history .status-dot.dry { background: var(--text-muted); }
 table.history .status-dot.err { background: var(--red); }
 
+/* ─── Data Panel (per-workflow business data) ─── */
+.data-panel { margin-bottom: 20px; display: none; }
+.data-panel.visible { display: block; }
+.data-panel h3 { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .5px; }
+.data-days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.data-day {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; min-width: 140px; flex-shrink: 0; transition: border-color .15s;
+}
+.data-day:first-child { border-color: var(--green); }
+.data-day .day-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+.data-day .day-stats { display: flex; flex-direction: column; gap: 3px; }
+.data-day .day-stat { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.data-day .day-stat .num { font-weight: 700; font-family: 'Cascadia Code', monospace; color: var(--green); }
+.data-day:first-child .day-stat .num { color: var(--green); }
+
 /* ─── Code Viewer (bottom sheet) ─── */
 .code-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100; display: none; opacity: 0; transition: opacity .2s; }
 .code-overlay.open { display: block; opacity: 1; }
@@ -320,6 +336,12 @@ table.history .status-dot.err { background: var(--red); }
     <div class="stat-box"><div class="val" id="statSuccessRate">--</div><div class="label">Erfolgsrate</div></div>
     <div class="stat-box"><div class="val" id="statTotalRuns">--</div><div class="label" id="statTotalLabel">Laeufe (30)</div></div>
     <div class="stat-box"><div class="val" id="statLastRun">--</div><div class="label">Letzter Lauf</div></div>
+  </div>
+
+  <!-- Data Panel: workflow-specific business data (e.g. Fleetboard traces/arrivals) -->
+  <div class="data-panel" id="dataPanel">
+    <h3 id="dataPanelTitle">Daten pro Tag</h3>
+    <div class="data-days" id="dataDays"></div>
   </div>
 
   <table class="history">
@@ -605,12 +627,14 @@ function switchWorkflow(wfId) {
   const wf = STORE.workflows[wfId];
   if (!wf) return;
   STORE.currentWf = wf;
+  STORE.currentWfId = wfId;
   renderSwimlane(wf);
   renderGuardrails(wf);
   renderIntegration(wfId);
   updateWorkflowMeta(wfId);
   loadHistory(wfId);
   loadIncidents(wfId);
+  loadDataPanel(wfId);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1072,6 +1096,106 @@ async function loadHistory(wfId) {
     console.warn('History offline:', e.message);
     if (indicator) indicator.textContent = 'Offline — keine Live-Daten';
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:24px;">Offline — keine Live-Daten verfuegbar</td></tr>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DATA PANEL — workflow-specific business data aggregates
+// ═══════════════════════════════════════════════════════════════
+const DATA_QUERIES = {
+  fleetboard: {
+    title: 'Fleetboard Daten (letzte 7 Tage)',
+    queries: [
+      {
+        label: 'GPS-Traces',
+        path: 'fleetboard_traces?select=created_at&order=created_at.desc&limit=1',
+        aggregate: async () => {
+          // Get traces per day (last 7 days via RPC or client-side group)
+          const since = new Date(Date.now() - 7 * 86400000).toISOString();
+          const traces = await sbFetch('fleetboard_traces?select=created_at&created_at=gte.' + since + '&order=created_at.desc');
+          const arrivals = await sbFetch('fleetboard_arrivals?select=created_at,kennzeichen,tour_nr,status&created_at=gte.' + since + '&order=created_at.desc');
+
+          // Group by day
+          const days = {};
+          traces.forEach(t => {
+            const d = t.created_at.substring(0, 10);
+            if (!days[d]) days[d] = { traces: 0, arrivals: 0, fahrzeuge: new Set(), touren: new Set() };
+            days[d].traces++;
+          });
+          arrivals.forEach(a => {
+            const d = a.created_at.substring(0, 10);
+            if (!days[d]) days[d] = { traces: 0, arrivals: 0, fahrzeuge: new Set(), touren: new Set() };
+            days[d].arrivals++;
+            if (a.kennzeichen) days[d].fahrzeuge.add(a.kennzeichen);
+            if (a.tour_nr) days[d].touren.add(a.tour_nr);
+          });
+
+          // Convert Sets to counts and sort by date desc
+          return Object.entries(days)
+            .map(([date, d]) => ({
+              date,
+              stats: [
+                { label: 'GPS-Traces', value: d.traces.toLocaleString('de-DE') },
+                { label: 'Arrivals', value: d.arrivals },
+                { label: 'Fahrzeuge', value: d.fahrzeuge.size },
+                { label: 'Touren', value: d.touren.size }
+              ]
+            }))
+            .sort((a, b) => b.date.localeCompare(a.date))
+            .slice(0, 7);
+        }
+      }
+    ]
+  }
+};
+
+function formatDayLabel(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+  const dDate = new Date(d); dDate.setHours(0,0,0,0);
+  if (dDate.getTime() === today.getTime()) return 'Heute';
+  if (dDate.getTime() === yesterday.getTime()) return 'Gestern';
+  const weekdays = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  return weekdays[d.getDay()] + ' ' + String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+async function loadDataPanel(wfId) {
+  const panel = document.getElementById('dataPanel');
+  const container = document.getElementById('dataDays');
+  const title = document.getElementById('dataPanelTitle');
+  if (!panel || !container) return;
+
+  const config = DATA_QUERIES[wfId];
+  if (!config) {
+    panel.classList.remove('visible');
+    return;
+  }
+
+  title.textContent = config.title;
+  container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:10px;">Lade Daten...</div>';
+  panel.classList.add('visible');
+
+  try {
+    for (const q of config.queries) {
+      const days = await q.aggregate();
+      if (days.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:10px;">Keine Daten gefunden.</div>';
+        return;
+      }
+      let html = '';
+      days.forEach(day => {
+        html += '<div class="data-day"><div class="day-label">' + formatDayLabel(day.date) + '</div><div class="day-stats">';
+        day.stats.forEach(s => {
+          html += '<div class="day-stat"><span>' + s.label + '</span><span class="num">' + s.value + '</span></div>';
+        });
+        html += '</div></div>';
+      });
+      container.innerHTML = html;
+    }
+  } catch(e) {
+    console.warn('Data panel error:', e.message);
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:10px;">Offline — keine Business-Daten</div>';
   }
 }
 
