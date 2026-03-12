@@ -427,7 +427,9 @@
         "type": "github-gist",
         "owner": "ExasyncOU",
         "gistId": "beb6e4606c1ea14911d8d71fe1ede38d",
-        "file": "FleetboardMatcher_current.ps1"
+        "file": "FleetboardMatcher_current.ps1",
+        "lines": 1332,
+        "size": 56000
       },
       "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
       "frozenAt": "2026-03-10T12:00:00Z"
@@ -446,7 +448,9 @@
         "type": "github-gist",
         "owner": "ExasyncOU",
         "gistId": "8c3618336714d5aa123794d9200eb77c",
-        "file": "send_report.ps1"
+        "file": "send_report.ps1",
+        "lines": 180,
+        "size": 7200
       },
       "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
       "frozenAt": "2026-03-10T12:00:00Z"

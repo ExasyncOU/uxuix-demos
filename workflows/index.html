@@ -464,7 +464,9 @@ function renderSwimlane(wf) {
         html += '<div class="sub">' + (step.description || '').slice(0, 60) + '</div>';
         const src = mod.source || {};
         const fileInfo = src.type === 'github-gist'
-          ? src.file + ' (' + (src.lines || '?') + ' Zeilen) — Gist ' + (src.sha || '').substring(0, 8)
+          ? src.file + ' (' + (src.lines || '?') + ' Zeilen) — Gist'
+          : src.type === 'vm-only'
+          ? src.vmPath.split('\\').pop() + ' — nur VM'
           : (mod.language || '') + ' / ' + modFile;
         html += '<div class="file-tag">' + fileInfo + '</div>';
         html += '</div></div>';
