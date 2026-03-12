@@ -186,7 +186,7 @@ table.history .status-dot.err { background: var(--red); }
 .btn { padding: 7px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--accent); color: var(--text); cursor: pointer; font-size: 13px; transition: all .15s; }
 .btn:hover { border-color: var(--green); background: #163a6e; }
 .btn.active { border-color: var(--green); background: rgba(0,212,170,0.12); color: var(--green); }
-.main { display: flex; flex-direction: column; height: calc(100vh - 56px); }
+.main { display: flex; flex-direction: column; height: calc(100vh - 92px); }
 .section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
 .section-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; max-width: 800px; }
 
@@ -234,6 +234,70 @@ table.history .status-dot.err { background: var(--red); }
 .inc-tag.resolved { background: rgba(0,212,170,.12); color: var(--green); }
 .inc-tag.learning { background: rgba(79,195,247,.12); color: var(--blue); }
 
+/* ─── VM Worker Bar ─── */
+.vm-bar { display: flex; align-items: center; gap: 10px; padding: 6px 24px; background: var(--panel); border-bottom: 1px solid var(--border); height: 36px; overflow-x: auto; flex-wrap: nowrap; }
+.vm-bar .vm-label { font-size: 11px; color: var(--text-muted); font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+.vm-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+.vm-chip .vm-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.vm-dot.vm-online { background: var(--green); }
+.vm-dot.vm-idle { background: var(--yellow); }
+.vm-dot.vm-offline { background: var(--red); }
+.vm-dot.vm-stale { background: var(--text-muted); }
+
+/* ─── Task Queue Table ─── */
+.task-stats { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.task-stat { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 100px; }
+.task-stat .val { font-size: 20px; font-weight: 700; }
+.task-stat .label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+table.tasks { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.tasks th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+table.tasks td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.04); }
+table.tasks tr:hover { background: rgba(255,255,255,.02); cursor: pointer; }
+table.tasks .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+table.tasks .status-badge.completed { background: rgba(0,212,170,.15); color: var(--green); }
+table.tasks .status-badge.pending { background: rgba(255,217,61,.15); color: var(--yellow); }
+table.tasks .status-badge.error { background: rgba(255,107,107,.15); color: var(--red); }
+table.tasks .status-badge.running { background: rgba(79,195,247,.15); color: var(--blue); }
+.task-detail { display: none; padding: 12px 16px; background: var(--code-bg); border-bottom: 1px solid var(--border); font-size: 12px; font-family: 'Cascadia Code', monospace; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow: auto; }
+.task-detail.open { display: block; }
+
+/* ─── Edge Logs Table ─── */
+.edge-filter { margin-bottom: 16px; display: flex; gap: 10px; align-items: center; }
+.edge-filter select { background: var(--accent); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 13px; }
+table.edge-logs { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.edge-logs th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+table.edge-logs td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.04); }
+table.edge-logs tr:hover { background: rgba(255,255,255,.02); cursor: pointer; }
+.edge-detail { display: none; padding: 12px 16px; background: var(--code-bg); border-bottom: 1px solid var(--border); font-size: 12px; font-family: 'Cascadia Code', monospace; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow: auto; }
+.edge-detail.open { display: block; }
+
+/* ─── Credential Vault Cards ─── */
+.cred-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.cred-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.cred-card h3 { font-size: 14px; margin-bottom: 4px; }
+.cred-card .cred-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.cred-card .cred-meta { font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
+.cred-card .cred-meta span { display: flex; justify-content: space-between; }
+.cred-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.cred-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--accent); color: var(--blue); border: 1px solid var(--border); }
+.rotation-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; margin-top: 8px; }
+.rotation-badge.rot-ok { background: rgba(0,212,170,.15); color: var(--green); }
+.rotation-badge.rot-warn { background: rgba(255,217,61,.15); color: var(--yellow); }
+.rotation-badge.rot-overdue { background: rgba(255,107,107,.15); color: var(--red); }
+
+/* ─── Gist Versions ─── */
+.gist-select { margin-bottom: 16px; display: flex; gap: 10px; align-items: center; }
+.gist-select select { background: var(--accent); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 13px; }
+.gist-select label { font-size: 12px; color: var(--text-muted); }
+table.gist-versions { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.gist-versions th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border); color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+table.gist-versions td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.04); }
+table.gist-versions tr:hover { background: rgba(255,255,255,.02); }
+table.gist-versions a { color: var(--blue); text-decoration: none; }
+table.gist-versions a:hover { text-decoration: underline; }
+.gist-additions { color: var(--green); font-weight: 600; }
+.gist-deletions { color: var(--red); font-weight: 600; }
+
 /* ─── Mobile Responsive ─── */
 @media (max-width: 900px) {
   .header { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
@@ -241,13 +305,16 @@ table.history .status-dot.err { background: var(--red); }
   .header-meta { gap: 8px; flex-wrap: wrap; }
   .header-meta .tag { font-size: 10px; padding: 2px 6px; }
   .header-actions { width: 100%; justify-content: flex-end; }
+  .vm-bar { padding: 6px 14px; gap: 6px; }
   .tabs { padding: 0 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .tab { padding: 8px 14px; font-size: 12px; white-space: nowrap; }
   .panel { padding: 14px; }
   .swimlane-grid { min-width: 1200px; }
   .guardrails-grid { grid-template-columns: 1fr; }
   .integration-grid { grid-template-columns: 1fr; }
+  .cred-grid { grid-template-columns: 1fr; }
   .history-stats { flex-wrap: wrap; gap: 10px; }
+  .task-stats { gap: 8px; }
   .stat-box { flex: 1; min-width: 80px; padding: 10px 12px; }
   .stat-box .val { font-size: 18px; }
   .code-sheet { max-height: 85vh; }
@@ -255,9 +322,10 @@ table.history .status-dot.err { background: var(--red); }
 @media (max-width: 500px) {
   .header h1 { font-size: 14px; }
   .header-meta { display: none; }
+  .vm-bar { height: auto; flex-wrap: wrap; }
   .tab { padding: 8px 10px; font-size: 11px; }
-  table.history { font-size: 11px; }
-  table.history th, table.history td { padding: 6px 4px; }
+  table.history, table.tasks, table.edge-logs, table.gist-versions { font-size: 11px; }
+  table.history th, table.history td, table.tasks th, table.tasks td, table.edge-logs th, table.edge-logs td { padding: 6px 4px; }
 }
 </style>
 </head>
@@ -283,12 +351,22 @@ table.history .status-dot.err { background: var(--red); }
   </div>
 </div>
 
+<!-- ═══ VM WORKER BAR ═══ -->
+<div class="vm-bar" id="vmBar">
+  <span class="vm-label">Workers:</span>
+  <span id="vmChips" style="display:flex;gap:6px;color:var(--text-muted);font-size:11px;">Lade...</span>
+</div>
+
 <!-- ═══ TABS ═══ -->
 <div class="tabs">
   <div class="tab active" data-tab="workflow">Workflow</div>
   <div class="tab" data-tab="guardrails">Guardrails</div>
   <div class="tab" data-tab="integration">Integration</div>
   <div class="tab" data-tab="history">Historie</div>
+  <div class="tab" data-tab="tasks">Tasks</div>
+  <div class="tab" data-tab="edgelogs">Edge Logs</div>
+  <div class="tab" data-tab="credentials">Credentials</div>
+  <div class="tab" data-tab="versions">Versionen</div>
 </div>
 
 <!-- ═══ MAIN ═══ -->
@@ -370,6 +448,74 @@ table.history .status-dot.err { background: var(--red); }
   </div>
 </div>
 
+<!-- ════════════════════════════════════════════════════════════
+     TAB 5: TASK QUEUE
+     ════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-tasks">
+  <div class="section-title">Task Queue</div>
+  <div class="section-desc">AFK Task Queue — letzte 30 Tasks mit Status, Worker und Ergebnis.</div>
+  <div class="task-stats" id="taskStats"></div>
+  <table class="tasks">
+    <thead>
+      <tr><th>Titel</th><th>Status</th><th>Worker</th><th>Erstellt</th><th>Dauer</th><th>Ergebnis</th></tr>
+    </thead>
+    <tbody id="taskBody">
+      <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Tab aktivieren zum Laden...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     TAB 6: EDGE FUNCTION LOGS
+     ════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-edgelogs">
+  <div class="section-title">Edge Function Logs</div>
+  <div class="section-desc">Ausfuehrungsprotokoll der Supabase Edge Functions und Scheduled Tasks.</div>
+  <div class="edge-filter">
+    <label style="font-size:12px;color:var(--text-muted);">Filter:</label>
+    <select id="edgeTaskFilter"><option value="">Alle Tasks</option></select>
+  </div>
+  <table class="edge-logs">
+    <thead>
+      <tr><th>Task</th><th>Worker</th><th>Status</th><th>Dauer</th><th>Ausgefuehrt</th><th>Output</th></tr>
+    </thead>
+    <tbody id="edgeBody">
+      <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Tab aktivieren zum Laden...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     TAB 7: CREDENTIAL VAULT
+     ════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-credentials">
+  <div class="section-title">Credential Vault</div>
+  <div class="section-desc">Uebersicht aller gespeicherten Credentials mit Rotations-Status. Passwoerter werden NICHT angezeigt.</div>
+  <div class="cred-grid" id="credGrid">
+    <div style="color:var(--text-muted);font-size:13px;">Tab aktivieren zum Laden...</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     TAB 8: GIST VERSIONS
+     ════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-versions">
+  <div class="section-title">Gist Versionen</div>
+  <div class="section-desc">Revisionsverlauf der GitHub Gists fuer die Deploy Pipelines.</div>
+  <div class="gist-select">
+    <label>Pipeline:</label>
+    <select id="gistPipelineSelect"></select>
+  </div>
+  <table class="gist-versions">
+    <thead>
+      <tr><th>Version</th><th>Datum</th><th>Dateien</th><th>+/-</th></tr>
+    </thead>
+    <tbody id="gistBody">
+      <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Tab aktivieren zum Laden...</td></tr>
+    </tbody>
+  </table>
+</div>
+
 </div><!-- /panels -->
 </div><!-- /main -->
 
@@ -386,6 +532,10 @@ table.history .status-dot.err { background: var(--red); }
 </div>
 
 <script>
+// Lazy-load flags (declared early for tab handler access)
+var tasksLoaded = false, edgeLogsLoaded = false, credsLoaded = false, versionsLoaded = false;
+var edgeAllLogs = [];
+
 // ═══════════════════════════════════════════════════════════════
 // TAB SWITCHING
 // ═══════════════════════════════════════════════════════════════
@@ -394,7 +544,16 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
-    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    const panelId = tab.dataset.tab;
+    document.getElementById('panel-' + panelId).classList.add('active');
+    if (panelId === 'tasks' && !tasksLoaded) loadTasks();
+    if (panelId === 'edgelogs' && !edgeLogsLoaded) loadEdgeLogs();
+    if (panelId === 'credentials' && !credsLoaded) loadCredentials();
+    if (panelId === 'versions' && !versionsLoaded) {
+      populateGistSelector();
+      const sel = document.getElementById('gistPipelineSelect');
+      if (sel && sel.value) loadGistVersions(sel.value);
+    }
   });
 });
 
@@ -1254,7 +1413,268 @@ async function loadIncidents(wfId) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// AUTO-REFRESH — History + Heartbeat every 60s
+// VM WORKERS — worker_registry status bar
+// ═══════════════════════════════════════════════════════════════
+async function loadWorkers() {
+  try {
+    const workers = await sbFetch('worker_registry?select=name,hostname,status,last_seen&order=last_seen.desc');
+    const container = document.getElementById('vmChips');
+    if (!container || workers.length === 0) {
+      if (container) container.textContent = 'Keine Worker registriert';
+      return;
+    }
+    let html = '';
+    const now = Date.now();
+    workers.forEach(w => {
+      const age = now - new Date(w.last_seen).getTime();
+      let dotCls = 'vm-stale';
+      let label = 'offline';
+      if (age < 300000) { dotCls = 'vm-online'; label = 'online'; }
+      else if (age < 1800000) { dotCls = 'vm-idle'; label = 'idle'; }
+      else if (age < 86400000) { dotCls = 'vm-offline'; label = 'offline'; }
+      if (w.status === 'busy') { dotCls = 'vm-online'; label = 'busy'; }
+      html += '<span class="vm-chip"><span class="vm-dot ' + dotCls + '"></span>' + (w.name || w.hostname) + ' <span style="color:var(--text-muted)">' + label + '</span></span>';
+    });
+    container.innerHTML = html;
+  } catch(e) {
+    console.warn('Workers offline:', e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TASK QUEUE — task_queue table
+// ═══════════════════════════════════════════════════════════════
+async function loadTasks() {
+  const tbody = document.getElementById('taskBody');
+  const statsEl = document.getElementById('taskStats');
+  if (!tbody) return;
+  try {
+    const tasks = await sbFetch('task_queue?order=created_at.desc&limit=30&select=id,title,status,target_worker,execution_type,created_at,started_at,completed_at,result,error_message,priority');
+    tasksLoaded = true;
+    const pending = tasks.filter(t => t.status === 'pending').length;
+    const running = tasks.filter(t => t.status === 'running').length;
+    const today = new Date().toISOString().substring(0, 10);
+    const completedToday = tasks.filter(t => t.status === 'completed' && t.completed_at && t.completed_at.substring(0, 10) === today).length;
+    const errors = tasks.filter(t => t.status === 'error').length;
+    const errRate = tasks.length > 0 ? Math.round((errors / tasks.length) * 100) : 0;
+    statsEl.innerHTML =
+      '<div class="task-stat"><div class="val" style="color:var(--yellow)">' + pending + '</div><div class="label">Pending</div></div>' +
+      '<div class="task-stat"><div class="val" style="color:var(--blue)">' + running + '</div><div class="label">Running</div></div>' +
+      '<div class="task-stat"><div class="val" style="color:var(--green)">' + completedToday + '</div><div class="label">Heute erledigt</div></div>' +
+      '<div class="task-stat"><div class="val" style="color:var(--red)">' + errRate + '%</div><div class="label">Fehlerrate</div></div>';
+    if (tasks.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Keine Tasks gefunden.</td></tr>';
+      return;
+    }
+    let html = '';
+    tasks.forEach((t, i) => {
+      const statusCls = t.status === 'completed' ? 'completed' : t.status === 'pending' ? 'pending' : t.status === 'error' ? 'error' : 'running';
+      const dur = formatDuration(t.started_at || t.created_at, t.completed_at);
+      const output = t.result && t.result.output ? String(t.result.output) : (t.error_message || '--');
+      const truncOut = output.length > 50 ? output.substring(0, 47) + '...' : output;
+      html += '<tr data-task-idx="' + i + '">';
+      html += '<td>' + (t.title || '--') + '</td>';
+      html += '<td><span class="status-badge ' + statusCls + '">' + t.status + '</span></td>';
+      html += '<td>' + (t.target_worker || t.execution_type || '--') + '</td>';
+      html += '<td>' + formatDate(t.created_at) + '</td>';
+      html += '<td>' + dur + '</td>';
+      html += '<td title="' + esc(output).replace(/"/g, '&quot;') + '">' + esc(truncOut) + '</td>';
+      html += '</tr>';
+      html += '<tr><td colspan="6"><div class="task-detail" id="task-detail-' + i + '">' + esc(output) + '</div></td></tr>';
+    });
+    tbody.innerHTML = html;
+    tbody.querySelectorAll('tr[data-task-idx]').forEach(row => {
+      row.addEventListener('click', () => {
+        const idx = row.dataset.taskIdx;
+        const detail = document.getElementById('task-detail-' + idx);
+        if (detail) detail.classList.toggle('open');
+      });
+    });
+  } catch(e) {
+    console.warn('Tasks offline:', e.message);
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Offline</td></tr>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EDGE FUNCTION LOGS — uxuix_execution_log
+// ═══════════════════════════════════════════════════════════════
+async function loadEdgeLogs() {
+  const tbody = document.getElementById('edgeBody');
+  if (!tbody) return;
+  try {
+    edgeAllLogs = await sbFetch('uxuix_execution_log?order=executed_at.desc&limit=50&select=id,task_name,worker,status,details,executed_at');
+    edgeLogsLoaded = true;
+    populateEdgeFilter();
+    renderEdgeLogs(edgeAllLogs);
+  } catch(e) {
+    console.warn('Edge logs offline:', e.message);
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Offline</td></tr>';
+  }
+}
+
+function populateEdgeFilter() {
+  const sel = document.getElementById('edgeTaskFilter');
+  if (!sel) return;
+  const names = [...new Set(edgeAllLogs.map(l => l.task_name).filter(Boolean))].sort();
+  let opts = '<option value="">Alle Tasks</option>';
+  names.forEach(n => { opts += '<option value="' + esc(n) + '">' + esc(n) + '</option>'; });
+  sel.innerHTML = opts;
+}
+
+function renderEdgeLogs(logs) {
+  const tbody = document.getElementById('edgeBody');
+  if (!tbody) return;
+  if (logs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px;">Keine Logs gefunden.</td></tr>';
+    return;
+  }
+  let html = '';
+  logs.forEach((l, i) => {
+    const dotCls = statusDotClass(l.status);
+    const det = l.details || {};
+    const durMs = det.duration_ms;
+    const dur = durMs ? (durMs < 1000 ? durMs + 'ms' : durMs < 60000 ? Math.round(durMs / 1000) + 's' : Math.round(durMs / 60000) + 'min') : '--';
+    const output = det.output ? String(det.output) : (det.error_message || '--');
+    const truncOut = output.length > 40 ? output.substring(0, 37) + '...' : output;
+    html += '<tr data-edge-idx="' + i + '">';
+    html += '<td>' + esc(l.task_name || '--') + '</td>';
+    html += '<td>' + esc(l.worker || '--') + '</td>';
+    html += '<td><span class="status-dot ' + dotCls + '"></span> ' + (l.status || '--') + '</td>';
+    html += '<td>' + dur + '</td>';
+    html += '<td>' + formatDate(l.executed_at) + '</td>';
+    html += '<td title="' + esc(output).replace(/"/g, '&quot;') + '">' + esc(truncOut) + '</td>';
+    html += '</tr>';
+    html += '<tr><td colspan="6"><div class="edge-detail" id="edge-detail-' + i + '">' + esc(output) + '</div></td></tr>';
+  });
+  tbody.innerHTML = html;
+  tbody.querySelectorAll('tr[data-edge-idx]').forEach(row => {
+    row.addEventListener('click', () => {
+      const idx = row.dataset.edgeIdx;
+      const detail = document.getElementById('edge-detail-' + idx);
+      if (detail) detail.classList.toggle('open');
+    });
+  });
+}
+
+document.getElementById('edgeTaskFilter').addEventListener('change', function() {
+  const val = this.value;
+  if (!val) { renderEdgeLogs(edgeAllLogs); return; }
+  renderEdgeLogs(edgeAllLogs.filter(l => l.task_name === val));
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CREDENTIAL VAULT — credential_vault (no secrets!)
+// ═══════════════════════════════════════════════════════════════
+async function loadCredentials() {
+  const grid = document.getElementById('credGrid');
+  if (!grid) return;
+  try {
+    const creds = await sbFetch('credential_vault?select=id,service_name,description,machine_scope,last_rotated,rotation_interval_days,updated_at&order=service_name');
+    credsLoaded = true;
+    if (creds.length === 0) {
+      grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Keine Credentials gefunden.</div>';
+      return;
+    }
+    const now = Date.now();
+    let html = '';
+    creds.forEach(c => {
+      const lastRot = c.last_rotated ? new Date(c.last_rotated) : null;
+      const interval = c.rotation_interval_days || 90;
+      let rotLabel = '--', rotCls = 'rot-ok';
+      if (lastRot) {
+        const daysSince = Math.floor((now - lastRot.getTime()) / 86400000);
+        if (daysSince > interval) { rotLabel = 'Rotation ueberfaellig (' + daysSince + 'd)'; rotCls = 'rot-overdue'; }
+        else if (daysSince > interval * 0.75) { rotLabel = 'Bald rotieren (' + daysSince + '/' + interval + 'd)'; rotCls = 'rot-warn'; }
+        else { rotLabel = 'OK (' + daysSince + '/' + interval + 'd)'; rotCls = 'rot-ok'; }
+      }
+      const scopes = Array.isArray(c.machine_scope) ? c.machine_scope : [];
+      html += '<div class="cred-card">';
+      html += '<h3>' + esc(c.service_name || '--') + '</h3>';
+      html += '<div class="cred-desc">' + esc(c.description || '') + '</div>';
+      html += '<div class="cred-meta">';
+      html += '<span><span>Letzte Rotation</span><span>' + (lastRot ? formatDate(c.last_rotated) : '--') + '</span></span>';
+      html += '<span><span>Intervall</span><span>' + interval + ' Tage</span></span>';
+      html += '<span><span>Aktualisiert</span><span>' + formatDate(c.updated_at) + '</span></span>';
+      html += '</div>';
+      if (scopes.length > 0) {
+        html += '<div class="cred-tags">';
+        scopes.forEach(s => { html += '<span class="cred-tag">' + esc(String(s)) + '</span>'; });
+        html += '</div>';
+      }
+      html += '<span class="rotation-badge ' + rotCls + '">' + rotLabel + '</span>';
+      html += '</div>';
+    });
+    grid.innerHTML = html;
+  } catch(e) {
+    console.warn('Credentials offline:', e.message);
+    grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Offline</div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GIST VERSIONS — GitHub Gist commit history
+// ═══════════════════════════════════════════════════════════════
+const GIST_MAP = {
+  fleetboard: { id: 'beb6e4606c1ea14911d8d71fe1ede38d', name: 'Fleetboard Pipeline' },
+  nacke: { id: 'd8fe35c43d948ed0e898e4eb76049934', name: 'NackeScript Pipeline' },
+  'send-report': { id: '8c3618336714d5aa123794d9200eb77c', name: 'Fleetboard Report' }
+};
+function populateGistSelector() {
+  const sel = document.getElementById('gistPipelineSelect');
+  if (!sel || sel.children.length > 0) return;
+  Object.entries(GIST_MAP).forEach(([key, val]) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = val.name;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => loadGistVersions(sel.value));
+}
+
+async function loadGistVersions(pipelineKey) {
+  const tbody = document.getElementById('gistBody');
+  if (!tbody) return;
+  const gist = GIST_MAP[pipelineKey];
+  if (!gist) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Unbekannte Pipeline.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Lade Gist-Historie...</td></tr>';
+  try {
+    const resp = await fetch('https://api.github.com/gists/' + gist.id + '/commits?per_page=15');
+    if (!resp.ok) throw new Error('GitHub API ' + resp.status);
+    const commits = await resp.json();
+    versionsLoaded = true;
+    if (commits.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Keine Revisionen gefunden.</td></tr>';
+      return;
+    }
+    let html = '';
+    commits.forEach(c => {
+      const sha = c.version ? c.version.substring(0, 8) : '--';
+      const date = formatDate(c.committed_at);
+      const cs = c.change_status || {};
+      const adds = cs.additions || 0;
+      const dels = cs.deletions || 0;
+      const total = cs.total || 0;
+      const url = 'https://gist.github.com/' + gist.id + '/' + c.version;
+      html += '<tr>';
+      html += '<td><a href="' + url + '" target="_blank" rel="noopener">' + sha + '</a></td>';
+      html += '<td>' + date + '</td>';
+      html += '<td>' + total + ' Dateien</td>';
+      html += '<td><span class="gist-additions">+' + adds + '</span> / <span class="gist-deletions">-' + dels + '</span></td>';
+      html += '</tr>';
+    });
+    tbody.innerHTML = html;
+  } catch(e) {
+    console.warn('Gist versions error:', e.message);
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Fehler: ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUTO-REFRESH — History + Heartbeat + new tabs every 60s
 // ═══════════════════════════════════════════════════════════════
 let refreshTimer = null;
 function startAutoRefresh() {
@@ -1263,12 +1683,16 @@ function startAutoRefresh() {
     const wfId = wfSelect.value;
     if (!wfId) return;
     checkHeartbeat();
-    // Only refresh history if tab is active
+    loadWorkers();
     const histPanel = document.getElementById('panel-history');
     if (histPanel && histPanel.classList.contains('active')) {
       loadHistory(wfId);
       loadIncidents(wfId);
     }
+    const tasksPanel = document.getElementById('panel-tasks');
+    if (tasksPanel && tasksPanel.classList.contains('active')) loadTasks();
+    const edgePanel = document.getElementById('panel-edgelogs');
+    if (edgePanel && edgePanel.classList.contains('active')) loadEdgeLogs();
   }, 60000);
 }
 
@@ -1277,7 +1701,7 @@ function startAutoRefresh() {
 // ═══════════════════════════════════════════════════════════════
 (async function boot() {
   await loadAllData();
-  // Fallback: wenn nach loadAllData kein Inhalt gerendert wurde, nochmal forcen
+  loadWorkers();
   const sr = document.getElementById('swimlane-render');
   if (sr && (!sr.innerHTML || sr.innerHTML.includes('Lade'))) {
     const keys = Object.keys(STORE.workflows);
