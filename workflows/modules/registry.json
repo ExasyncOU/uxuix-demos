@@ -473,6 +473,23 @@
       },
       "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
       "frozenAt": "2026-03-10T12:00:00Z"
+    },
+
+    "fleetboard2/sync-geodata": {
+      "id": "fleetboard2/sync-geodata",
+      "name": "Geodaten Sync",
+      "version": "2.0.0",
+      "status": "active",
+      "language": "javascript",
+      "description": "Laedt Areas (53 Bounding-Boxes) + Mappings (Zustellreferenz -> Gebiet) aus Supabase, cached lokal als JSON. Prueft CSV-Refs und meldet Unbekannte an fleetboard_unknown_refs (Monitor).",
+      "usedBy": ["fleetboard2"],
+      "dependencies": ["@supabase/supabase-js"],
+      "source": {
+        "type": "local",
+        "file": "sync-geodata.mjs",
+        "path": "A.I.D.A/flows/fleetboard2/sync-geodata.mjs",
+        "lines": 160
+      }
     }
   },
 

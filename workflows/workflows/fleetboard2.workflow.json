@@ -8,9 +8,8 @@
   "vm": "UXUIX (157.180.78.163)",
   "vmPath": "C:\\FleetboardScript\\",
   "source": {
-    "type": "github-gist",
-    "gistId": "beb6e4606c1ea14911d8d71fe1ede38d",
-    "owner": "ExasyncOU"
+    "type": "local",
+    "path": "A.I.D.A/flows/fleetboard2/"
   },
   "schedule": {
     "cron": "*/5 * * * *",
@@ -24,18 +23,45 @@
       "hardRules": [
         "Max 4 Min Laufzeit (5-Min-Cron-Takt)",
         "IMAP: automation@uxuix.de (Finnland/Cloud)",
-        "DateTime.Parse() statt ParseExact() fuer gps_time",
         "GVLOGMG: 3-fach Validierung (nach Zustellstopp, max 4h, nach erstem Soll)"
       ]
     },
     "variables": []
   },
   "lanes": [
-    { "id": "pipeline", "label": "Pipeline", "icon": "zap", "color": "#4A90D9", "description": "Hauptablauf: Fetch -> Match -> Report" },
-    { "id": "data", "label": "Daten", "icon": "database", "color": "#8E44AD", "description": "Supabase Reads/Writes" }
+    { "id": "geodata", "label": "Geodaten", "icon": "map-pin", "color": "#27AE60", "description": "Areas + Mappings aus Supabase, lokaler Cache" },
+    { "id": "pipeline", "label": "Pipeline", "icon": "zap", "color": "#4A90D9", "description": "CSV -> GPS -> Match -> Report" },
+    { "id": "data", "label": "Daten", "icon": "database", "color": "#8E44AD", "description": "Supabase Reads/Writes" },
+    { "id": "monitor", "label": "Monitor", "icon": "activity", "color": "#E74C3C", "description": "Unknown Refs, Metriken, Alerts" }
   ],
-  "steps": [],
+  "steps": [
+    {
+      "id": "sync-geodata",
+      "lane": "geodata",
+      "module": "fleetboard2/sync-geodata",
+      "label": "Geodaten Sync",
+      "description": "Areas + Mappings aus Supabase laden, lokal als JSON cachen. Einmalig oder bei Aenderungen.",
+      "next": ["check-refs"],
+      "inputs": ["supabase:fleetboard_areas", "supabase:fleetboard_mappings"],
+      "outputs": ["cache/areas.json", "cache/mappings.json"],
+      "script": "sync-geodata.mjs"
+    },
+    {
+      "id": "check-refs",
+      "lane": "monitor",
+      "module": "fleetboard2/sync-geodata",
+      "label": "Zustellreferenzen pruefen",
+      "description": "CSV-Refs gegen Mappings pruefen. Unbekannte Refs -> fleetboard_unknown_refs (Monitor-sichtbar).",
+      "next": [],
+      "inputs": ["cache/mappings.json", "csv_file"],
+      "outputs": ["fleetboard_unknown_refs"],
+      "script": "sync-geodata.mjs --check"
+    }
+  ],
   "supabaseTables": [
+    { "name": "fleetboard_areas", "purpose": "53 Gebiete mit Bounding-Boxes (lat/lon)", "rw": "read" },
+    { "name": "fleetboard_mappings", "purpose": "Zustellreferenz -> Gebietsname", "rw": "rw" },
+    { "name": "fleetboard_unknown_refs", "purpose": "Unbekannte Refs fuer Monitor", "rw": "write" },
     { "name": "fleetboard_traces", "purpose": "GPS-Punkte akkumuliert", "rw": "rw" },
     { "name": "fleetboard_arrivals", "purpose": "Match-Ergebnisse", "rw": "rw" },
     { "name": "workflow_runs", "purpose": "Monitoring pro Lauf", "rw": "write" }
