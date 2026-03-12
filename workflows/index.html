@@ -2013,15 +2013,26 @@ document.getElementById('kbCancelBtn').addEventListener('click', () => {
   if (kbCurrentDoc) showKbDoc(kbCurrentDoc);
 });
 
+// KB Auth: Token wird einmal per Prompt abgefragt und in sessionStorage gecacht (nie im HTML)
+function getKbToken() {
+  let token = sessionStorage.getItem('kb_token');
+  if (token) return token;
+  token = prompt('Wissensbasis-Passwort eingeben:');
+  if (token) sessionStorage.setItem('kb_token', token);
+  return token;
+}
+
 document.getElementById('kbSaveBtn').addEventListener('click', async () => {
   if (!kbCurrentDoc) return;
+  const token = getKbToken();
+  if (!token) return;
   const newContent = document.getElementById('kbEditor').value;
   const btn = document.getElementById('kbSaveBtn');
   btn.textContent = 'Speichern...';
   try {
     const resp = await fetch(SB_URL + '/functions/v1/knowledge-update/update', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'x-kb-token': 'exasync-kb-2026' },
+      headers: { 'Content-Type': 'application/json', 'x-kb-token': token },
       body: JSON.stringify({ file_path: kbCurrentDoc.file_path, content: newContent })
     });
     const result = await resp.json();
@@ -2031,6 +2042,7 @@ document.getElementById('kbSaveBtn').addEventListener('click', async () => {
       btn.textContent = 'Gespeichert!';
       setTimeout(() => { btn.textContent = 'Speichern'; }, 2000);
     } else {
+      if (resp.status === 401) sessionStorage.removeItem('kb_token');
       throw new Error(result.error || 'Unbekannter Fehler');
     }
   } catch(e) {
