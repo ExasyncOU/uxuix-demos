@@ -298,6 +298,62 @@ table.gist-versions a:hover { text-decoration: underline; }
 .gist-additions { color: var(--green); font-weight: 600; }
 .gist-deletions { color: var(--red); font-weight: 600; }
 
+/* ─── Wissensbasis / Knowledge Base ─── */
+.kb-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+.kb-header h2 { font-size: 18px; font-weight: 600; }
+.kb-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.kb-search { background: var(--code-bg); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 6px; font-size: 13px; width: 200px; }
+.kb-search:focus { outline: none; border-color: var(--green); }
+.kb-filter { background: var(--code-bg); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+.kb-sync-btn { background: var(--accent); border: 1px solid var(--border); color: var(--green); padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.kb-sync-btn:hover { background: var(--green); color: var(--bg); }
+.kb-stats { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.kb-stat { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 100px; }
+.kb-stat-val { display: block; font-size: 22px; font-weight: 700; color: var(--green); }
+.kb-stat-lbl { font-size: 11px; color: var(--text-muted); }
+.kb-layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; min-height: 500px; }
+.kb-sidebar { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.kb-list { max-height: 600px; overflow-y: auto; }
+.kb-item { padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s; }
+.kb-item:hover { background: rgba(255,255,255,.04); }
+.kb-item.active { background: var(--accent); border-left: 3px solid var(--green); }
+.kb-item-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kb-item-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; display: flex; gap: 8px; }
+.kb-item-type { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 600; text-transform: uppercase; }
+.kb-item-type.agent { background: rgba(0,212,170,.15); color: var(--green); }
+.kb-item-type.doc { background: rgba(79,195,247,.15); color: var(--blue); }
+.kb-item-type.memory { background: rgba(179,136,255,.15); color: var(--purple); }
+.kb-item-type.config { background: rgba(255,171,64,.15); color: var(--orange); }
+.kb-viewer { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
+.kb-viewer-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.kb-viewer-header span { font-weight: 600; font-size: 14px; }
+.kb-edit-btn, .kb-save-btn, .kb-cancel-btn { padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); }
+.kb-edit-btn { background: var(--accent); color: var(--blue); }
+.kb-save-btn { background: var(--green); color: var(--bg); border: none; }
+.kb-cancel-btn { background: var(--code-bg); color: var(--text-muted); }
+.kb-viewer-meta { padding: 8px 16px; font-size: 11px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,.04); display: flex; gap: 16px; flex-wrap: wrap; }
+.kb-content { flex: 1; padding: 16px; overflow: auto; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; background: var(--code-bg); margin: 0; max-height: 500px; }
+.kb-editor { flex: 1; padding: 16px; font-size: 13px; line-height: 1.6; background: var(--code-bg); color: var(--text); border: none; resize: none; font-family: 'Cascadia Code', monospace; min-height: 400px; }
+.kb-editor-actions { padding: 10px 16px; display: flex; gap: 8px; border-top: 1px solid var(--border); }
+.kb-vector-section { margin-top: 24px; }
+.kb-vector-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+.kb-vector-tabs { display: flex; gap: 0; margin-bottom: 12px; }
+.kb-vtab { padding: 8px 18px; background: var(--panel); border: 1px solid var(--border); color: var(--text-muted); font-size: 13px; cursor: pointer; }
+.kb-vtab:first-child { border-radius: 6px 0 0 6px; }
+.kb-vtab:last-child { border-radius: 0 6px 6px 0; }
+.kb-vtab.active { background: var(--accent); color: var(--green); border-color: var(--green); }
+.kb-vector-content { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 0; max-height: 400px; overflow: auto; }
+.kb-vector-card { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.kb-vector-card:last-child { border-bottom: none; }
+.kb-vector-key { font-weight: 600; font-size: 13px; color: var(--blue); }
+.kb-vector-category { font-size: 10px; padding: 1px 6px; border-radius: 3px; background: rgba(0,212,170,.1); color: var(--green); margin-left: 8px; }
+.kb-vector-value { font-size: 12px; color: var(--text); margin-top: 4px; line-height: 1.5; }
+.kb-vector-meta { font-size: 10px; color: var(--text-muted); margin-top: 4px; display: flex; gap: 12px; }
+.kb-vector-confidence { display: inline-block; width: 40px; height: 4px; background: var(--code-bg); border-radius: 2px; position: relative; vertical-align: middle; }
+.kb-vector-confidence-fill { height: 100%; border-radius: 2px; background: var(--green); }
+.kb-vector-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.kb-vector-tag { font-size: 9px; padding: 1px 5px; background: rgba(255,255,255,.06); border-radius: 3px; color: var(--text-muted); }
+
 /* ─── Mobile Responsive ─── */
 @media (max-width: 900px) {
   .header { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
@@ -367,6 +423,7 @@ table.gist-versions a:hover { text-decoration: underline; }
   <div class="tab" data-tab="edgelogs">Edge Logs</div>
   <div class="tab" data-tab="credentials">Credentials</div>
   <div class="tab" data-tab="versions">Versionen</div>
+  <div class="tab" data-tab="knowledge">Wissensbasis</div>
 </div>
 
 <!-- ═══ MAIN ═══ -->
@@ -516,6 +573,69 @@ table.gist-versions a:hover { text-decoration: underline; }
   </table>
 </div>
 
+<!-- ════════════════════════════════════════════════════════════
+     TAB 9: WISSENSBASIS — Agents, Docs, Memory, Vector Store
+     ════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-knowledge">
+  <div class="kb-header">
+    <h2>Wissensbasis</h2>
+    <div class="kb-controls">
+      <input type="text" id="kbSearch" placeholder="Suchen..." class="kb-search">
+      <select id="kbTypeFilter" class="kb-filter">
+        <option value="">Alle Typen</option>
+        <option value="agent">Agenten</option>
+        <option value="doc">Docs</option>
+        <option value="memory">Memory</option>
+        <option value="config">Config</option>
+      </select>
+      <button id="kbSyncBtn" class="kb-sync-btn" title="Wissensbasis synchronisieren">Sync</button>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="kb-stats" id="kbStats">
+    <div class="kb-stat"><span class="kb-stat-val" id="kbStatTotal">--</span><span class="kb-stat-lbl">Dokumente</span></div>
+    <div class="kb-stat"><span class="kb-stat-val" id="kbStatAgents">--</span><span class="kb-stat-lbl">Agenten</span></div>
+    <div class="kb-stat"><span class="kb-stat-val" id="kbStatDocs">--</span><span class="kb-stat-lbl">Docs</span></div>
+    <div class="kb-stat"><span class="kb-stat-val" id="kbStatMemory">--</span><span class="kb-stat-lbl">Memory</span></div>
+    <div class="kb-stat"><span class="kb-stat-val" id="kbStatSemantic">--</span><span class="kb-stat-lbl">Semantic Vectors</span></div>
+    <div class="kb-stat"><span class="kb-stat-val" id="kbStatEpisodic">--</span><span class="kb-stat-lbl">Episodic Events</span></div>
+  </div>
+
+  <!-- Two-column layout: list + viewer -->
+  <div class="kb-layout">
+    <div class="kb-sidebar">
+      <div class="kb-list" id="kbList">
+        <div style="color:var(--text-muted);font-size:13px;padding:16px;">Tab aktivieren zum Laden...</div>
+      </div>
+    </div>
+    <div class="kb-viewer">
+      <div class="kb-viewer-header" id="kbViewerHeader">
+        <span id="kbViewerTitle">Dokument waehlen...</span>
+        <button id="kbEditBtn" class="kb-edit-btn" style="display:none;">Bearbeiten</button>
+      </div>
+      <div class="kb-viewer-meta" id="kbViewerMeta"></div>
+      <pre class="kb-content" id="kbContent">Waehle ein Dokument aus der Liste links.</pre>
+      <textarea class="kb-editor" id="kbEditor" style="display:none;"></textarea>
+      <div class="kb-editor-actions" id="kbEditorActions" style="display:none;">
+        <button id="kbSaveBtn" class="kb-save-btn">Speichern</button>
+        <button id="kbCancelBtn" class="kb-cancel-btn">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vector Store Section -->
+  <div class="kb-vector-section">
+    <h3>Hive Memory — Vektorspeicher</h3>
+    <div class="kb-vector-tabs">
+      <button class="kb-vtab active" data-vtab="semantic">Semantic Memory (18)</button>
+      <button class="kb-vtab" data-vtab="episodic">Episodic Memory (10)</button>
+    </div>
+    <div class="kb-vector-content" id="kbVectorSemantic"></div>
+    <div class="kb-vector-content" id="kbVectorEpisodic" style="display:none;"></div>
+  </div>
+</div>
+
 </div><!-- /panels -->
 </div><!-- /main -->
 
@@ -554,6 +674,7 @@ document.querySelectorAll('.tab').forEach(tab => {
       const sel = document.getElementById('gistPipelineSelect');
       if (sel && sel.value) loadGistVersions(sel.value);
     }
+    if (panelId === 'knowledge' && !kbLoaded) loadKnowledge();
   });
 });
 
@@ -1760,6 +1881,245 @@ async function loadGistVersions(pipelineKey) {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">Fehler: ' + esc(e.message) + '</td></tr>';
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// WISSENSBASIS — Knowledge Base: Agents, Docs, Memory, Vectors
+// ═══════════════════════════════════════════════════════════════
+let kbAllDocs = [];
+let kbLoaded = false;
+let kbCurrentDoc = null;
+let kbEditing = false;
+
+async function loadKnowledge() {
+  try {
+    // Load knowledge_base docs
+    kbAllDocs = await sbFetch('knowledge_base?order=doc_type,title&select=id,doc_type,file_path,title,content,description,tags,file_size_bytes,last_synced_at,last_edited_at');
+    kbLoaded = true;
+
+    // Stats
+    document.getElementById('kbStatTotal').textContent = kbAllDocs.length;
+    document.getElementById('kbStatAgents').textContent = kbAllDocs.filter(d => d.doc_type === 'agent').length;
+    document.getElementById('kbStatDocs').textContent = kbAllDocs.filter(d => d.doc_type === 'doc').length;
+    document.getElementById('kbStatMemory').textContent = kbAllDocs.filter(d => d.doc_type === 'memory').length;
+
+    renderKbList(kbAllDocs);
+
+    // Load vector store stats
+    loadVectorStats();
+  } catch(e) {
+    console.warn('Knowledge base offline:', e.message);
+    document.getElementById('kbList').innerHTML = '<div style="color:var(--text-muted);padding:16px;">Offline: ' + esc(e.message) + '</div>';
+  }
+}
+
+function renderKbList(docs) {
+  const list = document.getElementById('kbList');
+  if (docs.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-muted);padding:16px;">Keine Dokumente gefunden.</div>';
+    return;
+  }
+  // Group by type
+  const groups = {};
+  docs.forEach(d => {
+    if (!groups[d.doc_type]) groups[d.doc_type] = [];
+    groups[d.doc_type].push(d);
+  });
+  const typeLabels = { agent: 'Agenten', doc: 'Dokumentation', memory: 'Memory (Session)', config: 'Konfiguration' };
+  const typeOrder = ['agent', 'config', 'doc', 'memory'];
+
+  let html = '';
+  typeOrder.forEach(type => {
+    const items = groups[type];
+    if (!items || items.length === 0) return;
+    html += '<div style="padding:8px 14px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);">' + (typeLabels[type] || type) + ' (' + items.length + ')</div>';
+    items.forEach(d => {
+      const size = d.file_size_bytes > 1024 ? Math.round(d.file_size_bytes / 1024) + ' KB' : d.file_size_bytes + ' B';
+      html += '<div class="kb-item" data-fp="' + esc(d.file_path) + '">';
+      html += '<div style="display:flex;align-items:center;gap:6px;">';
+      html += '<span class="kb-item-type ' + d.doc_type + '">' + d.doc_type + '</span>';
+      html += '<span class="kb-item-title">' + esc(d.title) + '</span>';
+      html += '</div>';
+      html += '<div class="kb-item-meta"><span>' + esc(d.file_path.split('/').pop()) + '</span><span>' + size + '</span></div>';
+      html += '</div>';
+    });
+  });
+  list.innerHTML = html;
+
+  // Click handlers
+  list.querySelectorAll('.kb-item').forEach(el => {
+    el.addEventListener('click', () => {
+      list.querySelectorAll('.kb-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      const fp = el.dataset.fp;
+      const doc = kbAllDocs.find(d => d.file_path === fp);
+      if (doc) showKbDoc(doc);
+    });
+  });
+}
+
+function showKbDoc(doc) {
+  kbCurrentDoc = doc;
+  kbEditing = false;
+  document.getElementById('kbViewerTitle').textContent = doc.title;
+  document.getElementById('kbEditBtn').style.display = 'inline-block';
+  document.getElementById('kbContent').style.display = 'block';
+  document.getElementById('kbEditor').style.display = 'none';
+  document.getElementById('kbEditorActions').style.display = 'none';
+
+  // Meta
+  const synced = doc.last_synced_at ? formatDate(doc.last_synced_at) : '--';
+  const edited = doc.last_edited_at ? formatDate(doc.last_edited_at) : '--';
+  const tags = (doc.tags || []).map(t => '<span class="kb-vector-tag">' + esc(t) + '</span>').join('');
+  document.getElementById('kbViewerMeta').innerHTML =
+    '<span>Pfad: <code>' + esc(doc.file_path) + '</code></span>' +
+    '<span>Sync: ' + synced + '</span>' +
+    '<span>Editiert: ' + edited + '</span>' +
+    (tags ? '<span>' + tags + '</span>' : '');
+
+  // Content
+  document.getElementById('kbContent').textContent = doc.content || '(leer)';
+}
+
+// Search + Filter
+document.getElementById('kbSearch').addEventListener('input', function() { filterKb(); });
+document.getElementById('kbTypeFilter').addEventListener('change', function() { filterKb(); });
+
+function filterKb() {
+  const q = document.getElementById('kbSearch').value.toLowerCase();
+  const type = document.getElementById('kbTypeFilter').value;
+  let filtered = kbAllDocs;
+  if (type) filtered = filtered.filter(d => d.doc_type === type);
+  if (q) filtered = filtered.filter(d =>
+    d.title.toLowerCase().includes(q) ||
+    d.file_path.toLowerCase().includes(q) ||
+    (d.content && d.content.toLowerCase().includes(q)) ||
+    (d.tags && d.tags.some(t => t.toLowerCase().includes(q)))
+  );
+  renderKbList(filtered);
+}
+
+// Edit mode
+document.getElementById('kbEditBtn').addEventListener('click', () => {
+  if (!kbCurrentDoc) return;
+  kbEditing = true;
+  document.getElementById('kbContent').style.display = 'none';
+  document.getElementById('kbEditor').style.display = 'block';
+  document.getElementById('kbEditor').value = kbCurrentDoc.content || '';
+  document.getElementById('kbEditorActions').style.display = 'flex';
+  document.getElementById('kbEditBtn').style.display = 'none';
+});
+
+document.getElementById('kbCancelBtn').addEventListener('click', () => {
+  if (kbCurrentDoc) showKbDoc(kbCurrentDoc);
+});
+
+document.getElementById('kbSaveBtn').addEventListener('click', async () => {
+  if (!kbCurrentDoc) return;
+  const newContent = document.getElementById('kbEditor').value;
+  const btn = document.getElementById('kbSaveBtn');
+  btn.textContent = 'Speichern...';
+  try {
+    const resp = await fetch(SB_URL + '/functions/v1/knowledge-update/update', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-kb-token': 'exasync-kb-2026' },
+      body: JSON.stringify({ file_path: kbCurrentDoc.file_path, content: newContent })
+    });
+    const result = await resp.json();
+    if (result.ok) {
+      kbCurrentDoc.content = newContent;
+      showKbDoc(kbCurrentDoc);
+      btn.textContent = 'Gespeichert!';
+      setTimeout(() => { btn.textContent = 'Speichern'; }, 2000);
+    } else {
+      throw new Error(result.error || 'Unbekannter Fehler');
+    }
+  } catch(e) {
+    btn.textContent = 'Fehler!';
+    console.error('Save error:', e);
+    setTimeout(() => { btn.textContent = 'Speichern'; }, 3000);
+  }
+});
+
+// Vector Store
+async function loadVectorStats() {
+  try {
+    // Semantic Memory
+    const semantic = await sbFetch('hive_semantic_memory?order=updated_at.desc&select=id,category,key,value,confidence,frequency,tags,created_at,updated_at');
+    document.getElementById('kbStatSemantic').textContent = semantic.length;
+    const semBtn = document.querySelector('[data-vtab="semantic"]');
+    if (semBtn) semBtn.textContent = 'Semantic Memory (' + semantic.length + ')';
+
+    let semHtml = '';
+    semantic.forEach(s => {
+      const conf = Math.round((s.confidence || 0) * 100);
+      const tags = (s.tags || []).map(t => '<span class="kb-vector-tag">' + esc(String(t)) + '</span>').join('');
+      semHtml += '<div class="kb-vector-card">';
+      semHtml += '<span class="kb-vector-key">' + esc(s.key || '--') + '</span>';
+      if (s.category) semHtml += '<span class="kb-vector-category">' + esc(s.category) + '</span>';
+      semHtml += '<div class="kb-vector-value">' + esc((s.value || '').substring(0, 300)) + (s.value && s.value.length > 300 ? '...' : '') + '</div>';
+      semHtml += '<div class="kb-vector-meta">';
+      semHtml += '<span>Confidence: <span class="kb-vector-confidence"><span class="kb-vector-confidence-fill" style="width:' + conf + '%"></span></span> ' + conf + '%</span>';
+      semHtml += '<span>Freq: ' + (s.frequency || 0) + '</span>';
+      semHtml += '<span>' + formatDate(s.updated_at) + '</span>';
+      semHtml += '</div>';
+      if (tags) semHtml += '<div class="kb-vector-tags">' + tags + '</div>';
+      semHtml += '</div>';
+    });
+    document.getElementById('kbVectorSemantic').innerHTML = semHtml || '<div style="padding:16px;color:var(--text-muted);">Keine semantischen Eintraege.</div>';
+
+    // Episodic Memory
+    const episodic = await sbFetch('hive_episodic_memory?order=created_at.desc&select=id,agent_id,session_id,event_type,content,outcome,confidence,retention_score,access_count,created_at');
+    document.getElementById('kbStatEpisodic').textContent = episodic.length;
+    const epiBtn = document.querySelector('[data-vtab="episodic"]');
+    if (epiBtn) epiBtn.textContent = 'Episodic Memory (' + episodic.length + ')';
+
+    let epiHtml = '';
+    episodic.forEach(e => {
+      const conf = Math.round((e.confidence || 0) * 100);
+      const ret = Math.round((e.retention_score || 0) * 100);
+      epiHtml += '<div class="kb-vector-card">';
+      epiHtml += '<span class="kb-vector-key">' + esc(e.event_type || '--') + '</span>';
+      if (e.agent_id) epiHtml += '<span class="kb-vector-category">' + esc(e.agent_id) + '</span>';
+      epiHtml += '<div class="kb-vector-value">' + esc((e.content || '').substring(0, 300)) + (e.content && e.content.length > 300 ? '...' : '') + '</div>';
+      if (e.outcome) epiHtml += '<div style="font-size:11px;color:var(--green);margin-top:4px;">Outcome: ' + esc(e.outcome.substring(0, 150)) + '</div>';
+      epiHtml += '<div class="kb-vector-meta">';
+      epiHtml += '<span>Confidence: ' + conf + '%</span>';
+      epiHtml += '<span>Retention: ' + ret + '%</span>';
+      epiHtml += '<span>Zugriffe: ' + (e.access_count || 0) + '</span>';
+      epiHtml += '<span>' + formatDate(e.created_at) + '</span>';
+      epiHtml += '</div>';
+      epiHtml += '</div>';
+    });
+    document.getElementById('kbVectorEpisodic').innerHTML = epiHtml || '<div style="padding:16px;color:var(--text-muted);">Keine episodischen Eintraege.</div>';
+
+  } catch(e) {
+    console.warn('Vector stats error:', e.message);
+    document.getElementById('kbStatSemantic').textContent = '?';
+    document.getElementById('kbStatEpisodic').textContent = '?';
+  }
+}
+
+// Vector tab switching
+document.querySelectorAll('.kb-vtab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.kb-vtab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.vtab;
+    document.getElementById('kbVectorSemantic').style.display = tab === 'semantic' ? 'block' : 'none';
+    document.getElementById('kbVectorEpisodic').style.display = tab === 'episodic' ? 'block' : 'none';
+  });
+});
+
+// Sync button — triggers re-sync notification
+document.getElementById('kbSyncBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('kbSyncBtn');
+  btn.textContent = 'Syncing...';
+  btn.disabled = true;
+  // Reload from DB
+  await loadKnowledge();
+  btn.textContent = 'Sync';
+  btn.disabled = false;
+});
 
 // ═══════════════════════════════════════════════════════════════
 // AUTO-REFRESH — History + Heartbeat + new tabs every 60s
