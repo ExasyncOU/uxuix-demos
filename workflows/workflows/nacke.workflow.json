@@ -2,7 +2,7 @@
   "$schema": "workflow-v1",
   "id": "nacke",
   "name": "NackeScript IDIS Auftragsbestätigung",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "description": "Automatische Auftragsbestaetigung + Overconfirmation in IDIS fuer Nacke Logistik",
   "owner": "nacke-agent",
   "vm": "UXUIX (Nacke-VM)",
@@ -10,11 +10,11 @@
     "type": "github-gist",
     "gistId": "d8fe35c43d948ed0e898e4eb76049934",
     "owner": "ExasyncOU",
-    "currentSHA": "7c9a0e625418d8f378c22d43b84db0e868b6457c",
+    "currentSHA": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
     "lastSynced": "2026-03-11T08:00:00Z",
     "files": {
-      "orchestrator.py": { "lines": 920, "size": 37510, "module": "nacke/orchestrator" },
-      "idis_browser.py": { "lines": 916, "size": 38612, "module": "nacke/idis-browser" },
+      "orchestrator.py": { "lines": 876, "size": 37510, "module": "nacke/orchestrator" },
+      "idis_browser.py": { "lines": 997, "size": 38612, "module": "nacke/idis-browser" },
       "picklist_generator.py": { "lines": 1153, "size": 47104, "module": "nacke/picklist-generator" },
       "master_data.py": { "lines": 361, "size": 12530, "module": "nacke/master-data" },
       "overconfirmation.py": { "lines": 249, "size": 8770, "module": "nacke/overconfirmation" },
@@ -44,16 +44,16 @@
         "Fuer DRY-RUN IMMER dediziertes Dryrun-Script verwenden",
         "Bundle Size IMMER aus Col K (Einstellung RPR Kartonage) — NIEMALS Col J",
         "Overconfirmation Faktor IMMER 1 (PCS=1, PPP=1) — NIEMALS factor_ppp=3",
-        "Frischer Browser pro Land (sequentiell) — kein CDP-State-Aufbau zwischen Laendern"
+        "Frischer Browser-Context pro Land (PARALLEL via CDP) — kein State-Bleed zwischen Laendern"
       ],
       "frozenLogic": {
-        "version": "5.0.0",
-        "frozenAt": "2026-03-11",
-        "pipelineGistSHA": "7c9a0e625418d8f378c22d43b84db0e868b6457c",
-        "deployGistSHA": "5fd7f4480d7144b7061264df0320d47957a7620d",
+        "version": "6.0.0",
+        "frozenAt": "2026-03-12",
+        "pipelineGistSHA": "b296f0bcb3b9f2ea4bf5ad3e92325bee8052ca44",
+        "deployGistSHA": "14fa2e61c5ec1ce54230623eb5b935e4e8fe759a",
         "bundleSource": "Col K (Einstellung RPR Kartonage), OL: OL Kartonage Sheet",
         "overconfirmationFactor": { "PCS": 1, "PPP": 1 },
-        "browserStrategy": "fresh-per-country-sequential",
+        "browserStrategy": "fresh-context-per-country-parallel",
         "smtpUser": "bot@uxuix.de",
         "smtpVia": "Edge Function nacke-report (Vault Secrets)"
       }
@@ -140,9 +140,19 @@
       "module": "nacke/orchestrator",
       "label": "Ergebnis speichern",
       "description": "Bestaetigungsergebnisse zurueck nach Supabase schreiben",
-      "next": ["generate-report"],
+      "next": ["generate-picklists"],
       "inputs": ["results[]"],
       "outputs": ["saved_count"]
+    },
+    {
+      "id": "generate-picklists",
+      "lane": "reporting",
+      "module": "nacke/picklist-generator",
+      "label": "Picklisten generieren",
+      "description": "Excel + PDF Raussuchlisten aus Post-Export-Daten generieren. Sortiert nach Class, mit Seitenumbruch vor Summenblock.",
+      "next": ["generate-report"],
+      "inputs": ["results[]", "config", "masterData"],
+      "outputs": ["picklists[]"]
     },
     {
       "id": "generate-report",
