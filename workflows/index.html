@@ -318,7 +318,7 @@ table.history .status-dot.err { background: var(--red); }
   <div class="history-stats">
     <div class="stat-box"><div class="val" id="statAvgDuration">--</div><div class="label">Avg. Dauer</div></div>
     <div class="stat-box"><div class="val" id="statSuccessRate">--</div><div class="label">Erfolgsrate</div></div>
-    <div class="stat-box"><div class="val" id="statTotalRuns">--</div><div class="label">Laeufe (20)</div></div>
+    <div class="stat-box"><div class="val" id="statTotalRuns">--</div><div class="label" id="statTotalLabel">Laeufe (30)</div></div>
     <div class="stat-box"><div class="val" id="statLastRun">--</div><div class="label">Letzter Lauf</div></div>
   </div>
 
@@ -911,20 +911,46 @@ async function sbFetch(path) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// HEARTBEAT — Live Supabase Ping
+// WORKFLOW ID MAPPING — Dashboard-ID → Supabase workflow_id Pattern
+// Manche Workflows haben mehrere Sub-IDs in der DB
+// ═══════════════════════════════════════════════════════════════
+const WF_ID_MAP = {
+  fleetboard: ['uxuix/fleetboard-5min', 'uxuix/fleetboard-matcher', 'uxuix/fleetboard', 'uxuix/fleetboard-imap-fetch', 'fleetboard'],
+  fleetboard2: ['uxuix/fleetboard-5min', 'uxuix/fleetboard-matcher', 'uxuix/fleetboard', 'uxuix/fleetboard-imap-fetch', 'fleetboard'],
+  nacke: ['nacke'],
+  maut: ['uxuix/mautberechnung', 'maut'],
+  linkedin: ['uxuix/linkedin-leadgen', 'linkedin']
+};
+
+function wfRunsFilter(wfId) {
+  const ids = WF_ID_MAP[wfId];
+  if (ids && ids.length > 0) {
+    return 'workflow_id=in.(' + ids.map(id => '"' + id + '"').join(',') + ')';
+  }
+  // Fallback: like-Match
+  return 'workflow_id=like.*' + encodeURIComponent(wfId) + '*';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HEARTBEAT — Live Supabase Ping (every 60s)
 // ═══════════════════════════════════════════════════════════════
 async function checkHeartbeat() {
   try {
     const wfId = wfSelect.value;
-    const data = await sbFetch('workflow_runs?workflow_id=eq.' + wfId + '&order=started_at.desc&limit=1');
+    const data = await sbFetch('workflow_runs?' + wfRunsFilter(wfId) + '&order=started_at.desc&limit=1');
     if (data.length > 0) {
       const last = data[0];
       const startedAt = new Date(last.started_at);
       const age = Date.now() - startedAt.getTime();
       const dot = document.getElementById('heartbeatDot');
       const text = document.getElementById('heartbeatText');
-      const hoursAgo = Math.round(age / 3600000);
-      const timeLabel = hoursAgo < 1 ? 'vor <1h' : 'vor ' + hoursAgo + 'h';
+
+      const formatAge = (ms) => {
+        if (ms < 60000) return 'vor ' + Math.round(ms / 1000) + 's';
+        if (ms < 3600000) return 'vor ' + Math.round(ms / 60000) + 'min';
+        return 'vor ' + Math.round(ms / 3600000) + 'h';
+      };
+      const timeLabel = formatAge(age);
 
       if (last.status === 'error' || last.status === 'failed') {
         dot.className = 'pulse dead';
@@ -937,20 +963,18 @@ async function checkHeartbeat() {
         text.textContent = 'OK ' + timeLabel;
       } else {
         dot.className = 'pulse unknown';
-        text.textContent = 'Kein Lauf seit ' + hoursAgo + 'h';
+        text.textContent = 'Kein Lauf seit ' + Math.round(age / 3600000) + 'h';
       }
     } else {
       document.getElementById('heartbeatDot').className = 'pulse unknown';
       document.getElementById('heartbeatText').textContent = 'Keine Daten';
     }
   } catch(e) {
-    // Offline mode — keep static meta data from WF_META
     console.warn('Heartbeat offline:', e.message);
   }
 }
-// Initial check + every 5 minutes
+// Initial check (auto-refresh handles subsequent polls every 60s)
 checkHeartbeat();
-setInterval(checkHeartbeat, 300000);
 
 // ═══════════════════════════════════════════════════════════════
 // HISTORY — Last 20 runs from workflow_runs
@@ -987,8 +1011,8 @@ async function loadHistory(wfId) {
 
   try {
     const runs = await sbFetch(
-      'workflow_runs?workflow_id=eq.' + wfId +
-      '&order=started_at.desc&limit=20' +
+      'workflow_runs?' + wfRunsFilter(wfId) +
+      '&order=started_at.desc&limit=30' +
       '&select=id,workflow_id,status,started_at,finished_at,step_current,step_log,metrics,agent_id,vm,trigger,error_message'
     );
 
@@ -1029,11 +1053,13 @@ async function loadHistory(wfId) {
       const step = run.step_current || '--';
       const vm = run.vm || '--';
       const trigger = run.trigger || '--';
+      // Show sub-workflow ID for multi-ID workflows (e.g. fleetboard has 5min, matcher, imap-fetch)
+      const subId = run.workflow_id ? run.workflow_id.split('/').pop() : '';
 
       html += '<tr' + rowCls + '>'
         + '<td>' + formatDate(run.started_at) + '</td>'
         + '<td><span class="status-dot ' + dotCls + '"></span> ' + (run.status || '--') + '</td>'
-        + '<td>' + step + '</td>'
+        + '<td>' + (subId && subId !== step ? '<span style="color:var(--blue);font-size:11px;">' + subId + '</span> ' : '') + step + '</td>'
         + '<td>' + duration + '</td>'
         + '<td>' + vm + '</td>'
         + '<td>' + trigger + '</td>'
@@ -1064,7 +1090,7 @@ async function loadIncidents(wfId) {
 
   try {
     const incidents = await sbFetch(
-      'workflow_incidents?workflow_id=eq.' + wfId +
+      'workflow_incidents?' + wfRunsFilter(wfId) +
       '&order=id.desc&limit=15' +
       '&select=id,workflow_id,run_id,step_id,severity,message,recommendation,resolved,resolved_at,resolved_by'
     );
@@ -1104,6 +1130,25 @@ async function loadIncidents(wfId) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// AUTO-REFRESH — History + Heartbeat every 60s
+// ═══════════════════════════════════════════════════════════════
+let refreshTimer = null;
+function startAutoRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => {
+    const wfId = wfSelect.value;
+    if (!wfId) return;
+    checkHeartbeat();
+    // Only refresh history if tab is active
+    const histPanel = document.getElementById('panel-history');
+    if (histPanel && histPanel.classList.contains('active')) {
+      loadHistory(wfId);
+      loadIncidents(wfId);
+    }
+  }, 60000);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // BOOT — Alles laden und rendern
 // ═══════════════════════════════════════════════════════════════
 (async function boot() {
@@ -1117,6 +1162,7 @@ async function loadIncidents(wfId) {
       switchWorkflow(wfId);
     }
   }
+  startAutoRefresh();
 })();
 
 </script>
