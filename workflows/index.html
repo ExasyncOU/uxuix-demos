@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Exasync Workflow Monitor v2.1</title>
+<title>Exasync Workflow Monitor v2.2</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
@@ -1054,13 +1054,47 @@ function buildWfMeta(wf) {
 function populateSelector() {
   const sel = document.getElementById('wfSelect');
   sel.innerHTML = '';
-  Object.keys(STORE.workflows).forEach(id => {
-    const wf = STORE.workflows[id];
-    const opt = document.createElement('option');
-    opt.value = id;
-    opt.textContent = wf.name || id;
-    sel.appendChild(opt);
-  });
+  if (opsLoaded && OPS_CUSTOMERS.length > 0) {
+    // Group by customer with optgroups
+    OPS_CUSTOMERS.forEach(c => {
+      // Only show customers that have workflows loaded in STORE
+      const validWfs = c.workflows.filter(w => STORE.workflows[w.workflow_key]);
+      if (validWfs.length === 0) return;
+      const grp = document.createElement('optgroup');
+      grp.label = c.name;
+      validWfs.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w.workflow_key;
+        opt.textContent = w.workflow_name || w.workflow_key;
+        grp.appendChild(opt);
+      });
+      sel.appendChild(grp);
+    });
+    // Also add any STORE workflows not in ops (fallback)
+    const opsKeys = new Set();
+    OPS_CUSTOMERS.forEach(c => c.workflows.forEach(w => opsKeys.add(w.workflow_key)));
+    const extras = Object.keys(STORE.workflows).filter(k => !opsKeys.has(k));
+    if (extras.length > 0) {
+      const grp = document.createElement('optgroup');
+      grp.label = 'Weitere';
+      extras.forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = STORE.workflows[id].name || id;
+        grp.appendChild(opt);
+      });
+      sel.appendChild(grp);
+    }
+  } else {
+    // Flat list fallback
+    Object.keys(STORE.workflows).forEach(id => {
+      const wf = STORE.workflows[id];
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = wf.name || id;
+      sel.appendChild(opt);
+    });
+  }
 }
 
 function updateWorkflowMeta(wfId) {
@@ -1097,7 +1131,60 @@ async function sbFetch(path) {
 // WORKFLOW ID MAPPING — Dashboard-ID → Supabase workflow_id Pattern
 // Manche Workflows haben mehrere Sub-IDs in der DB
 // ═══════════════════════════════════════════════════════════════
-const WF_ID_MAP = {
+// ═══════════════════════════════════════════════════════════════
+// MULTI-TENANT — ops_customers + ops_customer_workflows
+// Dynamisch aus Supabase, Hardcoded-Fallback wenn leer/offline
+// ═══════════════════════════════════════════════════════════════
+let OPS_CUSTOMERS = [];  // [{id, name, short_name, workflows: [...]}]
+let opsLoaded = false;
+
+async function loadOpsCustomers() {
+  try {
+    const customers = await sbFetch('ops_customers?active=eq.true&order=name');
+    if (!customers || customers.length === 0) return false;
+    const workflows = await sbFetch('ops_customer_workflows?active=eq.true&order=workflow_name');
+    if (!workflows || workflows.length === 0) return false;
+
+    // Build customer→workflows map
+    OPS_CUSTOMERS = customers.map(c => ({
+      ...c,
+      workflows: workflows.filter(w => w.customer_id === c.id)
+    }));
+
+    // Override WF_ID_MAP from DB
+    const newMap = {};
+    workflows.forEach(w => {
+      if (w.workflow_ids && w.workflow_ids.length > 0) {
+        newMap[w.workflow_key] = w.workflow_ids;
+      }
+    });
+    if (Object.keys(newMap).length > 0) {
+      WF_ID_MAP = { ...WF_ID_MAP, ...newMap };
+      // fleetboard2 mirrors fleetboard
+      if (newMap.fleetboard) WF_ID_MAP.fleetboard2 = newMap.fleetboard;
+    }
+
+    // Override GIST_MAP from DB
+    const newGists = {};
+    workflows.forEach(w => {
+      if (w.gist_id) {
+        newGists[w.workflow_key] = { id: w.gist_id, name: w.gist_name || w.workflow_name };
+      }
+    });
+    if (Object.keys(newGists).length > 0) {
+      GIST_MAP = { ...GIST_MAP, ...newGists };
+    }
+
+    opsLoaded = true;
+    return true;
+  } catch(e) {
+    console.warn('ops_customers offline, using hardcoded fallback:', e.message);
+    return false;
+  }
+}
+
+// Hardcoded fallback — overridden by ops_customer_workflows if available
+let WF_ID_MAP = {
   fleetboard: ['uxuix/fleetboard-5min', 'uxuix/fleetboard-matcher', 'uxuix/fleetboard', 'uxuix/fleetboard-imap-fetch', 'fleetboard'],
   fleetboard2: ['uxuix/fleetboard-5min', 'uxuix/fleetboard-matcher', 'uxuix/fleetboard', 'uxuix/fleetboard-imap-fetch', 'fleetboard'],
   nacke: ['nacke'],
@@ -1615,7 +1702,8 @@ async function loadCredentials() {
 // ═══════════════════════════════════════════════════════════════
 // GIST VERSIONS — GitHub Gist commit history
 // ═══════════════════════════════════════════════════════════════
-const GIST_MAP = {
+// Hardcoded fallback — overridden by ops_customer_workflows if available
+let GIST_MAP = {
   fleetboard: { id: 'beb6e4606c1ea14911d8d71fe1ede38d', name: 'Fleetboard Pipeline' },
   nacke: { id: 'd8fe35c43d948ed0e898e4eb76049934', name: 'NackeScript Pipeline' },
   'send-report': { id: '8c3618336714d5aa123794d9200eb77c', name: 'Fleetboard Report' }
@@ -1700,6 +1788,8 @@ function startAutoRefresh() {
 // BOOT — Alles laden und rendern
 // ═══════════════════════════════════════════════════════════════
 (async function boot() {
+  // Multi-Tenant: Load customer data first (overrides WF_ID_MAP, GIST_MAP)
+  await loadOpsCustomers();
   await loadAllData();
   loadWorkers();
   const sr = document.getElementById('swimlane-render');
