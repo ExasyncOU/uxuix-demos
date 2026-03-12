@@ -2,14 +2,31 @@
   "$schema": "workflow-v1",
   "id": "fleetboard",
   "name": "Fleetboard Tourenabfrage",
-  "version": "1.5.0",
-  "description": "IMAP-Fetch von Fleetboard-Emails, Tour-Matching, Kontrollzentrum-Update",
+  "version": "1.8.0",
+  "description": "GPS-Trace-Sammlung via Fleetboard SOAP API, Tour-Matching per Geofencing + Distanz-Fallback, Ankunftszeit-Report fuer GV Logistik",
   "owner": "fleetboard-agent",
-  "vm": "B-Drone",
+  "vm": "UXUIX (157.180.78.163)",
+  "vmPath": "C:\\FleetboardScript\\",
+  "source": {
+    "type": "github-gist",
+    "gistId": "beb6e4606c1ea14911d8d71fe1ede38d",
+    "owner": "ExasyncOU",
+    "lastSynced": "2026-03-10T12:00:00Z",
+    "files": {
+      "FleetboardMatcher_current.ps1": { "module": "fleetboard/matcher", "gistId": "beb6e4606c1ea14911d8d71fe1ede38d" },
+      "send_report.ps1": { "module": "fleetboard/send-report", "gistId": "8c3618336714d5aa123794d9200eb77c" }
+    },
+    "vmOnlyFiles": {
+      "run_scheduler.ps1": { "module": "fleetboard/scheduler", "vmPath": "C:\\FleetboardScript\\run_scheduler.ps1" },
+      "fetch_tours_email.ps1": { "module": "fleetboard/imap-fetch", "vmPath": "C:\\FleetboardScript\\fetch_tours_email.ps1" },
+      "config.json": { "module": "fleetboard/config", "vmPath": "C:\\FleetboardScript\\config.json" }
+    }
+  },
   "schedule": {
     "cron": "*/5 * * * *",
-    "human": "Alle 5 Minuten (24/7)",
-    "timezone": "Europe/Berlin"
+    "human": "Alle 5 Minuten (24/7, Mo-So)",
+    "timezone": "Europe/Berlin",
+    "managedBy": "kontrollzentrum-server.js (SSH-Cron) + uxuix_schedules"
   },
   "guardrails": {
     "constraints": {
@@ -19,73 +36,188 @@
       "timeoutMinutes": 4,
       "hardRules": [
         "Darf NICHT laenger als 4 Minuten laufen (5-Min-Cron-Takt)",
-        "IMAP Email: automation@uxuix.de (NUR Finnland/Cloud)",
-        "Bei IMAP Lock: NICHT loeschen, Prozess pruefen"
+        "IMAP Email: automation@uxuix.de (NUR Finnland/Cloud — Email-Geo-Regel)",
+        "Bei IMAP Lock: NICHT loeschen, Prozess pruefen",
+        "DateTime.Parse() statt ParseExact() fuer gps_time",
+        "MinTime per TOUR (frueheste BelVonDat), NICHT per Stop",
+        "GVLOGMG-Matches 3-fach validieren (nach Zustellstopp, max 4h, nach erstem Soll)",
+        "Nach Supabase-Korrekturen Matcher manuell laufen lassen (RESTORE-Logik)",
+        "Fleetboard API: max ~100 Punkte/Request, limit ignoriert"
       ]
     },
+    "frozenLogic": {
+      "version": "1.8.0",
+      "frozenAt": "2026-03-10",
+      "matcherVersion": "v1.8 (Distanz-Fallback 15km)",
+      "imapUser": "automation@uxuix.de",
+      "imapVaultKey": "uxuix-automation",
+      "smtpVia": "Edge Function fleetboard-email (VM-IP auf DNSBL)",
+      "gpsAccumulation": "5-Min-Fenster in fleetboard_traces (UNIQUE vehicle_id+gps_time)",
+      "distanceThresholdKm": 15,
+      "gvlogmgValidation": "3 Regeln (nach Zustellstopp, max 4h vor Soll, nach erstem Zustellstopp-Soll)"
+    },
     "variables": [
-      { "name": "IMAP_USER", "type": "string", "default": "automation@uxuix.de", "locked": true, "description": "IMAP Email-Konto" },
-      { "name": "IMAP_SERVER", "type": "string", "default": "w0192bee.kasserver.com", "locked": true, "description": "IMAP Server" },
-      { "name": "MATCH_TOLERANCE_KM", "type": "number", "default": 5, "min": 1, "max": 20, "description": "Toleranz fuer Geo-Matching in km" },
-      { "name": "HEIMAT_DEPOT", "type": "string", "default": "auto", "description": "Heimat-Depot fuer Zuordnung" }
+      { "name": "IMAP_USER", "type": "string", "default": "automation@uxuix.de", "locked": true, "description": "IMAP Email-Konto (Geo: Finnland/Cloud)" },
+      { "name": "IMAP_SERVER", "type": "string", "default": "w00f31fe.kasserver.com", "locked": true, "description": "IMAP Server (Kasserver)" },
+      { "name": "SUPABASE_URL", "type": "string", "default": "from_.env", "locked": true, "description": "Supabase Projekt-URL" },
+      { "name": "SUPABASE_SERVICE_KEY", "type": "string", "default": "from_.env", "locked": true, "description": "Supabase Service Key (fuer Writes)" },
+      { "name": "DISTANCE_THRESHOLD_KM", "type": "number", "default": 15, "min": 1, "max": 50, "description": "Distanz-Fallback fuer Geofencing in km" },
+      { "name": "SCHEDULE_INTERVAL_MINUTES", "type": "number", "default": 5, "locked": true, "description": "Cron-Intervall in Minuten" }
     ]
   },
   "lanes": [
-    { "id": "scheduler", "label": "Scheduler", "icon": "⏰", "color": "#4A90D9" },
-    { "id": "imap", "label": "IMAP / Email", "icon": "📬", "color": "#E67E22" },
-    { "id": "matcher", "label": "Matcher", "icon": "🔄", "color": "#27AE60" },
-    { "id": "data", "label": "Supabase", "icon": "📊", "color": "#8E44AD" }
+    { "id": "scheduler", "label": "Scheduler", "icon": "clock", "color": "#4A90D9", "description": "Cron-Steuerung, Lock-Management, Orchestrierung" },
+    { "id": "imap", "label": "IMAP / Email", "icon": "mail", "color": "#E67E22", "description": "Tourenabfrage-CSV per Email abholen" },
+    { "id": "gps", "label": "GPS / SOAP API", "icon": "satellite", "color": "#2ECC71", "description": "Fleetboard SOAP API, Trace-Sammlung, Akkumulation" },
+    { "id": "matcher", "label": "Matcher / Geofencing", "icon": "map-pin", "color": "#27AE60", "description": "Bounding-Box + Distanz-Matching, GVLOGMG-Validierung" },
+    { "id": "data", "label": "Supabase", "icon": "database", "color": "#8E44AD", "description": "fleetboard_traces, fleetboard_arrivals, workflow_runs" },
+    { "id": "reporting", "label": "Reporting", "icon": "bar-chart", "color": "#E74C3C", "description": "Email-Report via Edge Function, CSV/JSON Output" }
   ],
   "steps": [
     {
-      "id": "check-schedule",
+      "id": "scheduler-check",
       "lane": "scheduler",
-      "module": "fleetboard/check-schedule",
-      "label": "Cron Check",
-      "description": "Pruefen ob ein Lauf faellig ist, Lock-Datei checken",
-      "next": ["fetch-emails"],
-      "inputs": ["cron_schedule"],
-      "outputs": ["should_run"]
+      "module": "fleetboard/scheduler",
+      "label": "Scheduler Check",
+      "description": "run_scheduler.ps1: Lock-Datei pruefen, vorherigen Lauf abwarten, Orchestrierung starten",
+      "next": ["imap-fetch"],
+      "inputs": ["lock_file", "schedule_interval"],
+      "outputs": ["should_run"],
+      "script": "run_scheduler.ps1"
     },
     {
-      "id": "fetch-emails",
+      "id": "imap-fetch",
       "lane": "imap",
       "module": "fleetboard/imap-fetch",
-      "label": "Emails abholen",
-      "description": "Neue Fleetboard-Emails per IMAP abholen",
-      "next": ["parse-tours"],
-      "inputs": ["IMAP_USER", "IMAP_SERVER"],
-      "outputs": ["raw_emails[]"]
+      "label": "Tourenabfrage-CSV abholen",
+      "description": "fetch_tours_email.ps1: IMAP-Fetch von automation@uxuix.de, CSV-Anhang extrahieren, neueste CSV nach Dateinamen-Datum waehlen",
+      "next": ["parse-csv"],
+      "inputs": ["IMAP_USER", "IMAP_SERVER", "vault:uxuix-automation"],
+      "outputs": ["csv_file_path"],
+      "script": "fetch_tours_email.ps1"
     },
     {
-      "id": "parse-tours",
+      "id": "parse-csv",
       "lane": "imap",
-      "module": "fleetboard/parse-tours",
-      "label": "Touren parsen",
-      "description": "Email-Inhalt parsen: Fahrzeug, Route, Zeiten extrahieren",
-      "next": ["match-vehicles"],
-      "inputs": ["raw_emails[]"],
-      "outputs": ["parsed_tours[]"]
+      "module": "fleetboard/matcher",
+      "label": "CSV parsen",
+      "description": "FleetboardMatcher.ps1 (Phase 1): Tourenabfrage-CSV lesen, Stopps extrahieren (BelNr, BelVonDat, BelVonZeit, Zustellreferenz, Kennzeichen)",
+      "next": ["collect-gps-traces"],
+      "inputs": ["csv_file_path"],
+      "outputs": ["parsed_stops[]", "tour_vehicles[]"],
+      "script": "FleetboardMatcher.ps1"
     },
     {
-      "id": "match-vehicles",
-      "lane": "matcher",
-      "module": "fleetboard/match-vehicles",
-      "label": "Fahrzeuge zuordnen",
-      "description": "Kennzeichen mit Fahrzeugliste matchen, Heimat-Depot zuordnen",
-      "next": ["push-to-db"],
-      "inputs": ["parsed_tours[]", "MATCH_TOLERANCE_KM", "HEIMAT_DEPOT"],
-      "outputs": ["matched_tours[]"]
+      "id": "collect-gps-traces",
+      "lane": "gps",
+      "module": "fleetboard/matcher",
+      "label": "GPS-Traces sammeln",
+      "description": "FleetboardMatcher.ps1 (Phase 2): Fleetboard SOAP API pro Fahrzeug, 1h-Zeitfenster, max ~100 Punkte/Request. In fleetboard_traces akkumulieren.",
+      "next": ["read-accumulated-traces"],
+      "inputs": ["tour_vehicles[]", "fleetboard_soap_credentials"],
+      "outputs": ["new_traces_count"],
+      "script": "FleetboardMatcher.ps1"
     },
     {
-      "id": "push-to-db",
+      "id": "read-accumulated-traces",
       "lane": "data",
-      "module": "fleetboard/push-to-supabase",
-      "label": "DB Update",
-      "description": "Gematchte Touren in Supabase schreiben",
+      "module": "fleetboard/matcher",
+      "label": "Traces aus Supabase lesen",
+      "description": "FleetboardMatcher.ps1 (Phase 3): Akkumulierte GPS-Punkte fuer heutiges Tourdatum aus fleetboard_traces laden",
+      "next": ["geofencing-match"],
+      "inputs": ["tour_vehicles[]", "tourdatum"],
+      "outputs": ["accumulated_traces[]"],
+      "script": "FleetboardMatcher.ps1"
+    },
+    {
+      "id": "geofencing-match",
+      "lane": "matcher",
+      "module": "fleetboard/matcher",
+      "label": "Geofencing + Distanz-Matching",
+      "description": "FleetboardMatcher.ps1 (Phase 4): Bounding-Box-Match, bei Fehlschlag Distanz-Fallback (15km). Find-FirstArrival pro Stopp.",
+      "next": ["gvlogmg-validation"],
+      "inputs": ["accumulated_traces[]", "parsed_stops[]", "DISTANCE_THRESHOLD_KM"],
+      "outputs": ["raw_matches[]"],
+      "script": "FleetboardMatcher.ps1"
+    },
+    {
+      "id": "gvlogmg-validation",
+      "lane": "matcher",
+      "module": "fleetboard/matcher",
+      "label": "GVLOGMG-Validierung",
+      "description": "FleetboardMatcher.ps1 (Phase 5): 3-fach Validierung fuer GVLOGMG-Heimatdepot: (1) nach letztem Zustellstopp, (2) max 4h vor Soll, (3) nach erstem Zustellstopp-Soll. Beladung != Rueckkehr.",
+      "next": ["push-arrivals"],
+      "inputs": ["raw_matches[]"],
+      "outputs": ["validated_matches[]"],
+      "script": "FleetboardMatcher.ps1"
+    },
+    {
+      "id": "push-arrivals",
+      "lane": "data",
+      "module": "fleetboard/matcher",
+      "label": "Arrivals in DB schreiben",
+      "description": "FleetboardMatcher.ps1 (Phase 6): Validierte Matches nach fleetboard_arrivals schreiben. RESTORE-Logik: bestehende Eintraege bleiben erhalten.",
+      "next": ["generate-output"],
+      "inputs": ["validated_matches[]"],
+      "outputs": ["rows_upserted"],
+      "script": "FleetboardMatcher.ps1"
+    },
+    {
+      "id": "generate-output",
+      "lane": "reporting",
+      "module": "fleetboard/matcher",
+      "label": "CSV + JSON Output",
+      "description": "FleetboardMatcher.ps1 (Phase 7): ankunft_YYYYMMDD_HHMMSS.csv + .json nach C:\\FleetboardScript\\output\\ schreiben",
+      "next": ["send-report"],
+      "inputs": ["validated_matches[]"],
+      "outputs": ["output_csv", "output_json"],
+      "script": "FleetboardMatcher.ps1"
+    },
+    {
+      "id": "send-report",
+      "lane": "reporting",
+      "module": "fleetboard/send-report",
+      "label": "Email-Report senden",
+      "description": "send_report.ps1 v2.0: HTML-Report via Edge Function fleetboard-email (VM-IP auf DNSBL, kein direkter SMTP)",
+      "next": ["log-metrics"],
+      "inputs": ["output_json", "output_csv"],
+      "outputs": ["email_sent"],
+      "script": "send_report.ps1"
+    },
+    {
+      "id": "log-metrics",
+      "lane": "data",
+      "module": "core/metrics-collector",
+      "label": "workflow_runs schreiben",
+      "description": "Laufzeit, tours_matched, traces_collected, new_arrivals nach workflow_runs INSERT. PFLICHT fuer Workflow Monitor.",
       "next": [],
-      "inputs": ["matched_tours[]"],
-      "outputs": ["rows_inserted"]
+      "inputs": ["all_results", "timing"],
+      "outputs": ["metrics_logged"],
+      "script": "run_scheduler.ps1"
     }
+  ],
+  "supabaseTables": [
+    { "name": "fleetboard_traces", "purpose": "GPS-Punkte akkumuliert (UNIQUE vehicle_id+gps_time)", "rw": "rw" },
+    { "name": "fleetboard_arrivals", "purpose": "Match-Ergebnisse mit RESTORE-Logik", "rw": "rw" },
+    { "name": "workflow_runs", "purpose": "Monitoring: Status + Metriken pro Lauf", "rw": "write" },
+    { "name": "workflow_incidents", "purpose": "Fehler und Anomalien", "rw": "write" }
+  ],
+  "errorHandling": {
+    "module": "core/error-handler",
+    "strategy": "log-and-continue",
+    "escalation": "workflow_incidents + email-to-bodo",
+    "alarmRules": [
+      { "condition": "Kein success-Run seit > 15 Min", "severity": "WARNING" },
+      { "condition": "3+ error-Runs in 30 Min", "severity": "CRITICAL", "action": "Crash-Loop vermutet" },
+      { "condition": "Match-Rate < 50%", "severity": "WARNING" },
+      { "condition": "0 Traces heute", "severity": "CRITICAL", "action": "SOAP API oder Scheduler ausgefallen" },
+      { "condition": "Scheduler LastResult = 2147946720", "severity": "CRITICAL", "action": "Haengt still, PID pruefen" }
+    ]
+  },
+  "incidents": [
+    { "date": "2026-03-06", "description": "Crash-Loop 3 Tage (ssh2 ECONNRESET + sbFetch Header-Bug)", "fix": "v1.6" },
+    { "date": "2026-03-10", "description": "GVLOGMG falsche Ankunft (Beladung als Rueckkehr)", "fix": "v1.5 (3 Regeln)" },
+    { "date": "2026-03-10", "description": "5 Gebiete nicht gematcht (Bounding-Boxes zu klein)", "fix": "v1.8 (Distanz-Fallback 15km)" },
+    { "date": "2026-03-05", "description": "IMAP 3 Tage tot (PW geaendert, .env nicht aktualisiert)", "fix": "Credential-Sync-Regel" }
   ]
 }

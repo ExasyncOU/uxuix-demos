@@ -631,32 +631,57 @@ async function openCode(moduleId) {
 
   // 1. Eingebetteter Code in Registry (Legacy-Module)
   if (regMod && regMod.code) {
-    codeContent.innerHTML = highlightPython(regMod.code);
+    const lang = regMod.source ? detectLang(regMod.source.file || '') : 'python';
+    codeContent.innerHTML = highlightCode(regMod.code, lang);
   }
-  // 2. Gist-Referenz: Code live vom GitHub Gist laden
+  // 2. Gist-Referenz: Code live vom GitHub Gist laden (SHA mit HEAD-Fallback)
   else if (regMod && regMod.source && regMod.source.type === 'github-gist') {
     const src = regMod.source;
-    const sha = src.sha || 'HEAD';
-    const rawUrl = 'https://gist.githubusercontent.com/' + (src.owner || 'ExasyncOU') + '/' + src.gistId + '/raw/' + sha + '/' + encodeURIComponent(src.file);
-    codeContent.innerHTML = '<span class="cmt"># Lade ' + src.file + ' vom Gist (' + sha.substring(0, 8) + ')...</span>';
+    const owner = src.owner || 'ExasyncOU';
+    const file = encodeURIComponent(src.file);
+    const sha = src.sha || '';
+    const baseUrl = 'https://gist.githubusercontent.com/' + owner + '/' + src.gistId + '/raw/';
+    codeContent.innerHTML = '<span class="cmt"># Lade ' + src.file + ' vom Gist...</span>';
     overlay.classList.add('open');
     requestAnimationFrame(() => sheet.classList.add('open'));
     try {
-      const resp = await fetch(rawUrl);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const code = await resp.text();
-      codeContent.innerHTML = highlightPython(code);
-      codeTitle.textContent = title + ' — ' + src.file + ' (' + code.split('\n').length + ' Zeilen)';
+      let code = null;
+      let usedSha = 'HEAD';
+      // Try SHA-pinned URL first, fallback to HEAD
+      if (sha) {
+        try {
+          const resp = await fetch(baseUrl + sha + '/' + file);
+          if (resp.ok) { code = await resp.text(); usedSha = sha.substring(0, 8); }
+        } catch (_) { /* SHA failed, try HEAD */ }
+      }
+      if (!code) {
+        const resp = await fetch(baseUrl + file);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        code = await resp.text();
+        usedSha = 'HEAD (latest)';
+      }
+      const lang = detectLang(src.file);
+      codeContent.innerHTML = highlightCode(code, lang);
+      codeTitle.textContent = title + ' — ' + src.file + ' (' + code.split('\n').length + ' Zeilen, ' + usedSha + ')';
     } catch (err) {
-      codeContent.innerHTML = '<span class="cmt"># Fehler beim Laden: ' + esc(String(err)) + '\n# URL: ' + esc(rawUrl) + '\n\n# Fallback: Oeffne Gist direkt:\n# https://gist.github.com/' + (src.owner || 'ExasyncOU') + '/' + src.gistId + '</span>';
+      codeContent.innerHTML = '<span class="cmt"># Fehler beim Laden: ' + esc(String(err)) + '\n# Gist: https://gist.github.com/' + owner + '/' + src.gistId + '</span>';
     }
     return;
   }
   // 3. Legacy MODULES dict
   else if (legacyMod) {
-    codeContent.innerHTML = highlightPython(legacyMod.code);
+    codeContent.innerHTML = highlightCode(legacyMod.code, 'python');
   }
-  // 4. Kein Code verfuegbar
+  // 4. VM-only: Code liegt nur auf der VM, nicht im Gist
+  else if (regMod && regMod.source && regMod.source.type === 'vm-only') {
+    const src = regMod.source;
+    codeContent.innerHTML = '<span class="cmt"># Dieses Script liegt nur auf der VM und ist nicht im Gist hinterlegt.</span>\n' +
+      '<span class="cmt"># VM: ' + esc(src.vm || 'unbekannt') + '</span>\n' +
+      '<span class="cmt"># Pfad: ' + esc(src.vmPath || 'unbekannt') + '</span>\n\n' +
+      '<span class="ann"># Um dieses Script im Monitor anzuzeigen, muss es in den Gist hochgeladen werden.</span>\n' +
+      '<span class="ann"># Gist: https://gist.github.com/ExasyncOU (neuen Gist anlegen oder bestehenden erweitern)</span>';
+  }
+  // 5. Kein Code verfuegbar
   else {
     codeContent.innerHTML = '<span class="cmt"># Kein Code in der Registry hinterlegt fuer: ' + moduleId + '</span>';
   }
@@ -678,59 +703,124 @@ document.querySelectorAll('.module-card').forEach(card => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// SYNTAX HIGHLIGHTING (simple Python highlighter)
+// SYNTAX HIGHLIGHTING (multi-language: Python, PowerShell, JSON)
 // ═══════════════════════════════════════════════════════════════
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function highlightPython(code) {
+function detectLang(filename) {
+  if (!filename) return 'python';
+  const ext = filename.split('.').pop().toLowerCase();
+  if (ext === 'ps1' || ext === 'psm1' || ext === 'psd1') return 'powershell';
+  if (ext === 'json') return 'json';
+  if (ext === 'js' || ext === 'mjs' || ext === 'cjs') return 'javascript';
+  return 'python';
+}
+
+function highlightCode(code, lang) {
+  if (lang === 'powershell') return highlightPowerShell(code);
+  if (lang === 'json') return highlightJSON(code);
+  if (lang === 'javascript') return highlightJavaScript(code);
+  return highlightPython(code);
+}
+
+function highlightPowerShell(code) {
   const lines = code.split('\n');
   return lines.map(line => {
-    // Preserve indentation
     const indent = line.match(/^(\s*)/)[1];
     let rest = line.slice(indent.length);
-
     // Full-line comments
     if (/^#/.test(rest)) {
-      // ERKLAERUNG annotation style
-      if (/^# ERKLAERUNG:/.test(rest) || /^#\s*ERKLAERUNG:/.test(rest)) {
+      if (/^#\s*(ERKLAERUNG|TODO|FIXME|HACK):/.test(rest)) {
         return indent + '<span class="ann">' + esc(rest) + '</span>';
       }
       return indent + '<span class="cmt">' + esc(rest) + '</span>';
     }
-
-    // Escape HTML first
     rest = esc(rest);
-
     // Inline comments
+    rest = rest.replace(/(#\s*(ERKLAERUNG|TODO|FIXME).*)$/, '<span class="ann">$1</span>');
+    rest = rest.replace(/(#(?!\s*(ERKLAERUNG|TODO|FIXME)).*)$/, '<span class="cmt">$1</span>');
+    // Strings
+    rest = rest.replace(/(&quot;[^&]*?&quot;)/g, '<span class="str">$1</span>');
+    rest = rest.replace(/('[^']*')/g, '<span class="str">$1</span>');
+    // Variables ($var, $env:VAR)
+    rest = rest.replace(/(\$\w[\w:]*)/g, '<span class="dec">$1</span>');
+    // Keywords
+    const kws = ['function','param','begin','process','end','if','elseif','else','switch','foreach','for','while','do','until','try','catch','finally','throw','return','break','continue','exit','filter','class','enum','using','Import-Module','Export-ModuleMember','Write-Host','Write-Output','Write-Error','Write-Warning','Write-Verbose','Set-Variable','Get-Variable','New-Object','Add-Type','Invoke-RestMethod','Invoke-WebRequest','ConvertTo-Json','ConvertFrom-Json','Select-Object','Where-Object','ForEach-Object','Sort-Object','Group-Object','Measure-Object','Test-Path','Get-Content','Set-Content','Add-Content','Get-ChildItem','Get-Item','Copy-Item','Move-Item','Remove-Item','New-Item','Start-Process','Stop-Process','Get-Process','Start-Job','Wait-Job','Receive-Job','Start-Sleep'];
+    kws.forEach(kw => {
+      rest = rest.replace(new RegExp('\\b(' + kw.replace('-', '\\-') + ')\\b', 'gi'), '<span class="kw">$1</span>');
+    });
+    // Operators
+    rest = rest.replace(/\b(-eq|-ne|-gt|-lt|-ge|-le|-like|-match|-notmatch|-contains|-in|-notin|-replace|-split|-join|-not|-and|-or|-band|-bor)\b/g, '<span class="kw">$1</span>');
+    // Numbers
+    rest = rest.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+    // Cmdlet-style function calls (Verb-Noun)
+    rest = rest.replace(/\b([A-Z][a-z]+-[A-Z]\w+)\b/g, '<span class="fn">$1</span>');
+    // Pipe operator
+    rest = rest.replace(/(\|)/g, '<span class="kw">$1</span>');
+    return indent + rest;
+  }).join('\n');
+}
+
+function highlightJSON(code) {
+  const lines = code.split('\n');
+  return lines.map(line => {
+    let rest = esc(line);
+    // Keys
+    rest = rest.replace(/(&quot;[^&]*?&quot;)\s*:/g, '<span class="kw">$1</span>:');
+    // String values
+    rest = rest.replace(/:\s*(&quot;[^&]*?&quot;)/g, ': <span class="str">$1</span>');
+    // Numbers
+    rest = rest.replace(/:\s*(\d+\.?\d*)/g, ': <span class="num">$1</span>');
+    // Booleans/null
+    rest = rest.replace(/:\s*(true|false|null)\b/g, ': <span class="dec">$1</span>');
+    return rest;
+  }).join('\n');
+}
+
+function highlightJavaScript(code) {
+  const lines = code.split('\n');
+  return lines.map(line => {
+    const indent = line.match(/^(\s*)/)[1];
+    let rest = line.slice(indent.length);
+    if (/^\/\//.test(rest)) return indent + '<span class="cmt">' + esc(rest) + '</span>';
+    rest = esc(rest);
+    rest = rest.replace(/(\/\/.*)$/, '<span class="cmt">$1</span>');
+    rest = rest.replace(/('[^']*')/g, '<span class="str">$1</span>');
+    rest = rest.replace(/(`[^`]*`)/g, '<span class="str">$1</span>');
+    const kws = ['import','from','export','default','const','let','var','function','async','await','return','if','else','for','of','in','while','do','try','catch','finally','throw','new','class','extends','switch','case','break','continue','yield','true','false','null','undefined','this','super'];
+    kws.forEach(kw => {
+      rest = rest.replace(new RegExp('\\b(' + kw + ')\\b', 'g'), '<span class="kw">$1</span>');
+    });
+    rest = rest.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+    rest = rest.replace(/(\w+)(\()/g, '<span class="fn">$1</span>$2');
+    return indent + rest;
+  }).join('\n');
+}
+
+function highlightPython(code) {
+  const lines = code.split('\n');
+  return lines.map(line => {
+    const indent = line.match(/^(\s*)/)[1];
+    let rest = line.slice(indent.length);
+    if (/^#/.test(rest)) {
+      if (/^#\s*ERKLAERUNG:/.test(rest)) return indent + '<span class="ann">' + esc(rest) + '</span>';
+      return indent + '<span class="cmt">' + esc(rest) + '</span>';
+    }
+    rest = esc(rest);
     rest = rest.replace(/(#\s*ERKLAERUNG:.*)$/, '<span class="ann">$1</span>');
     rest = rest.replace(/(#(?!\s*ERKLAERUNG).*)$/, '<span class="cmt">$1</span>');
-
-    // Triple-quoted strings (simplified)
     rest = rest.replace(/(&quot;&quot;&quot;|&apos;&apos;&apos;|""")(.*?)(\1)/g, '<span class="str">$1$2$3</span>');
     rest = rest.replace(/(""".*)/g, '<span class="str">$1</span>');
-
-    // Strings
     rest = rest.replace(/(f?"[^"]*")/g, '<span class="str">$1</span>');
     rest = rest.replace(/(f?'[^']*')/g, '<span class="str">$1</span>');
-
-    // Keywords
     const kws = ['import','from','class','def','async','await','return','if','elif','else','for','in','not','and','or','try','except','raise','with','as','True','False','None','pass','continue','break','yield','finally','while','is','lambda','del','global','nonlocal','assert'];
     kws.forEach(kw => {
       rest = rest.replace(new RegExp('\\b(' + kw + ')\\b', 'g'), '<span class="kw">$1</span>');
     });
-
-    // Decorators
     rest = rest.replace(/(@\w+)/g, '<span class="dec">$1</span>');
-
-    // Numbers
     rest = rest.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
-
-    // Function calls
     rest = rest.replace(/(\w+)(\()/g, '<span class="fn">$1</span>$2');
-
-    // self. prefix
     rest = rest.replace(/\bself\./g, '<span class="kw">self</span>.');
-
     return indent + rest;
   }).join('\n');
 }

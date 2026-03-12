@@ -45,7 +45,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "orchestrator.py",
-        "sha": "7c9a0e625418d8f378c22d43b84db0e868b6457c",
+        "sha": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
         "lines": 920,
         "size": 37510
       },
@@ -67,7 +67,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_browser.py",
-        "sha": "7c9a0e625418d8f378c22d43b84db0e868b6457c",
+        "sha": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
         "lines": 916,
         "size": 38612
       },
@@ -78,23 +78,23 @@
     "nacke/picklist-generator": {
       "id": "nacke/picklist-generator",
       "name": "Picklist Generator (Raussuchlisten)",
-      "version": "5.0.0",
+      "version": "6.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Generiert Excel-Raussuchlisten aus exportierten IDIS-Daten. Verarbeitet Masterdatei-Zuordnungen, Bundle-Sizes aus Col K (Einstellung RPR Kartonage).",
+      "description": "Generiert Excel+PDF Raussuchlisten aus IDIS-Export. v6: Font 19, PAL, Seitenumbruch vor Summen, Sort by Class, Shipment-Fix.",
       "usedBy": ["nacke"],
-      "dependencies": ["openpyxl", "nacke/config", "nacke/master-data"],
+      "dependencies": ["openpyxl", "fpdf", "nacke/config", "nacke/master-data"],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "picklist_generator.py",
-        "sha": "7c9a0e625418d8f378c22d43b84db0e868b6457c",
-        "lines": 1153,
-        "size": 47104
+        "sha": "b296f0bcb3b9f2ea4bf5ad3e92325bee8052ca44",
+        "lines": 1172,
+        "size": 48324
       },
-      "gate": { "passed": true, "score": "11/11", "checkedAt": "2026-03-11T08:00:00Z" },
-      "frozenAt": "2026-03-11T08:00:00Z"
+      "gate": { "passed": true, "score": "8/11", "checkedAt": "2026-03-12T07:15:00Z", "notes": "G2/G3/G8 known exceptions" },
+      "frozenAt": "2026-03-12T07:15:00Z"
     },
 
     "nacke/master-data": {
@@ -111,7 +111,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "master_data.py",
-        "sha": "7c9a0e625418d8f378c22d43b84db0e868b6457c",
+        "sha": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
         "lines": 361,
         "size": 12530
       },
@@ -133,7 +133,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "overconfirmation.py",
-        "sha": "7c9a0e625418d8f378c22d43b84db0e868b6457c",
+        "sha": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
         "lines": 249,
         "size": 8770
       },
@@ -155,7 +155,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "daily_report.py",
-        "sha": "7c9a0e625418d8f378c22d43b84db0e868b6457c",
+        "sha": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
         "lines": 252,
         "size": 9549
       },
@@ -177,7 +177,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "printer.py",
-        "sha": "7c9a0e625418d8f378c22d43b84db0e868b6457c",
+        "sha": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
         "lines": 235,
         "size": 7852
       },
@@ -187,8 +187,8 @@
 
     "nacke/config": {
       "id": "nacke/config",
-      "name": "Pipeline Configuration v5.0",
-      "version": "5.0.0",
+      "name": "Pipeline Configuration v6.0",
+      "version": "6.0.0",
       "status": "frozen",
       "language": "json",
       "description": "Zentrale Pipeline-Konfiguration: IDIS-URLs, Laender, Drucker, Pfade, Feature-Flags, Schedule. Single source of truth fuer alle Nacke-Module.",
@@ -199,7 +199,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "config.json",
-        "sha": "7c9a0e625418d8f378c22d43b84db0e868b6457c",
+        "sha": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
         "lines": 118,
         "size": 2983
       },
@@ -376,82 +376,113 @@
       "code": "/**\n * Alle Aktionen einer Session in Supabase loggen.\n * \n * Jede Aktion wird als einzelne Zeile gespeichert:\n * - account_id: welcher Account\n * - action_type: 'connect', 'browse', 'search'\n * - target_name: Name des Kontakts\n * - created_at: Zeitstempel (automatisch von Supabase)\n * \n * Diese Daten nutzt der Account Guard fuer Rate Limit Checks.\n */\nexport async function logActivity(sb, accountId, results) {\n  if (!results || results.length === 0) return;\n  \n  // Alle Ergebnisse in Activity-Records umwandeln\n  const records = results.map(r => ({\n    account_id: accountId,\n    action_type: r.action || 'unknown',\n    target_name: r.name || null,\n    status: r.status,\n    metadata: JSON.stringify(r)\n  }));\n  \n  // Batch-Insert in Supabase\n  const { data, error } = await sb\n    .from('linkedin_activity')\n    .insert(records);\n  \n  if (error) {\n    console.error(`Activity-Log Fehler: ${error.message}`);\n    throw error;\n  }\n  \n  console.log(`${records.length} Aktionen geloggt fuer Account ${accountId}`);\n  return data;\n}"
     },
 
-    "fleetboard/check-schedule": {
-      "id": "fleetboard/check-schedule",
-      "name": "Fleetboard Schedule Check",
-      "version": "1.0.0",
+    "fleetboard/scheduler": {
+      "id": "fleetboard/scheduler",
+      "name": "Fleetboard Scheduler / Orchestrator",
+      "version": "1.8.0",
       "status": "frozen",
-      "language": "javascript",
-      "description": "Prueft ob der Fleetboard-Job laufen darf (Lock-Datei, vorheriger Lauf noch aktiv). Verhindert ueberlappende Ausfuehrungen bei 5-Minuten-Takt.",
+      "language": "powershell",
+      "description": "run_scheduler.ps1: Orchestriert den gesamten Fleetboard-Lauf (Fetch+Match+Report). Lock-Management, Timeout-Kontrolle, workflow_runs INSERT am Ende.",
       "usedBy": ["fleetboard"],
-      "dependencies": ["fs"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-04" },
-      "code": "import fs from 'fs';\nimport path from 'path';\n\nconst LOCK_FILE = path.join(process.env.TEMP || '/tmp', 'fleetboard.lock');\nconst MAX_LOCK_AGE_MS = 4 * 60 * 1000; // 4 Minuten (Timeout = Cron-Takt - 1 Min)\n\n/**\n * Pruefen ob der Job starten darf.\n * \n * Lock-Datei verhindert, dass zwei Instanzen gleichzeitig laufen.\n * Wenn die Lock-Datei aelter als 4 Minuten ist, gilt der vorherige\n * Job als abgestuerzt und die Lock-Datei wird geloescht.\n * \n * WICHTIG: Lock-Datei NICHT manuell loeschen! Immer erst pruefen\n * ob der Prozess noch laeuft.\n */\nexport function checkSchedule() {\n  if (fs.existsSync(LOCK_FILE)) {\n    const stat = fs.statSync(LOCK_FILE);\n    const ageMs = Date.now() - stat.mtimeMs;\n    \n    if (ageMs < MAX_LOCK_AGE_MS) {\n      console.log(`Lock aktiv seit ${Math.round(ageMs/1000)}s - ueberspringe Lauf`);\n      return false; // Vorheriger Lauf noch aktiv\n    }\n    \n    console.warn(`Stale Lock gefunden (${Math.round(ageMs/1000)}s alt) - entferne`);\n    fs.unlinkSync(LOCK_FILE);\n  }\n  \n  // Lock-Datei erstellen\n  fs.writeFileSync(LOCK_FILE, JSON.stringify({ pid: process.pid, started: new Date().toISOString() }));\n  return true;\n}"
+      "dependencies": ["fleetboard/imap-fetch", "fleetboard/matcher", "fleetboard/send-report"],
+      "source": {
+        "type": "vm-only",
+        "vmPath": "C:\\FleetboardScript\\run_scheduler.ps1",
+        "vm": "UXUIX (157.180.78.163)",
+        "note": "Nur auf VM vorhanden, nicht im Gist. Muss in Gist hochgeladen werden fuer Live-View."
+      },
+      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
+      "frozenAt": "2026-03-10T12:00:00Z"
     },
 
     "fleetboard/imap-fetch": {
       "id": "fleetboard/imap-fetch",
       "name": "Fleetboard IMAP Fetch",
-      "version": "1.3.0",
+      "version": "2.0.0",
       "status": "frozen",
-      "language": "javascript",
-      "description": "Holt neue Fleetboard-Emails per IMAP von automation@uxuix.de. Filtert nach Subject-Pattern und markiert verarbeitete Emails als gelesen.",
-      "usedBy": ["fleetboard"],
-      "dependencies": ["imap-simple", "mailparser"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-08" },
-      "code": "import imaps from 'imap-simple';\nimport { simpleParser } from 'mailparser';\n\n/**\n * Neue Fleetboard-Emails per IMAP abholen.\n * \n * Verbindung: automation@uxuix.de auf w0192bee.kasserver.com\n * Email-Geografie-Regel: NUR von Finnland/Cloud aus zugreifen!\n * \n * Filtert Emails nach Subject das 'Fleetboard' oder 'Tour' enthaelt.\n * Markiert verarbeitete Emails als SEEN (gelesen).\n */\nexport async function fetchEmails(imapUser, imapServer) {\n  const config = {\n    imap: {\n      user: imapUser,\n      password: process.env.IMAP_PASSWORD,\n      host: imapServer,\n      port: 993,\n      tls: true,\n      tlsOptions: { rejectUnauthorized: false }\n    }\n  };\n  \n  const connection = await imaps.connect(config);\n  await connection.openBox('INBOX');\n  \n  // Nur ungelesene Emails mit Fleetboard-Bezug suchen\n  const criteria = ['UNSEEN', ['OR', ['SUBJECT', 'Fleetboard'], ['SUBJECT', 'Tour']]];\n  const messages = await connection.search(criteria, { bodies: '' });\n  \n  const emails = [];\n  for (const msg of messages) {\n    const parsed = await simpleParser(msg.parts[0].body);\n    emails.push({\n      uid: msg.attributes.uid,\n      subject: parsed.subject,\n      from: parsed.from?.text,\n      date: parsed.date,\n      body: parsed.text || parsed.html\n    });\n    \n    // Als gelesen markieren\n    await connection.addFlags(msg.attributes.uid, '\\\\Seen');\n  }\n  \n  await connection.end();\n  console.log(`${emails.length} neue Fleetboard-Emails abgeholt`);\n  return emails;\n}"
-    },
-
-    "fleetboard/parse-tours": {
-      "id": "fleetboard/parse-tours",
-      "name": "Fleetboard Tour Parser",
-      "version": "1.2.0",
-      "status": "frozen",
-      "language": "javascript",
-      "description": "Parst den Inhalt von Fleetboard-Emails und extrahiert strukturierte Tourdaten: Fahrzeug-Kennzeichen, Start/Ziel-Ort, Abfahrt/Ankunft-Zeiten.",
+      "language": "powershell",
+      "description": "fetch_tours_email.ps1: IMAP-Fetch von automation@uxuix.de (Kasserver, TLS 1.2, Cert-Bypass). Extrahiert Tourenabfrage-CSV aus Email-Anhang. Vault-Support mit .env Fallback.",
       "usedBy": ["fleetboard"],
       "dependencies": [],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-04" },
-      "code": "/**\n * Fleetboard-Email-Body in strukturierte Tourdaten parsen.\n * \n * Fleetboard-Emails haben ein festes Format:\n * - Zeile 1: Kennzeichen (z.B. 'GV-XX 1234')\n * - Zeile 2: Route (z.B. 'Frechen -> Amsterdam')\n * - Zeile 3: Abfahrt (z.B. '10.03.2026 07:15')\n * - Zeile 4: Ankunft (z.B. '10.03.2026 14:30')\n * \n * Das Format kann variieren - der Parser ist tolerant gebaut.\n */\nconst PLATE_REGEX = /([A-Z]{1,3})-?\\s?[A-Z]{1,2}\\s?\\d{1,4}/;\nconst DATE_REGEX = /(\\d{2}\\.\\d{2}\\.\\d{4}\\s\\d{2}:\\d{2})/;\n\nexport function parseTours(rawEmails) {\n  const tours = [];\n  \n  for (const email of rawEmails) {\n    const lines = (email.body || '').split('\\n').map(l => l.trim()).filter(Boolean);\n    \n    // Kennzeichen extrahieren (erste Zeile mit KZ-Pattern)\n    const plateLine = lines.find(l => PLATE_REGEX.test(l));\n    const plate = plateLine ? plateLine.match(PLATE_REGEX)[0] : null;\n    \n    // Alle Datumsangaben finden\n    const dates = lines\n      .map(l => l.match(DATE_REGEX))\n      .filter(Boolean)\n      .map(m => m[1]);\n    \n    // Route extrahieren (Zeile mit '->' oder 'nach')\n    const routeLine = lines.find(l => l.includes('->') || l.includes(' nach '));\n    \n    if (plate) {\n      tours.push({\n        plate,\n        route: routeLine || 'unbekannt',\n        departure: dates[0] || null,\n        arrival: dates[1] || null,\n        emailUid: email.uid,\n        emailDate: email.date\n      });\n    }\n  }\n  \n  console.log(`${tours.length} Touren aus ${rawEmails.length} Emails geparst`);\n  return tours;\n}"
+      "source": {
+        "type": "vm-only",
+        "vmPath": "C:\\FleetboardScript\\fetch_tours_email.ps1",
+        "vm": "UXUIX (157.180.78.163)",
+        "note": "Nur auf VM vorhanden, nicht im Gist. Muss in Gist hochgeladen werden fuer Live-View."
+      },
+      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
+      "frozenAt": "2026-03-10T12:00:00Z"
     },
 
-    "fleetboard/match-vehicles": {
-      "id": "fleetboard/match-vehicles",
-      "name": "Fleetboard Fahrzeug-Matcher",
-      "version": "1.4.0",
-      "status": "broken",
-      "language": "javascript",
-      "description": "Matcht Kennzeichen aus Emails mit der Fahrzeugliste und ordnet das Heimat-Depot zu. BROKEN: Geo-Matching-Algorithmus liefert falsche Ergebnisse bei Depots < 3km Abstand. Fix in Arbeit.",
-      "usedBy": ["fleetboard"],
-      "dependencies": ["@supabase/supabase-js"],
-      "gate": { "passed": false, "score": "7/11", "lastCheck": "2026-03-09", "failures": ["G3: Testdaten-Snapshot fehlt", "G5: config_version nicht genutzt", "G6: Kein Backup vor letztem Deploy", "G9: Silent catch in matchByGeo()"] },
-      "code": "/**\n * Fahrzeug-Kennzeichen mit Stammdaten matchen.\n * \n * 1. Exaktes KZ-Matching mit der Fahrzeugliste\n * 2. Heimat-Depot Zuordnung per Geo-Distanz\n * \n * BEKANNTER BUG: Wenn zwei Depots < 3km auseinander liegen,\n * wird manchmal das falsche Depot zugeordnet.\n * Haversine-Berechnung muss auf Vincenty umgestellt werden.\n */\nfunction haversineDistance(lat1, lon1, lat2, lon2) {\n  const R = 6371; // Erdradius in km\n  const dLat = (lat2 - lat1) * Math.PI / 180;\n  const dLon = (lon2 - lon1) * Math.PI / 180;\n  const a = Math.sin(dLat/2) ** 2\n    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)\n    * Math.sin(dLon/2) ** 2;\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));\n}\n\nexport async function matchVehicles(sb, parsedTours, toleranceKm = 5) {\n  // Fahrzeugliste aus Supabase laden\n  const { data: vehicles } = await sb.from('fleetboard_vehicles')\n    .select('plate, depot_id, vehicle_type').eq('active', true);\n  \n  const plateMap = Object.fromEntries(vehicles.map(v => [v.plate, v]));\n  \n  return parsedTours.map(tour => {\n    const vehicle = plateMap[tour.plate];\n    return {\n      ...tour,\n      matched: !!vehicle,\n      depot_id: vehicle?.depot_id || null,\n      vehicle_type: vehicle?.vehicle_type || 'unknown'\n    };\n  });\n}"
-    },
-
-    "fleetboard/push-to-supabase": {
-      "id": "fleetboard/push-to-supabase",
-      "name": "Fleetboard DB Push",
-      "version": "1.1.0",
+    "fleetboard/matcher": {
+      "id": "fleetboard/matcher",
+      "name": "Fleetboard GPS Matcher",
+      "version": "1.8.0",
       "status": "frozen",
-      "language": "javascript",
-      "description": "Schreibt gematchte Tourdaten in die Supabase fleetboard_tours Tabelle. Nutzt Upsert auf email_uid um Duplikate zu vermeiden.",
+      "language": "powershell",
+      "description": "FleetboardMatcher_current.ps1 v1.8: CSV parsen, GPS-Traces via SOAP API sammeln (1h-Fenster), in fleetboard_traces akkumulieren, Bounding-Box + Distanz-Fallback (15km) Matching, GVLOGMG 3-fach Validierung, Ergebnisse nach fleetboard_arrivals mit RESTORE-Logik.",
       "usedBy": ["fleetboard"],
-      "dependencies": ["@supabase/supabase-js"],
-      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-04" },
-      "code": "/**\n * Gematchte Touren in Supabase speichern.\n * \n * Nutzt UPSERT mit email_uid als Unique Key:\n * - Wenn die Email schon verarbeitet wurde -> Update\n * - Wenn neu -> Insert\n * \n * So koennen wir den 5-Minuten-Cron sicher laufen lassen\n * ohne Duplikate zu erzeugen.\n */\nexport async function pushToSupabase(sb, matchedTours) {\n  if (!matchedTours || matchedTours.length === 0) {\n    console.log('Keine neuen Touren zum Speichern');\n    return 0;\n  }\n  \n  // Daten fuer Supabase aufbereiten\n  const records = matchedTours.map(t => ({\n    email_uid: t.emailUid,\n    plate: t.plate,\n    route: t.route,\n    departure_at: t.departure,\n    arrival_at: t.arrival,\n    depot_id: t.depot_id,\n    vehicle_type: t.vehicle_type,\n    matched: t.matched\n  }));\n  \n  // Upsert: bei Duplikat (email_uid) updaten statt Fehler\n  const { data, error } = await sb\n    .from('fleetboard_tours')\n    .upsert(records, { onConflict: 'email_uid' });\n  \n  if (error) {\n    throw new Error(`DB Push fehlgeschlagen: ${error.message}`);\n  }\n  \n  console.log(`${records.length} Touren in Supabase gespeichert`);\n  return records.length;\n}"
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "beb6e4606c1ea14911d8d71fe1ede38d",
+        "file": "FleetboardMatcher_current.ps1"
+      },
+      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
+      "frozenAt": "2026-03-10T12:00:00Z"
+    },
+
+    "fleetboard/send-report": {
+      "id": "fleetboard/send-report",
+      "name": "Fleetboard Report Versand",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "send_report.ps1 v2.0: HTML-Report via Edge Function fleetboard-email (VM-IP auf DNSBL, kein direkter SMTP). CSV + JSON Output nach C:\\FleetboardScript\\output\\.",
+      "usedBy": ["fleetboard"],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "8c3618336714d5aa123794d9200eb77c",
+        "file": "send_report.ps1"
+      },
+      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
+      "frozenAt": "2026-03-10T12:00:00Z"
+    },
+
+    "fleetboard/config": {
+      "id": "fleetboard/config",
+      "name": "Fleetboard Configuration",
+      "version": "1.8.0",
+      "status": "frozen",
+      "language": "json",
+      "description": "config.json: Pfade, Filter, Gebiets-Config, distance_threshold_km (15), schedule.interval_minutes (5), vehicleId-Mapping. Single source of truth auf der VM.",
+      "usedBy": ["fleetboard"],
+      "dependencies": [],
+      "source": {
+        "type": "vm-only",
+        "vmPath": "C:\\FleetboardScript\\config.json",
+        "vm": "UXUIX (157.180.78.163)",
+        "note": "Nur auf VM vorhanden, nicht im Gist. Muss in Gist hochgeladen werden fuer Live-View."
+      },
+      "gate": { "passed": true, "score": "11/11", "lastCheck": "2026-03-10" },
+      "frozenAt": "2026-03-10T12:00:00Z"
     }
   },
 
   "summary": {
     "totalModules": 25,
     "byStatus": {
-      "frozen": 21,
-      "draft": 3,
-      "broken": 1
+      "frozen": 23,
+      "draft": 2
     },
     "byLanguage": {
       "python": 15,
-      "javascript": 10
+      "javascript": 5,
+      "powershell": 4,
+      "json": 1
     },
     "byWorkflow": {
       "core": 2,
@@ -462,8 +493,7 @@
     },
     "sharedModules": [
       { "id": "core/metrics-collector", "usedBy": ["nacke", "maut", "fleetboard", "linkedin"] },
-      { "id": "core/error-handler", "usedBy": ["nacke", "maut"] },
-      { "id": "nacke/daily-report", "usedBy": ["nacke"] }
+      { "id": "core/error-handler", "usedBy": ["nacke", "maut"] }
     ]
   }
 }
