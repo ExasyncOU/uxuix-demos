@@ -573,13 +573,14 @@ function renderIntegration(wfId) {
 // LOAD + INIT — Workflows und Registry laden
 // ═══════════════════════════════════════════════════════════════
 async function loadAllData() {
+  const cb = '?v=' + Date.now();
   try {
     // Liste laden
-    const listRes = await fetch('workflows/list.json');
+    const listRes = await fetch('workflows/list.json' + cb);
     const list = await listRes.json();
 
     // Registry laden
-    const regRes = await fetch('modules/registry.json');
+    const regRes = await fetch('modules/registry.json' + cb);
     const regData = await regRes.json();
     const mods = regData.modules || regData;
     Object.values(mods).forEach(m => { STORE.registry[m.id] = m; });
@@ -587,7 +588,7 @@ async function loadAllData() {
     // Alle Workflows laden
     for (const name of list) {
       try {
-        const wfRes = await fetch('workflows/' + name + '.workflow.json');
+        const wfRes = await fetch('workflows/' + name + '.workflow.json' + cb);
         STORE.workflows[name] = await wfRes.json();
       } catch(e) { console.warn('Workflow nicht geladen: ' + name, e); }
     }
