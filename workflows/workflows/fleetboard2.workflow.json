@@ -29,10 +29,34 @@
     "variables": []
   },
   "lanes": [
-    { "id": "geodata", "label": "Geodaten", "icon": "map-pin", "color": "#27AE60", "description": "Areas + Mappings aus Supabase, lokaler Cache" },
-    { "id": "pipeline", "label": "Pipeline", "icon": "zap", "color": "#4A90D9", "description": "CSV -> GPS -> Match -> Report" },
-    { "id": "data", "label": "Daten", "icon": "database", "color": "#8E44AD", "description": "Supabase Reads/Writes" },
-    { "id": "monitor", "label": "Monitor", "icon": "activity", "color": "#E74C3C", "description": "Unknown Refs, Metriken, Alerts" }
+    {
+      "id": "geodata",
+      "label": "Geodaten",
+      "icon": "map-pin",
+      "color": "#27AE60",
+      "description": "Areas + Mappings aus Supabase, lokaler Cache"
+    },
+    {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "icon": "zap",
+      "color": "#4A90D9",
+      "description": "CSV -> GPS -> Match -> Report"
+    },
+    {
+      "id": "data",
+      "label": "Daten",
+      "icon": "database",
+      "color": "#8E44AD",
+      "description": "Supabase Reads/Writes"
+    },
+    {
+      "id": "monitor",
+      "label": "Monitor",
+      "icon": "activity",
+      "color": "#E74C3C",
+      "description": "Unknown Refs, Metriken, Alerts"
+    }
   ],
   "steps": [
     {
@@ -41,9 +65,17 @@
       "module": "fleetboard2/sync-geodata",
       "label": "Geodaten Sync",
       "description": "Areas + Mappings aus Supabase laden, lokal als JSON cachen. Einmalig oder bei Aenderungen.",
-      "next": ["check-refs"],
-      "inputs": ["supabase:fleetboard_areas", "supabase:fleetboard_mappings"],
-      "outputs": ["cache/areas.json", "cache/mappings.json"],
+      "next": [
+        "check-refs"
+      ],
+      "inputs": [
+        "supabase:fleetboard_areas",
+        "supabase:fleetboard_mappings"
+      ],
+      "outputs": [
+        "cache/areas.json",
+        "cache/mappings.json"
+      ],
       "script": "sync-geodata.mjs"
     },
     {
@@ -53,18 +85,72 @@
       "label": "Zustellreferenzen pruefen",
       "description": "CSV-Refs gegen Geodaten-Cache pruefen. Unbekannte Refs -> fleetboard_unknown_refs (Monitor-sichtbar).",
       "next": [],
-      "inputs": ["cache/geodata.json", "csv_file"],
-      "outputs": ["fleetboard_unknown_refs"],
+      "inputs": [
+        "cache/geodata.json",
+        "csv_file"
+      ],
+      "outputs": [
+        "fleetboard_unknown_refs"
+      ],
       "script": "check-refs.mjs"
+    },
+    {
+      "id": "fetch-positions",
+      "lane": "pipeline",
+      "module": "fleetboard2/fetch-positions",
+      "label": "GPS Fetch",
+      "description": "Aktuelle Position aller Fahrzeuge via SOAP API abrufen und in Supabase speichern.",
+      "next": [],
+      "inputs": [
+        "fleetboard-soap-api"
+      ],
+      "outputs": [
+        "supabase:fleetboard_positions"
+      ],
+      "script": "fetch-positions.mjs"
     }
   ],
   "supabaseTables": [
-    { "name": "fleetboard_areas", "purpose": "53 Gebiete mit Bounding-Boxes (lat/lon)", "rw": "read" },
-    { "name": "fleetboard_mappings", "purpose": "Zustellreferenz -> Gebietsname", "rw": "rw" },
-    { "name": "fleetboard_unknown_refs", "purpose": "Unbekannte Refs fuer Monitor", "rw": "write" },
-    { "name": "fleetboard_traces", "purpose": "GPS-Punkte akkumuliert", "rw": "rw" },
-    { "name": "fleetboard_arrivals", "purpose": "Match-Ergebnisse", "rw": "rw" },
-    { "name": "workflow_runs", "purpose": "Monitoring pro Lauf", "rw": "write" }
+    {
+      "name": "fleetboard_areas",
+      "purpose": "53 Gebiete mit Bounding-Boxes (lat/lon)",
+      "rw": "read"
+    },
+    {
+      "name": "fleetboard_mappings",
+      "purpose": "Zustellreferenz -> Gebietsname",
+      "rw": "rw"
+    },
+    {
+      "name": "fleetboard_unknown_refs",
+      "purpose": "Unbekannte Refs fuer Monitor",
+      "rw": "write"
+    },
+    {
+      "name": "fleetboard_traces",
+      "purpose": "GPS-Punkte akkumuliert",
+      "rw": "rw"
+    },
+    {
+      "name": "fleetboard_arrivals",
+      "purpose": "Match-Ergebnisse",
+      "rw": "rw"
+    },
+    {
+      "name": "workflow_runs",
+      "purpose": "Monitoring pro Lauf",
+      "rw": "write"
+    },
+    {
+      "name": "fleetboard_positions",
+      "purpose": "GPS-Positionen pro Minute pro Fahrzeug",
+      "rw": "write"
+    },
+    {
+      "name": "fleetboard_vehicles",
+      "purpose": "VehicleID -> Kennzeichen Cache",
+      "rw": "rw"
+    }
   ],
   "errorHandling": {
     "strategy": "log-and-continue",

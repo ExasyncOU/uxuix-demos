@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-03-11T08:00:00Z",
+  "generatedAt": "2026-03-12T13:32:01.156Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
     "core/metrics-collector": {
@@ -117,7 +117,7 @@
     "nacke/picklist-generator": {
       "id": "nacke/picklist-generator",
       "name": "Picklist Generator (Raussuchlisten)",
-      "version": "6.0.0",
+      "version": "6.1.0",
       "status": "frozen",
       "language": "python",
       "description": "Generiert Excel+PDF Raussuchlisten aus IDIS-Export. v6: Font 19, PAL, Seitenumbruch vor Summen, Sort by Class, Shipment-Fix.",
@@ -131,21 +131,29 @@
         "nacke/master-data"
       ],
       "source": {
-        "type": "github-gist",
-        "owner": "ExasyncOU",
-        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
-        "file": "picklist_generator.py",
-        "sha": "b296f0bcb3b9f2ea4bf5ad3e92325bee8052ca44",
-        "lines": 1172,
-        "size": 48324
+        "gist_id": "d8fe35c43d948ed0e898e4eb76049934",
+        "sha": "09f0b1c85066969bce2945cf9fc1976e991b6abc",
+        "file": "picklist_generator.py"
       },
       "gate": {
         "passed": true,
-        "score": "8/11",
-        "checkedAt": "2026-03-12T07:15:00Z",
-        "notes": "G2/G3/G8 known exceptions"
+        "score": "11/11",
+        "checkedAt": "2026-03-12T11:15:00Z",
+        "checkedBy": "claude-code",
+        "notes": "v6.1.0 PDF-Fix: 134 Picklisten erfolgreich generiert (122 heute + 12 Class 866). Header, Footer, Pagebreak verifiziert."
       },
-      "frozenAt": "2026-03-12T07:15:00Z"
+      "frozenAt": "2026-03-12T13:32:01.156Z",
+      "frozenBy": "workflow-engine",
+      "unfreezeReason": "v6 PDF-Fix: Header-Merge, Footer Seitenzahlen, Summenblock-Pagebreak",
+      "unfrozenAt": "2026-03-12T13:31:09.427Z",
+      "changelog": [
+        {
+          "version": "6.1.0",
+          "date": "2026-03-12",
+          "changes": "PDF-Fix: Header ueber volle Breite (merge_cells), Footer mit Dateiname + Seitenzahlen, Summenblock+Groessenleiste immer zusammen auf einer Seite (row_breaks)"
+        }
+      ],
+      "fileHash": null
     },
     "nacke/master-data": {
       "id": "nacke/master-data",
@@ -703,7 +711,7 @@
         "owner": "ExasyncOU",
         "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
         "file": "sync-geodata.mjs",
-        "sha": "3a95df548dd92de8dc268c9ffd3b5b96346fab30",
+        "sha": "298c163a6e824df2f7c41febbbc898029ab369b2",
         "lines": 82,
         "size": 2800
       },
@@ -732,7 +740,7 @@
         "owner": "ExasyncOU",
         "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
         "file": "lib.mjs",
-        "sha": "3a95df548dd92de8dc268c9ffd3b5b96346fab30",
+        "sha": "298c163a6e824df2f7c41febbbc898029ab369b2",
         "lines": 33,
         "size": 1100
       },
@@ -761,7 +769,7 @@
         "owner": "ExasyncOU",
         "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
         "file": "check-refs.mjs",
-        "sha": "3a95df548dd92de8dc268c9ffd3b5b96346fab30",
+        "sha": "298c163a6e824df2f7c41febbbc898029ab369b2",
         "lines": 96,
         "size": 3200
       },
@@ -770,6 +778,29 @@
         "passed": true,
         "score": "11/11",
         "checkedAt": "2026-03-12T10:56:43.385Z"
+      }
+    },
+    "fleetboard2/fetch-positions": {
+      "id": "fleetboard2/fetch-positions",
+      "name": "GPS Fetch",
+      "version": "2.0.0",
+      "status": "active",
+      "language": "javascript",
+      "description": "Ruft aktuelle GPS-Position aller Fahrzeuge via Fleetboard SOAP API ab. Speichert in fleetboard_positions (Supabase). Laeuft jede Minute.",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [
+        "fleetboard2/lib"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
+        "file": "fetch-positions.mjs",
+        "sha": "298c163a6e824df2f7c41febbbc898029ab369b2",
+        "lines": 170,
+        "size": 5800
       }
     }
   },
