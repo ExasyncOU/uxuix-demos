@@ -689,7 +689,7 @@
       "id": "fleetboard2/sync-geodata",
       "name": "Geodaten Sync",
       "version": "2.0.0",
-      "status": "active",
+      "status": "frozen",
       "language": "javascript",
       "description": "Laedt Areas (53 Bounding-Boxes) + Mappings (Zustellreferenz -> Gebiet) aus Supabase, cached lokal als JSON. Prueft CSV-Refs und meldet Unbekannte an fleetboard_unknown_refs (Monitor).",
       "usedBy": [
@@ -706,13 +706,19 @@
         "sha": "3a95df548dd92de8dc268c9ffd3b5b96346fab30",
         "lines": 82,
         "size": 2800
+      },
+      "frozenAt": "2026-03-12T10:56:43.385Z",
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-12T10:56:43.385Z"
       }
     },
     "fleetboard2/lib": {
       "id": "fleetboard2/lib",
       "name": "Shared Library",
       "version": "2.0.0",
-      "status": "active",
+      "status": "frozen",
       "language": "javascript",
       "description": "Supabase-Client, Cache-Pfade, Cache lesen/schreiben. Wird von allen Fleetboard 2.0 Scripts importiert.",
       "usedBy": [
@@ -729,13 +735,19 @@
         "sha": "3a95df548dd92de8dc268c9ffd3b5b96346fab30",
         "lines": 33,
         "size": 1100
+      },
+      "frozenAt": "2026-03-12T10:56:43.385Z",
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-12T10:56:43.385Z"
       }
     },
     "fleetboard2/check-refs": {
       "id": "fleetboard2/check-refs",
       "name": "Zustellreferenzen pruefen",
       "version": "2.0.0",
-      "status": "active",
+      "status": "frozen",
       "language": "javascript",
       "description": "Prueft Tourenabfrage-CSV auf unbekannte Zustellreferenzen. Meldet Unbekannte an fleetboard_unknown_refs (Monitor-sichtbar).",
       "usedBy": [
@@ -752,6 +764,12 @@
         "sha": "3a95df548dd92de8dc268c9ffd3b5b96346fab30",
         "lines": 96,
         "size": 3200
+      },
+      "frozenAt": "2026-03-12T10:56:43.385Z",
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-12T10:56:43.385Z"
       }
     }
   },
