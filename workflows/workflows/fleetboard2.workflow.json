@@ -1,0 +1,47 @@
+{
+  "$schema": "workflow-v1",
+  "id": "fleetboard2",
+  "name": "Fleetboard 2.0",
+  "version": "2.0.0",
+  "description": "GPS-Tracking + Ankunftserkennung fuer GV Logistik — Neuaufbau, lean und modular",
+  "owner": "fleetboard-agent",
+  "vm": "UXUIX (157.180.78.163)",
+  "vmPath": "C:\\FleetboardScript\\",
+  "source": {
+    "type": "github-gist",
+    "gistId": "beb6e4606c1ea14911d8d71fe1ede38d",
+    "owner": "ExasyncOU"
+  },
+  "schedule": {
+    "cron": "*/5 * * * *",
+    "human": "Alle 5 Minuten (24/7)",
+    "timezone": "Europe/Berlin"
+  },
+  "guardrails": {
+    "constraints": {
+      "maxConcurrentRuns": 1,
+      "timeoutMinutes": 4,
+      "hardRules": [
+        "Max 4 Min Laufzeit (5-Min-Cron-Takt)",
+        "IMAP: automation@uxuix.de (Finnland/Cloud)",
+        "DateTime.Parse() statt ParseExact() fuer gps_time",
+        "GVLOGMG: 3-fach Validierung (nach Zustellstopp, max 4h, nach erstem Soll)"
+      ]
+    },
+    "variables": []
+  },
+  "lanes": [
+    { "id": "pipeline", "label": "Pipeline", "icon": "zap", "color": "#4A90D9", "description": "Hauptablauf: Fetch -> Match -> Report" },
+    { "id": "data", "label": "Daten", "icon": "database", "color": "#8E44AD", "description": "Supabase Reads/Writes" }
+  ],
+  "steps": [],
+  "supabaseTables": [
+    { "name": "fleetboard_traces", "purpose": "GPS-Punkte akkumuliert", "rw": "rw" },
+    { "name": "fleetboard_arrivals", "purpose": "Match-Ergebnisse", "rw": "rw" },
+    { "name": "workflow_runs", "purpose": "Monitoring pro Lauf", "rw": "write" }
+  ],
+  "errorHandling": {
+    "strategy": "log-and-continue",
+    "escalation": "workflow_incidents + email-to-bodo"
+  }
+}

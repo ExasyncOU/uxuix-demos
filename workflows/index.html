@@ -261,10 +261,7 @@ table.history .status-dot.err { background: var(--red); }
   </div>
   <div class="header-actions">
     <select class="wf-select" id="wfSelect" title="Workflow waehlen">
-      <option value="nacke">NackeScript</option>
-      <option value="maut">Mautberechnung</option>
-      <option value="linkedin">LinkedIn Connect</option>
-      <option value="fleetboard">Fleetboard</option>
+      <!-- Dynamisch befuellt aus list.json + workflow.json -->
     </select>
     <button class="theme-toggle" id="themeToggle" title="Dark/Light umschalten">&#9790;</button>
   </div>
@@ -593,7 +590,8 @@ async function loadAllData() {
       } catch(e) { console.warn('Workflow nicht geladen: ' + name, e); }
     }
 
-    // Initial rendern
+    // Dropdown dynamisch befuellen + Initial rendern
+    populateSelector();
     const initial = new URLSearchParams(window.location.search).get('workflow') || list[0] || 'nacke';
     if (document.getElementById('wfSelect')) document.getElementById('wfSelect').value = initial;
     switchWorkflow(initial);
@@ -856,20 +854,35 @@ themeToggle.addEventListener('click', () => {
 // WORKFLOW SELECTOR
 // ═══════════════════════════════════════════════════════════════
 const wfSelect = document.getElementById('wfSelect');
-const WF_META = {
-  nacke:      { name: 'NackeScript v4.2',      vm: 'UXUIX-VM',  schedule: 'Mo-Do 07:00',    lastRun: '09.03 OK',     status: 'alive' },
-  maut:       { name: 'Mautberechnung v2.0',    vm: 'UXUIX-VM',  schedule: 'Mo 08:00',        lastRun: '09.03 OK',     status: 'alive' },
-  linkedin:   { name: 'LinkedIn Connect v1.5',  vm: 'B-Hive',    schedule: 'Mo-Fr 09:30-17',  lastRun: '10.03 OK',     status: 'alive' },
-  fleetboard: { name: 'Fleetboard v3.1',        vm: 'UXUIX-VM',  schedule: '24/7 alle 5min',  lastRun: '10.03 WARN',   status: 'unknown' }
-};
 
-// Set initial from URL parameter
-const urlWf = new URLSearchParams(window.location.search).get('workflow');
-if (urlWf && WF_META[urlWf]) wfSelect.value = urlWf;
+// Dynamisch: Meta wird direkt aus workflow.json gelesen
+function buildWfMeta(wf) {
+  if (!wf) return { name: wf, vm: '?', schedule: '?', lastRun: '?', status: 'unknown' };
+  return {
+    name: wf.name + ' v' + wf.version,
+    vm: (wf.vm || '?').split(' ')[0],
+    schedule: wf.schedule ? wf.schedule.human : '?',
+    lastRun: '—',
+    status: 'unknown'
+  };
+}
+
+// Dropdown dynamisch aus STORE.workflows befuellen
+function populateSelector() {
+  const sel = document.getElementById('wfSelect');
+  sel.innerHTML = '';
+  Object.keys(STORE.workflows).forEach(id => {
+    const wf = STORE.workflows[id];
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = wf.name || id;
+    sel.appendChild(opt);
+  });
+}
 
 function updateWorkflowMeta(wfId) {
-  const meta = WF_META[wfId];
-  if (!meta) return;
+  const wf = STORE.workflows[wfId];
+  const meta = buildWfMeta(wf);
   document.getElementById('metaVersion').textContent = meta.name;
   document.getElementById('metaVM').textContent = 'VM: ' + meta.vm;
   document.getElementById('metaSchedule').textContent = 'Schedule: ' + meta.schedule;
