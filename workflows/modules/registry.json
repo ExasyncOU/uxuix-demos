@@ -933,9 +933,11 @@
       ],
       "dependencies": [],
       "source": {
-        "type": "vm-only",
-        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
-        "vmPath": "C:\\Welzhofer\\scheduler.py"
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-scheduled-task.ps1",
+        "lines": 73
       }
     },
     "welzhofer/webhook": {
@@ -967,9 +969,12 @@
       ],
       "dependencies": [],
       "source": {
-        "type": "vm-only",
-        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
-        "vmPath": "C:\\Welzhofer\\scheduler.py"
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-patch.py",
+        "lines": 338,
+        "note": "Dieser Code ist Teil von scheduler.py auf der VM. Hier wird der Smart-Match Patch gezeigt."
       }
     },
     "welzhofer/ocr": {
@@ -984,9 +989,12 @@
       ],
       "dependencies": [],
       "source": {
-        "type": "vm-only",
-        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
-        "vmPath": "C:\\Welzhofer\\scheduler.py"
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-patch.py",
+        "lines": 338,
+        "note": "Dieser Code ist Teil von scheduler.py auf der VM. Hier wird der Smart-Match Patch gezeigt."
       }
     },
     "welzhofer/supabase": {
@@ -1018,9 +1026,11 @@
       ],
       "dependencies": [],
       "source": {
-        "type": "vm-only",
-        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
-        "vmPath": "C:\\Welzhofer\\scheduler.py"
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-diagnose.py",
+        "lines": 226
       }
     },
     "welzhofer/export": {
@@ -1035,9 +1045,12 @@
       ],
       "dependencies": [],
       "source": {
-        "type": "vm-only",
-        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
-        "vmPath": "C:\\Welzhofer\\scheduler.py"
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-patch.py",
+        "lines": 338,
+        "note": "Dieser Code ist Teil von scheduler.py auf der VM. Hier wird der Smart-Match Patch gezeigt."
       }
     },
     "welzhofer/email": {
@@ -1052,9 +1065,12 @@
       ],
       "dependencies": [],
       "source": {
-        "type": "vm-only",
-        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
-        "vmPath": "C:\\Welzhofer\\scheduler.py"
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-patch.py",
+        "lines": 338,
+        "note": "Dieser Code ist Teil von scheduler.py auf der VM. Hier wird der Smart-Match Patch gezeigt."
       }
     },
     "welzhofer/metrics": {
@@ -1069,9 +1085,12 @@
       ],
       "dependencies": [],
       "source": {
-        "type": "vm-only",
-        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
-        "vmPath": "C:\\Welzhofer\\scheduler.py"
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-patch.py",
+        "lines": 338,
+        "note": "Dieser Code ist Teil von scheduler.py auf der VM. Hier wird der Smart-Match Patch gezeigt."
       }
     }
   },
