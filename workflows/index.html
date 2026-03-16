@@ -2224,6 +2224,7 @@ async function loadDocumentation() {
     // Load documents for the currently selected workflow
     const currentWf = (document.querySelector('.wf-select') || {}).value || '';
     let url = 'docuforge_documents?order=created_at.desc&limit=50&select=id,customer_id,workflow_key,document_type,iso_norm,iso_clauses,period,version,document_id,title,review_status,approved_by,approved_at,retention_until,classification,metadata,created_at';
+    // Load all docs if no workflow selected, or filter by workflow
     if (currentWf) url += '&workflow_key=eq.' + currentWf;
     docAllDocs = await sbFetch(url);
     // Sort: process-documentation always on top, then by created_at desc
