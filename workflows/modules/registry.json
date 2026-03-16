@@ -802,6 +802,277 @@
         "lines": 170,
         "size": 5800
       }
+    },
+    "welzhofer/smart-match": {
+      "id": "welzhofer/smart-match",
+      "name": "Smart Article Matching",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Kombiniert Artikelnummer-Aehnlichkeit (Edit-Distance) mit Beschreibungstext-Vergleich fuer sichere OCR-Korrektur.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-match.py",
+        "lines": 277
+      }
+    },
+    "welzhofer/smart-patch": {
+      "id": "welzhofer/smart-patch",
+      "name": "Smart Match Patch Installer",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Patch-Installer: Smart Match Funktionen in scheduler.py einbauen.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [
+        "welzhofer/smart-match"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-patch.py",
+        "lines": 338
+      }
+    },
+    "welzhofer/diagnose": {
+      "id": "welzhofer/diagnose",
+      "name": "Welzhofer Diagnose",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Prueft Problem-Ordner, analysiert Email-Kategorien, zeigt Lern-Daten.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-diagnose.py",
+        "lines": 226
+      }
+    },
+    "welzhofer/test-smart": {
+      "id": "welzhofer/test-smart",
+      "name": "Smart Match Test Suite",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Test: Smart Article Matching mit bekannten Problem-Faellen.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [
+        "welzhofer/smart-match"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-test-smart.py",
+        "lines": 168
+      }
+    },
+    "welzhofer/scheduled-task": {
+      "id": "welzhofer/scheduled-task",
+      "name": "Scheduled Task Setup",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "powershell",
+      "description": "Windows Scheduled Task: Start Mo-Fr 07:00, Stop Mo-Fr 18:00.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-scheduled-task.ps1",
+        "lines": 73
+      }
+    },
+    "welzhofer/patch": {
+      "id": "welzhofer/patch",
+      "name": "Auto-Korrektur Patch",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "powershell",
+      "description": "Auto-Korrektur deaktivieren + Zeitplan Patch.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-patch.ps1",
+        "lines": 75
+      }
+    },
+    "welzhofer/scheduler": {
+      "id": "welzhofer/scheduler",
+      "name": "Welzhofer Scheduler",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Hauptscript: Email-Polling alle 5 Min, OCR via GPT-5.2, XLSX-Export.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "vm-only",
+        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
+        "vmPath": "C:\\Welzhofer\\scheduler.py"
+      }
+    },
+    "welzhofer/webhook": {
+      "id": "welzhofer/webhook",
+      "name": "Webhook Order Receiver",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "typescript",
+      "description": "Edge Function: Bestellungen per POST empfangen, validieren, speichern.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "edge-function",
+        "slug": "receive-webhook-order",
+        "url": "https://crslpxgwxjmovrhyxiim.supabase.co/functions/v1/receive-webhook-order"
+      }
+    },
+    "welzhofer/convertapi": {
+      "id": "welzhofer/convertapi",
+      "name": "ConvertAPI Bildkonvertierung",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "PDF zu PNG, JPG zu PNG Konvertierung via ConvertAPI. Teil von scheduler.py.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "vm-only",
+        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
+        "vmPath": "C:\\Welzhofer\\scheduler.py"
+      }
+    },
+    "welzhofer/ocr": {
+      "id": "welzhofer/ocr",
+      "name": "GPT-5.2 OCR Extraktion",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "OpenAI GPT-5.2 Vision: Bestelldaten aus Bild extrahieren.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "vm-only",
+        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
+        "vmPath": "C:\\Welzhofer\\scheduler.py"
+      }
+    },
+    "welzhofer/supabase": {
+      "id": "welzhofer/supabase",
+      "name": "Supabase Integration",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "typescript",
+      "description": "Edge Functions: Bestellungen + Status-Verwaltung.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "edge-function",
+        "slug": "welzhofer-order-status",
+        "url": "https://crslpxgwxjmovrhyxiim.supabase.co/functions/v1/welzhofer-order-status"
+      }
+    },
+    "welzhofer/categorizer": {
+      "id": "welzhofer/categorizer",
+      "name": "Bestell-Kategorisierung",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Kategorien: Futterhaus, Fressnapf, Andere, Nachbestellung, Handnotizen, Art.-Problem.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "vm-only",
+        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
+        "vmPath": "C:\\Welzhofer\\scheduler.py"
+      }
+    },
+    "welzhofer/export": {
+      "id": "welzhofer/export",
+      "name": "XLSX Export",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Bestellung als XLSX exportieren und auf OneDrive hochladen.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "vm-only",
+        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
+        "vmPath": "C:\\Welzhofer\\scheduler.py"
+      }
+    },
+    "welzhofer/email": {
+      "id": "welzhofer/email",
+      "name": "Email Versand",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Verarbeitete Bestellung per Email an Welzhofer senden.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "vm-only",
+        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
+        "vmPath": "C:\\Welzhofer\\scheduler.py"
+      }
+    },
+    "welzhofer/metrics": {
+      "id": "welzhofer/metrics",
+      "name": "Metriken Logger",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "workflow_runs Eintraege: items_processed, duration_ms, category, errors.",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "vm-only",
+        "vm": "UXUIX-VM (win-0m2ulke6vqq)",
+        "vmPath": "C:\\Welzhofer\\scheduler.py"
+      }
     }
   },
   "summary": {

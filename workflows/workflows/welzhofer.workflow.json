@@ -27,6 +27,17 @@
       "welzhofer-test-smart.py": { "module": "welzhofer/test-smart", "description": "Test: Smart Matching gegen Stammdaten" },
       "welzhofer-scheduled-task.ps1": { "module": "welzhofer/scheduled-task", "description": "Windows Scheduled Task Setup (Mo-Fr 07:00-18:00)" },
       "welzhofer-patch.ps1": { "module": "welzhofer/patch", "description": "Auto-Korrektur deaktivieren + Zeitplan-Patch" }
+    },
+    "moduleAliases": {
+      "welzhofer/scheduler": "welzhofer-scheduled-task.ps1",
+      "welzhofer/webhook": null,
+      "welzhofer/convertapi": null,
+      "welzhofer/ocr": null,
+      "welzhofer/supabase": null,
+      "welzhofer/categorizer": "welzhofer-diagnose.py",
+      "welzhofer/export": null,
+      "welzhofer/email": null,
+      "welzhofer/metrics": null
     }
   },
   "schedule": {
