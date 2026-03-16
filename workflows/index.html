@@ -2224,8 +2224,7 @@ async function loadDocumentation() {
   try {
     // Load documents for the currently selected workflow
     const currentWf = (document.querySelector('.wf-select') || {}).value || '';
-    let url = 'docuforge_documents?order=created_at.desc&limit=50&select=id,customer_id,workflow_key,document_type,iso_norm,iso_clauses,period,version,document_id,title,review_status,approved_by,approved_at,retention_until,classification,metadata,created_at';
-    // Load all docs if no workflow selected, or filter by workflow
+    let url = 'docuforge_documents?order=created_at.desc&limit=50&select=id,customer_id,workflow_key,document_type,iso_norm,iso_clauses,period,version,document_id,title,review_status,approved_by,approved_at,retention_until,classification,metadata,created_at,needs_refresh,pipeline_version,pipeline_frozen_at';
     if (currentWf) url += '&workflow_key=eq.' + currentWf;
     docAllDocs = await sbFetch(url);
     // Sort: process-documentation always on top, then by created_at desc
@@ -2246,7 +2245,17 @@ async function loadDocumentation() {
 
 function updateDocStats(docs) {
   document.getElementById('docStatTotal').textContent = docs.length;
-  document.getElementById('docStatPending').textContent = docs.filter(d => d.review_status === 'Pending Review').length;
+  const staleCount = docs.filter(d => d.needs_refresh).length;
+  const pendingEl = document.getElementById('docStatPending');
+  if (staleCount > 0) {
+    pendingEl.textContent = staleCount;
+    pendingEl.style.color = 'var(--red)';
+    pendingEl.parentElement.querySelector('.kb-stat-lbl').textContent = 'Veraltet ⚠';
+  } else {
+    pendingEl.textContent = docs.filter(d => d.review_status === 'Pending Review').length;
+    pendingEl.style.color = '';
+    pendingEl.parentElement.querySelector('.kb-stat-lbl').textContent = 'Pending Review';
+  }
   document.getElementById('docStatApproved').textContent = docs.filter(d => d.review_status === 'Approved').length;
   const norms = [...new Set(docs.map(d => d.iso_norm))];
   document.getElementById('docStatNorms').textContent = norms.length;
@@ -2282,7 +2291,8 @@ function renderDocList(docs) {
     html += '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + esc(normLabel) + ' | ' + esc(d.period || 'On-Demand') + ' | v' + esc(d.version || '') + '</div>';
     html += '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;">';
     html += '<span style="color:' + statusColor + ';font-weight:600;">' + esc(d.review_status) + '</span>';
-    html += '<span style="color:var(--text-muted);">' + esc(d.document_id || '') + '</span>';
+    if (d.needs_refresh) html += '<span style="color:var(--red);font-weight:600;" title="Pipeline geaendert — Doku veraltet">⚠ Veraltet</span>';
+    else html += '<span style="color:var(--text-muted);">' + esc(d.document_id || '') + '</span>';
     html += '</div></div>';
   });
   list.innerHTML = html;
@@ -2297,8 +2307,16 @@ function renderDocList(docs) {
 async function showDocument(doc) {
   docCurrentDoc = doc;
   document.getElementById('docViewerTitle').textContent = doc.title || doc.document_id;
-  const meta = document.getElementById('docViewerMeta');
-  meta.textContent = (doc.iso_norm || '').replace('iso-', 'ISO ') + ' | ' + (doc.iso_clauses || []).join(', ') + ' | ' + doc.classification + ' | Aufbewahrung bis ' + (doc.retention_until || '--');
+  const metaEl = document.getElementById('docViewerMeta');
+  let metaText = (doc.iso_norm || '').replace('iso-', 'ISO ') + ' | ' + (doc.iso_clauses || []).join(', ') + ' | ' + doc.classification;
+  if (doc.pipeline_version) metaText += ' | Pipeline v' + doc.pipeline_version;
+  if (doc.pipeline_frozen_at) metaText += ' (frozen ' + doc.pipeline_frozen_at + ')';
+  metaText += ' | Aufbewahrung bis ' + (doc.retention_until || '--');
+  if (doc.needs_refresh) {
+    metaEl.innerHTML = '<span style="background:rgba(255,107,107,.15);color:var(--red);padding:2px 8px;border-radius:4px;font-weight:600;font-size:10px;">⚠ VERALTET — Pipeline wurde geaendert, Dokumentation muss aktualisiert werden</span> ' + esc(metaText);
+  } else {
+    metaEl.textContent = metaText;
+  }
   document.getElementById('docActions').hidden = false;
   document.getElementById('docViewerEmpty').style.display = 'none';
 
@@ -2316,7 +2334,11 @@ async function showDocument(doc) {
 
   // Approve button
   const approveBtn = document.getElementById('docApproveBtn');
-  if (doc.review_status === 'Approved') {
+  if (doc.needs_refresh) {
+    approveBtn.textContent = '⚠ Erst aktualisieren';
+    approveBtn.style.background = 'var(--red)';
+    approveBtn.disabled = true;
+  } else if (doc.review_status === 'Approved') {
     approveBtn.textContent = 'Freigegeben ✓';
     approveBtn.style.background = 'var(--text-muted)';
     approveBtn.disabled = true;
