@@ -7,20 +7,26 @@
   "owner": "welzhofer-agent",
   "vm": "UXUIX-VM (win-0m2ulke6vqq)",
   "source": {
-    "type": "local-script",
-    "path": "C:\\Welzhofer\\",
+    "type": "github-gist",
+    "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+    "owner": "ExasyncOU",
+    "lastSynced": "2026-03-16T09:40:00Z",
+    "vmPath": "C:\\Welzhofer\\",
     "mainScript": "scheduler.py",
     "startScript": "start-welzhofer.bat",
     "stopScript": "stop-welzhofer.bat",
     "selfUpdate": {
       "enabled": true,
       "schedule": "daily 06:00",
-      "source": "github-repo"
+      "source": "github-gist"
     },
     "files": {
-      "scheduler.py": { "module": "welzhofer/scheduler", "description": "Hauptscript: Email-Polling, Orchestrierung" },
-      "learning.py": { "module": "welzhofer/learning", "description": "Self-Learning Store fuer Artikelkorrekturen" },
-      "config.json": { "module": "welzhofer/config", "description": "Konfiguration, API-Keys Referenzen" }
+      "welzhofer-smart-match.py": { "module": "welzhofer/smart-match", "description": "Smart Article Matching (Edit-Distance + Text-Similarity)" },
+      "welzhofer-smart-patch.py": { "module": "welzhofer/smart-patch", "description": "Patch-Installer: Smart Match in scheduler.py einbauen" },
+      "welzhofer-diagnose.py": { "module": "welzhofer/diagnose", "description": "Diagnose: Email-Ordner + Lern-Daten pruefen" },
+      "welzhofer-test-smart.py": { "module": "welzhofer/test-smart", "description": "Test: Smart Matching gegen Stammdaten" },
+      "welzhofer-scheduled-task.ps1": { "module": "welzhofer/scheduled-task", "description": "Windows Scheduled Task Setup (Mo-Fr 07:00-18:00)" },
+      "welzhofer-patch.ps1": { "module": "welzhofer/patch", "description": "Auto-Korrektur deaktivieren + Zeitplan-Patch" }
     }
   },
   "schedule": {
