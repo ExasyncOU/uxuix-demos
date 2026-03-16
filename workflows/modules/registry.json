@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-03-12T13:32:01.156Z",
+  "generatedAt": "2026-03-16T11:05:03.712Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
     "core/metrics-collector": {
@@ -86,16 +86,21 @@
     },
     "nacke/idis-browser": {
       "id": "nacke/idis-browser",
-      "name": "IDIS Browser Automation",
-      "version": "5.0.0",
-      "status": "frozen",
+      "name": "IDIS Browser Wrapper (Legacy)",
+      "version": "7.0.0",
+      "status": "draft",
       "language": "python",
-      "description": "Playwright CDP Browser-Automation fuer IDIS: Login, Export-Seite navigieren, Auftraege exportieren, Amendments durchfuehren. Frischer Browser pro Land (sequentiell).",
+      "description": "Wrapper fuer Rueckwaertskompatibilitaet - delegiert an die 6 IDIS-Module",
       "usedBy": [
         "nacke"
       ],
       "dependencies": [
-        "playwright",
+        "nacke/idis-selectors",
+        "nacke/idis-connect",
+        "nacke/idis-login",
+        "nacke/idis-export",
+        "nacke/idis-amend",
+        "nacke/idis-save-back",
         "nacke/config"
       ],
       "source": {
@@ -103,16 +108,16 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_browser.py",
-        "sha": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
-        "lines": 916,
-        "size": 38612
+        "sha": "07c03624662ee01c6d7b40407e4e29207d8f8e02",
+        "lines": 200,
+        "size": 9664
       },
       "gate": {
-        "passed": true,
-        "score": "11/11",
-        "checkedAt": "2026-03-11T08:00:00Z"
+        "passed": false,
+        "score": null,
+        "checkedAt": null
       },
-      "frozenAt": "2026-03-11T08:00:00Z"
+      "updatedAt": "2026-03-16T11:05:03.712Z"
     },
     "nacke/picklist-generator": {
       "id": "nacke/picklist-generator",
@@ -158,8 +163,8 @@
     "nacke/master-data": {
       "id": "nacke/master-data",
       "name": "Masterdatei Loader",
-      "version": "5.0.0",
-      "status": "frozen",
+      "version": "7.0.0",
+      "status": "draft",
       "language": "python",
       "description": "Laedt die Masterdatei (K:\\Masterdatei Orders.xlsx) mit Kunden-Zuordnungen, Artikel-Mapping und Depot-Konfiguration fuer die Picklist-Generierung.",
       "usedBy": [
@@ -174,22 +179,23 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "master_data.py",
-        "sha": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
+        "sha": "07c03624662ee01c6d7b40407e4e29207d8f8e02",
         "lines": 361,
-        "size": 12530
+        "size": 12446
       },
       "gate": {
         "passed": true,
         "score": "11/11",
         "checkedAt": "2026-03-11T08:00:00Z"
       },
-      "frozenAt": "2026-03-11T08:00:00Z"
+      "frozenAt": "2026-03-11T08:00:00Z",
+      "updatedAt": "2026-03-16T11:05:03.712Z"
     },
     "nacke/overconfirmation": {
       "id": "nacke/overconfirmation",
       "name": "Overconfirmation Calculator",
-      "version": "5.0.0",
-      "status": "frozen",
+      "version": "7.0.0",
+      "status": "draft",
       "language": "python",
       "description": "Berechnet Overconfirmation-Mengen: Rundet Bestellmengen auf Bundle-Size auf (Col K). Faktor IMMER 1 (PCS=1, PPP=1). Nur Col K als Bundle-Quelle.",
       "usedBy": [
@@ -203,16 +209,17 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "overconfirmation.py",
-        "sha": "354e1133e0fd8e9edeca9b34fde9fc7461e023a3",
+        "sha": "07c03624662ee01c6d7b40407e4e29207d8f8e02",
         "lines": 249,
-        "size": 8770
+        "size": 7306
       },
       "gate": {
         "passed": true,
         "score": "11/11",
         "checkedAt": "2026-03-11T08:00:00Z"
       },
-      "frozenAt": "2026-03-11T08:00:00Z"
+      "frozenAt": "2026-03-11T08:00:00Z",
+      "updatedAt": "2026-03-16T11:05:03.712Z"
     },
     "nacke/daily-report": {
       "id": "nacke/daily-report",
@@ -1092,26 +1099,203 @@
         "lines": 338,
         "note": "Dieser Code ist Teil von scheduler.py auf der VM. Hier wird der Smart-Match Patch gezeigt."
       }
+    },
+    "nacke/idis-selectors": {
+      "id": "nacke/idis-selectors",
+      "name": "IDIS Selectors & Constants",
+      "version": "7.0.0",
+      "status": "draft",
+      "language": "python",
+      "description": "Alle JSF Selektoren, Spalten-Konstanten, Laender-Mapping, CSV-Felder",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_selectors.py",
+        "sha": "07c03624662ee01c6d7b40407e4e29207d8f8e02",
+        "lines": 140,
+        "size": 5773
+      },
+      "gate": {
+        "passed": false,
+        "score": null,
+        "checkedAt": null
+      },
+      "createdAt": "2026-03-16T11:05:03.712Z"
+    },
+    "nacke/idis-connect": {
+      "id": "nacke/idis-connect",
+      "name": "IDIS Browser Connect",
+      "version": "7.0.0",
+      "status": "draft",
+      "language": "python",
+      "description": "CDP Port 9222, Browser starten/verbinden, Screenshot-Utility",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_connect.py",
+        "sha": "07c03624662ee01c6d7b40407e4e29207d8f8e02",
+        "lines": 130,
+        "size": 5626
+      },
+      "gate": {
+        "passed": false,
+        "score": null,
+        "checkedAt": null
+      },
+      "createdAt": "2026-03-16T11:05:03.712Z"
+    },
+    "nacke/idis-login": {
+      "id": "nacke/idis-login",
+      "name": "IDIS Login & Navigation",
+      "version": "7.0.0",
+      "status": "draft",
+      "language": "python",
+      "description": "IDIS Login LDAP, Navigate Process AROS, Back to Main Menu",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_login.py",
+        "sha": "07c03624662ee01c6d7b40407e4e29207d8f8e02",
+        "lines": 130,
+        "size": 5021
+      },
+      "gate": {
+        "passed": false,
+        "score": null,
+        "checkedAt": null
+      },
+      "createdAt": "2026-03-16T11:05:03.712Z"
+    },
+    "nacke/idis-export": {
+      "id": "nacke/idis-export",
+      "name": "IDIS Export & CSV",
+      "version": "7.0.0",
+      "status": "draft",
+      "language": "python",
+      "description": "Date/Company Filter setzen, Show Result, CSV Export+Download, Table Data Extraction, CSV Parsing",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_export.py",
+        "sha": "07c03624662ee01c6d7b40407e4e29207d8f8e02",
+        "lines": 290,
+        "size": 14291
+      },
+      "gate": {
+        "passed": false,
+        "score": null,
+        "checkedAt": null
+      },
+      "createdAt": "2026-03-16T11:05:03.712Z"
+    },
+    "nacke/idis-amend": {
+      "id": "nacke/idis-amend",
+      "name": "IDIS Amend Orders",
+      "version": "7.0.0",
+      "status": "draft",
+      "language": "python",
+      "description": "Overconfirmation ceil(ordered/bundle)*bundle per JS im Amend-Formular, Tabellen-Iteration",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_amend.py",
+        "sha": "07c03624662ee01c6d7b40407e4e29207d8f8e02",
+        "lines": 170,
+        "size": 7171
+      },
+      "gate": {
+        "passed": false,
+        "score": null,
+        "checkedAt": null
+      },
+      "createdAt": "2026-03-16T11:05:03.712Z"
+    },
+    "nacke/idis-save-back": {
+      "id": "nacke/idis-save-back",
+      "name": "IDIS Save & Back",
+      "version": "7.0.0",
+      "status": "draft",
+      "language": "python",
+      "description": "Save (_idJsp159), Back (_idJsp155), Cancel (_idJsp157) nach Amend",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_save_back.py",
+        "sha": "07c03624662ee01c6d7b40407e4e29207d8f8e02",
+        "lines": 100,
+        "size": 3803
+      },
+      "gate": {
+        "passed": false,
+        "score": null,
+        "checkedAt": null
+      },
+      "createdAt": "2026-03-16T11:05:03.712Z"
     }
   },
   "summary": {
-    "totalModules": 25,
+    "totalModules": 53,
     "byStatus": {
-      "frozen": 23,
-      "draft": 2
+      "frozen": 26,
+      "draft": 11,
+      "active": 16
     },
     "byLanguage": {
-      "python": 15,
-      "javascript": 5,
-      "powershell": 4,
-      "json": 1
+      "python": 33,
+      "json": 2,
+      "javascript": 10,
+      "powershell": 6,
+      "typescript": 2
     },
     "byWorkflow": {
-      "core": 2,
-      "nacke": 8,
-      "maut": 6,
-      "linkedin": 6,
-      "fleetboard": 5
+      "nacke": 16,
+      "maut": 9,
+      "fleetboard": 6,
+      "linkedin": 7,
+      "fleetboard2": 4,
+      "welzhofer": 15
     },
     "sharedModules": [
       {
