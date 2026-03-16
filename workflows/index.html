@@ -424,6 +424,7 @@ table.gist-versions a:hover { text-decoration: underline; }
   <div class="tab" data-tab="credentials">Credentials</div>
   <div class="tab" data-tab="versions">Versionen</div>
   <div class="tab" data-tab="knowledge">Wissensbasis</div>
+  <div class="tab" data-tab="documentation">Dokumentation</div>
 </div>
 
 <!-- ═══ MAIN ═══ -->
@@ -636,6 +637,58 @@ table.gist-versions a:hover { text-decoration: underline; }
   </div>
 </div>
 
+<!-- ════════════════════════════════════════════════════════════
+     TAB 10: DOCUMENTATION — ISO-konforme Live-Dokumentation
+     ════════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-documentation">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+    <h2 style="font-size:18px;margin:0;">ISO-Dokumentation <span style="font-size:12px;color:var(--text-muted);font-weight:400;">powered by DocuForge</span></h2>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select id="docTypeFilter" style="background:var(--accent);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:12px;">
+        <option value="">Alle Typen</option>
+        <option value="service-report">Service Report (ISO 20000)</option>
+        <option value="nonconformity-log">NC Log (ISO 9001)</option>
+        <option value="sla-conformance">SLA Conformance</option>
+        <option value="service-catalog">Service Catalog</option>
+        <option value="audit-trail">Audit Trail (ISO 27001)</option>
+      </select>
+      <select id="docPeriodFilter" style="background:var(--accent);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:12px;">
+        <option value="">Alle Zeitraeume</option>
+      </select>
+      <button id="docRefreshBtn" style="background:var(--green);color:#000;border:none;border-radius:4px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Aktualisieren</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="kb-stats" id="docStats">
+    <div class="kb-stat"><span class="kb-stat-val" id="docStatTotal">--</span><span class="kb-stat-lbl">Dokumente</span></div>
+    <div class="kb-stat"><span class="kb-stat-val" id="docStatPending">--</span><span class="kb-stat-lbl">Pending Review</span></div>
+    <div class="kb-stat"><span class="kb-stat-val" id="docStatApproved">--</span><span class="kb-stat-lbl">Freigegeben</span></div>
+    <div class="kb-stat"><span class="kb-stat-val" id="docStatNorms">--</span><span class="kb-stat-lbl">ISO-Normen</span></div>
+  </div>
+
+  <!-- Two-column: List + Viewer -->
+  <div class="kb-layout">
+    <div class="kb-sidebar">
+      <div class="kb-list" id="docList" style="max-height:calc(100vh - 280px);overflow:auto;">
+        <div style="color:var(--text-muted);font-size:13px;padding:16px;">Tab aktivieren zum Laden...</div>
+      </div>
+    </div>
+    <div class="kb-viewer" style="flex:3;">
+      <div class="kb-viewer-header" id="docViewerHeader" style="display:flex;justify-content:space-between;align-items:center;">
+        <span id="docViewerTitle">Dokument waehlen...</span>
+        <div style="display:flex;gap:8px;" id="docActions" hidden>
+          <button id="docApproveBtn" style="background:var(--green);color:#000;border:none;border-radius:4px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;">Freigeben</button>
+          <button id="docPrintBtn" style="background:var(--blue);color:#000;border:none;border-radius:4px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;">Drucken</button>
+        </div>
+      </div>
+      <div id="docViewerMeta" style="font-size:11px;color:var(--text-muted);margin:4px 0 8px;"></div>
+      <iframe id="docViewerFrame" style="width:100%;border:none;border-radius:8px;background:#fff;min-height:calc(100vh - 320px);display:none;"></iframe>
+      <div id="docViewerEmpty" style="color:var(--text-muted);font-size:13px;padding:40px;text-align:center;">Waehle ein Dokument aus der Liste links.</div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /panels -->
 </div><!-- /main -->
 
@@ -653,8 +706,10 @@ table.gist-versions a:hover { text-decoration: underline; }
 
 <script>
 // Lazy-load flags (declared early for tab handler access)
-var tasksLoaded = false, edgeLogsLoaded = false, credsLoaded = false, versionsLoaded = false;
+var tasksLoaded = false, edgeLogsLoaded = false, credsLoaded = false, versionsLoaded = false, docLoaded = false;
 var edgeAllLogs = [];
+var docAllDocs = [];
+var docCurrentDoc = null;
 
 // ═══════════════════════════════════════════════════════════════
 // TAB SWITCHING
@@ -675,6 +730,7 @@ document.querySelectorAll('.tab').forEach(tab => {
       if (sel && sel.value) loadGistVersions(sel.value);
     }
     if (panelId === 'knowledge' && !kbLoaded) loadKnowledge();
+    if (panelId === 'documentation' && !docLoaded) loadDocumentation();
   });
 });
 
@@ -2155,6 +2211,157 @@ function startAutoRefresh() {
     if (edgePanel && edgePanel.classList.contains('active')) loadEdgeLogs();
   }, 60000);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// DOCUMENTATION — DocuForge ISO Documents (Live from Supabase)
+// ═══════════════════════════════════════════════════════════════
+async function loadDocumentation() {
+  const list = document.getElementById('docList');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:16px;">Lade Dokumentation...</div>';
+  try {
+    // Load documents for the currently selected workflow
+    const currentWf = (document.querySelector('.wf-select') || {}).value || '';
+    let url = 'docuforge_documents?order=created_at.desc&limit=50&select=id,customer_id,workflow_key,document_type,iso_norm,iso_clauses,period,version,document_id,title,review_status,approved_by,approved_at,retention_until,classification,metadata,created_at';
+    if (currentWf) url += '&workflow_key=eq.' + currentWf;
+    docAllDocs = await sbFetch(url);
+    docLoaded = true;
+    renderDocList(docAllDocs);
+    updateDocStats(docAllDocs);
+    populateDocPeriodFilter(docAllDocs);
+  } catch(e) {
+    console.warn('DocuForge offline:', e.message);
+    list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:16px;">Offline: ' + esc(e.message) + '</div>';
+  }
+}
+
+function updateDocStats(docs) {
+  document.getElementById('docStatTotal').textContent = docs.length;
+  document.getElementById('docStatPending').textContent = docs.filter(d => d.review_status === 'Pending Review').length;
+  document.getElementById('docStatApproved').textContent = docs.filter(d => d.review_status === 'Approved').length;
+  const norms = [...new Set(docs.map(d => d.iso_norm))];
+  document.getElementById('docStatNorms').textContent = norms.length;
+}
+
+function populateDocPeriodFilter(docs) {
+  const sel = document.getElementById('docPeriodFilter');
+  if (!sel) return;
+  const periods = [...new Set(docs.map(d => d.period).filter(Boolean))].sort().reverse();
+  let html = '<option value="">Alle Zeitraeume</option>';
+  periods.forEach(p => { html += '<option value="' + esc(p) + '">' + esc(p) + '</option>'; });
+  sel.innerHTML = html;
+}
+
+function renderDocList(docs) {
+  const list = document.getElementById('docList');
+  if (!list) return;
+  if (docs.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:16px;">Keine Dokumente gefunden.</div>';
+    return;
+  }
+  let html = '';
+  docs.forEach((d, i) => {
+    const statusColor = d.review_status === 'Approved' ? 'var(--green)' : d.review_status === 'Rejected' ? 'var(--red)' : 'var(--yellow)';
+    const normLabel = (d.iso_norm || '').replace('iso-', 'ISO ');
+    const typeLabel = (d.document_type || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    html += '<div class="kb-item" data-doc-idx="' + i + '" style="cursor:pointer;padding:10px 12px;border-bottom:1px solid var(--border);transition:background .15s;"';
+    html += ' onmouseenter="this.style.background=\'var(--accent)\'" onmouseleave="this.style.background=\'transparent\'">';
+    html += '<div style="font-size:13px;font-weight:600;">' + esc(typeLabel) + '</div>';
+    html += '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + esc(normLabel) + ' | ' + esc(d.period || 'On-Demand') + ' | v' + esc(d.version || '') + '</div>';
+    html += '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;">';
+    html += '<span style="color:' + statusColor + ';font-weight:600;">' + esc(d.review_status) + '</span>';
+    html += '<span style="color:var(--text-muted);">' + esc(d.document_id || '') + '</span>';
+    html += '</div></div>';
+  });
+  list.innerHTML = html;
+  list.querySelectorAll('[data-doc-idx]').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.docIdx);
+      showDocument(docAllDocs[idx]);
+    });
+  });
+}
+
+async function showDocument(doc) {
+  docCurrentDoc = doc;
+  document.getElementById('docViewerTitle').textContent = doc.title || doc.document_id;
+  const meta = document.getElementById('docViewerMeta');
+  meta.textContent = (doc.iso_norm || '').replace('iso-', 'ISO ') + ' | ' + (doc.iso_clauses || []).join(', ') + ' | ' + doc.classification + ' | Aufbewahrung bis ' + (doc.retention_until || '--');
+  document.getElementById('docActions').hidden = false;
+  document.getElementById('docViewerEmpty').style.display = 'none';
+
+  // Fetch full HTML content
+  try {
+    const full = await sbFetch('docuforge_documents?id=eq.' + doc.id + '&select=html_content');
+    if (full && full[0] && full[0].html_content) {
+      const frame = document.getElementById('docViewerFrame');
+      frame.style.display = 'block';
+      frame.srcdoc = full[0].html_content;
+    }
+  } catch(e) {
+    console.warn('Doc load error:', e.message);
+  }
+
+  // Approve button
+  const approveBtn = document.getElementById('docApproveBtn');
+  if (doc.review_status === 'Approved') {
+    approveBtn.textContent = 'Freigegeben ✓';
+    approveBtn.style.background = 'var(--text-muted)';
+    approveBtn.disabled = true;
+  } else {
+    approveBtn.textContent = 'Freigeben';
+    approveBtn.style.background = 'var(--green)';
+    approveBtn.disabled = false;
+  }
+}
+
+// Approve document
+document.getElementById('docApproveBtn')?.addEventListener('click', async () => {
+  if (!docCurrentDoc) return;
+  try {
+    await fetch(SB_URL + '/rest/v1/docuforge_documents?id=eq.' + docCurrentDoc.id, {
+      method: 'PATCH',
+      headers: { ...SB_HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ review_status: 'Approved', approved_at: new Date().toISOString(), approved_by: 'Dashboard User' })
+    });
+    docCurrentDoc.review_status = 'Approved';
+    document.getElementById('docApproveBtn').textContent = 'Freigegeben ✓';
+    document.getElementById('docApproveBtn').style.background = 'var(--text-muted)';
+    document.getElementById('docApproveBtn').disabled = true;
+    docLoaded = false;
+    loadDocumentation();
+  } catch(e) { console.warn('Approve error:', e.message); }
+});
+
+// Print document
+document.getElementById('docPrintBtn')?.addEventListener('click', () => {
+  const frame = document.getElementById('docViewerFrame');
+  if (frame && frame.contentWindow) frame.contentWindow.print();
+});
+
+// Refresh button
+document.getElementById('docRefreshBtn')?.addEventListener('click', () => {
+  docLoaded = false;
+  loadDocumentation();
+});
+
+// Filters
+document.getElementById('docTypeFilter')?.addEventListener('change', function() {
+  const val = this.value;
+  const periodVal = document.getElementById('docPeriodFilter')?.value || '';
+  let filtered = docAllDocs;
+  if (val) filtered = filtered.filter(d => d.document_type === val);
+  if (periodVal) filtered = filtered.filter(d => d.period === periodVal);
+  renderDocList(filtered);
+});
+document.getElementById('docPeriodFilter')?.addEventListener('change', function() {
+  const val = this.value;
+  const typeVal = document.getElementById('docTypeFilter')?.value || '';
+  let filtered = docAllDocs;
+  if (typeVal) filtered = filtered.filter(d => d.document_type === typeVal);
+  if (val) filtered = filtered.filter(d => d.period === val);
+  renderDocList(filtered);
+});
 
 // ═══════════════════════════════════════════════════════════════
 // BOOT — Alles laden und rendern
