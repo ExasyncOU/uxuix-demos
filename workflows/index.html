@@ -651,6 +651,7 @@ table.gist-versions a:hover { text-decoration: underline; }
         <option value="sla-conformance">SLA Conformance</option>
         <option value="service-catalog">Service Catalog</option>
         <option value="audit-trail">Audit Trail (ISO 27001)</option>
+        <option value="process-documentation">Prozessdokumentation</option>
       </select>
       <select id="docPeriodFilter" style="background:var(--accent);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-size:12px;">
         <option value="">Alle Zeitraeume</option>
@@ -2225,6 +2226,12 @@ async function loadDocumentation() {
     let url = 'docuforge_documents?order=created_at.desc&limit=50&select=id,customer_id,workflow_key,document_type,iso_norm,iso_clauses,period,version,document_id,title,review_status,approved_by,approved_at,retention_until,classification,metadata,created_at';
     if (currentWf) url += '&workflow_key=eq.' + currentWf;
     docAllDocs = await sbFetch(url);
+    // Sort: process-documentation always on top, then by created_at desc
+    docAllDocs.sort((a, b) => {
+      if (a.document_type === 'process-documentation' && b.document_type !== 'process-documentation') return -1;
+      if (b.document_type === 'process-documentation' && a.document_type !== 'process-documentation') return 1;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
     docLoaded = true;
     renderDocList(docAllDocs);
     updateDocStats(docAllDocs);
@@ -2264,9 +2271,12 @@ function renderDocList(docs) {
     const statusColor = d.review_status === 'Approved' ? 'var(--green)' : d.review_status === 'Rejected' ? 'var(--red)' : 'var(--yellow)';
     const normLabel = (d.iso_norm || '').replace('iso-', 'ISO ');
     const typeLabel = (d.document_type || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    html += '<div class="kb-item" data-doc-idx="' + i + '" style="cursor:pointer;padding:10px 12px;border-bottom:1px solid var(--border);transition:background .15s;"';
-    html += ' onmouseenter="this.style.background=\'var(--accent)\'" onmouseleave="this.style.background=\'transparent\'">';
-    html += '<div style="font-size:13px;font-weight:600;">' + esc(typeLabel) + '</div>';
+    const isProc = d.document_type === 'process-documentation';
+    const bgStyle = isProc ? 'background:var(--accent);border-left:3px solid var(--green);' : '';
+    html += '<div class="kb-item" data-doc-idx="' + i + '" style="cursor:pointer;padding:10px 12px;border-bottom:1px solid var(--border);transition:background .15s;' + bgStyle + '"';
+    html += ' onmouseenter="this.style.background=\'var(--accent)\'" onmouseleave="this.style.background=\'' + (isProc ? 'var(--accent)' : 'transparent') + '\'">';
+    const icon = isProc ? '📋 ' : '';
+    html += '<div style="font-size:13px;font-weight:600;">' + icon + esc(typeLabel) + '</div>';
     html += '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + esc(normLabel) + ' | ' + esc(d.period || 'On-Demand') + ' | v' + esc(d.version || '') + '</div>';
     html += '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;">';
     html += '<span style="color:' + statusColor + ';font-weight:600;">' + esc(d.review_status) + '</span>';
