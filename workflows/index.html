@@ -2373,8 +2373,33 @@ document.getElementById('docPrintBtn')?.addEventListener('click', () => {
   if (frame && frame.contentWindow) frame.contentWindow.print();
 });
 
-// Refresh button
-document.getElementById('docRefreshBtn')?.addEventListener('click', () => {
+// Refresh button — if a stale doc is selected, trigger Edge Function refresh
+document.getElementById('docRefreshBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('docRefreshBtn');
+  // If we have a stale process-doc selected, trigger auto-refresh via Edge Function
+  if (docCurrentDoc && docCurrentDoc.needs_refresh && docCurrentDoc.document_type === 'process-documentation') {
+    btn.textContent = 'Aktualisiere...';
+    btn.disabled = true;
+    try {
+      const resp = await fetch(SB_URL + '/functions/v1/docuforge-refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SB_KEY, 'apikey': SB_KEY },
+        body: JSON.stringify({ workflow_key: docCurrentDoc.workflow_key })
+      });
+      const result = await resp.json();
+      if (result.ok) {
+        btn.textContent = 'Aktualisiert ✓ (v' + result.new_version + ')';
+        setTimeout(() => { btn.textContent = 'Aktualisieren'; btn.disabled = false; }, 3000);
+      } else {
+        btn.textContent = 'Fehler: ' + (result.error || 'Unbekannt');
+        setTimeout(() => { btn.textContent = 'Aktualisieren'; btn.disabled = false; }, 4000);
+      }
+    } catch(e) {
+      btn.textContent = 'Offline';
+      setTimeout(() => { btn.textContent = 'Aktualisieren'; btn.disabled = false; }, 3000);
+    }
+  }
+  // Always reload the list
   docLoaded = false;
   loadDocumentation();
 });
