@@ -1,0 +1,16 @@
+{
+  "name": "fleetboard2",
+  "version": "2.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "sync-geodata": "node sync-geodata.mjs",
+    "check-refs": "node check-refs.mjs",
+    "fetch-tours": "node fetch-tours.mjs",
+    "match-tours": "node match-tours.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "imapflow": "^1.2.13"
+  }
+}
