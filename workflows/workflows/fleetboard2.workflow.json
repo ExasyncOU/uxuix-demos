@@ -12,11 +12,50 @@
     "type": "gist",
     "gistId": "771c490a2fde04847cacdb439a227966",
     "gistUrl": "https://gist.github.com/ExasyncOU/771c490a2fde04847cacdb439a227966",
-    "repoBackup": "fleetboard2/"
+    "repoBackup": "fleetboard2/",
+    "currentSHA": "cf2a5fc2b718bf869ac846a24c817ab01b9a0dbf",
+    "lastSynced": "2026-03-18T15:54:44.290Z",
+    "files": {
+      "check-refs.mjs": {
+        "lines": 112,
+        "module": "fleetboard2/check-refs",
+        "logging": true
+      },
+      "fetch-positions.mjs": {
+        "lines": 193,
+        "module": "fleetboard2/fetch-positions",
+        "logging": true
+      },
+      "fetch-tours.mjs": {
+        "lines": 165,
+        "module": "fleetboard2/fetch-tours",
+        "logging": true
+      },
+      "lib.mjs": {
+        "lines": 49,
+        "module": "fleetboard2/lib",
+        "logging": true
+      },
+      "match-tours.mjs": {
+        "lines": 475,
+        "module": "fleetboard2/match-tours",
+        "logging": true
+      },
+      "package.json": {
+        "lines": 16,
+        "module": "fleetboard2/package",
+        "logging": true
+      },
+      "sync-geodata.mjs": {
+        "lines": 90,
+        "module": "fleetboard2/sync-geodata",
+        "logging": true
+      }
+    }
   },
   "schedule": {
-    "cron": "5,20,35,50 * * * 1-6",
-    "human": "Alle 15 Min (Mo-Sa), GPS jede Minute separat",
+    "cron": "*/5 * * * *",
+    "human": "Alle 5 Minuten (24/7)",
     "timezone": "Europe/Berlin"
   },
   "guardrails": {
@@ -24,64 +63,202 @@
       "maxConcurrentRuns": 1,
       "timeoutMinutes": 4,
       "hardRules": [
-        "Max 4 Min Laufzeit (15-Min-Cron-Takt)",
-        "IMAP: gvlog@uxuix.de (1x taeglich 10:00)",
+        "Max 4 Min Laufzeit (5-Min-Cron-Takt)",
+        "IMAP: automation@uxuix.de (Finnland/Cloud)",
         "GVLOGMG: 3-fach Validierung (nach Zustellstopp, max 4h, nach erstem Soll)"
       ]
     },
     "variables": []
   },
   "lanes": [
-    { "id": "geodata", "label": "Geodaten", "icon": "map-pin", "color": "#27AE60", "description": "Areas + Mappings aus Supabase, lokaler Cache" },
-    { "id": "pipeline", "label": "Pipeline", "icon": "zap", "color": "#4A90D9", "description": "DB(AUSSTEHEND) -> GPS -> Match -> DB(MATCH)" },
-    { "id": "data", "label": "Daten", "icon": "database", "color": "#8E44AD", "description": "Supabase Reads/Writes" },
-    { "id": "monitor", "label": "Monitor", "icon": "activity", "color": "#E74C3C", "description": "Unknown Refs, Metriken, Alerts" }
+    {
+      "id": "geodata",
+      "label": "Geodaten",
+      "icon": "map-pin",
+      "color": "#27AE60",
+      "description": "Areas + Mappings aus Supabase, lokaler Cache"
+    },
+    {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "icon": "zap",
+      "color": "#4A90D9",
+      "description": "CSV -> GPS -> Match -> Report"
+    },
+    {
+      "id": "data",
+      "label": "Daten",
+      "icon": "database",
+      "color": "#8E44AD",
+      "description": "Supabase Reads/Writes"
+    },
+    {
+      "id": "monitor",
+      "label": "Monitor",
+      "icon": "activity",
+      "color": "#E74C3C",
+      "description": "Unknown Refs, Metriken, Alerts"
+    }
   ],
   "steps": [
     {
-      "id": "sync-geodata", "lane": "geodata", "module": "fleetboard2/sync-geodata", "label": "Geodaten Sync",
-      "frozen": true, "frozenAt": "2026-03-17", "frozenReason": "53 Areas, Cache stabil",
-      "description": "Areas + Mappings aus Supabase laden, lokal als JSON cachen.",
-      "next": ["check-refs"], "inputs": ["supabase:fleetboard_areas"], "outputs": ["cache/geodata.json"], "script": "sync-geodata.mjs"
+      "id": "sync-geodata",
+      "lane": "geodata",
+      "module": "fleetboard2/sync-geodata",
+      "label": "Geodaten Sync",
+      "frozen": true,
+      "frozenAt": "2026-03-17",
+      "frozenReason": "53 Areas, Cache stabil, keine Aenderungen noetig",
+      "description": "Areas + Mappings aus Supabase laden, lokal als JSON cachen. Einmalig oder bei Aenderungen.",
+      "next": [
+        "check-refs"
+      ],
+      "inputs": [
+        "supabase:fleetboard_areas",
+        "supabase:fleetboard_mappings"
+      ],
+      "outputs": [
+        "cache/areas.json",
+        "cache/mappings.json"
+      ],
+      "script": "sync-geodata.mjs"
     },
     {
-      "id": "check-refs", "lane": "monitor", "module": "fleetboard2/check-refs", "label": "Zustellreferenzen pruefen",
-      "description": "CSV-Refs gegen Geodaten-Cache pruefen. Unbekannte -> fleetboard_unknown_refs.",
-      "next": [], "inputs": ["cache/geodata.json", "csv_file"], "outputs": ["fleetboard_unknown_refs"], "script": "check-refs.mjs"
+      "id": "check-refs",
+      "lane": "monitor",
+      "module": "fleetboard2/check-refs",
+      "label": "Zustellreferenzen pruefen",
+      "description": "CSV-Refs gegen Geodaten-Cache pruefen. Unbekannte Refs -> fleetboard_unknown_refs (Monitor-sichtbar).",
+      "next": [],
+      "inputs": [
+        "cache/geodata.json",
+        "csv_file"
+      ],
+      "outputs": [
+        "fleetboard_unknown_refs"
+      ],
+      "script": "check-refs.mjs"
     },
     {
-      "id": "fetch-positions", "lane": "pipeline", "module": "fleetboard2/fetch-positions", "label": "GPS Fetch",
-      "frozen": true, "frozenAt": "2026-03-17", "frozenReason": "6700+ Runs, 80 Fahrzeuge/min",
-      "description": "Aktuelle Position aller Fahrzeuge via SOAP API abrufen.",
-      "next": [], "inputs": ["fleetboard-soap-api"], "outputs": ["supabase:fleetboard_positions"], "script": "fetch-positions.mjs"
+      "id": "fetch-positions",
+      "lane": "pipeline",
+      "module": "fleetboard2/fetch-positions",
+      "label": "GPS Fetch",
+      "frozen": true,
+      "frozenAt": "2026-03-17",
+      "frozenReason": "6700+ Runs, 97-99.8% success, 80 Fahrzeuge/min. OFFEN: Duplikat-Schutz fehlt",
+      "description": "Aktuelle Position aller Fahrzeuge via SOAP API abrufen und in Supabase speichern.",
+      "next": [],
+      "inputs": [
+        "fleetboard-soap-api"
+      ],
+      "outputs": [
+        "supabase:fleetboard_positions"
+      ],
+      "script": "fetch-positions.mjs"
     },
     {
-      "id": "fetch-tours", "lane": "pipeline", "module": "fleetboard2/fetch-tours", "label": "IMAP CSV Fetch",
-      "frozen": true, "frozenAt": "2026-03-18", "frozenReason": "v2.2 — Auto DB-Import nach Download",
-      "description": "Tourenabfrage-CSV per IMAP holen, automatisch in DB importieren.",
-      "next": ["match-tours"], "inputs": ["imap:gvlog@uxuix.de"], "outputs": ["cache/Tourenabfrage_*.csv", "supabase:fleetboard_arrivals(AUSSTEHEND)"], "script": "fetch-tours.mjs"
+      "id": "fetch-tours",
+      "lane": "pipeline",
+      "module": "fleetboard2/fetch-tours",
+      "label": "IMAP CSV Fetch",
+      "frozen": true,
+      "frozenAt": "2026-03-17",
+      "frozenReason": "v2.2 — Nach CSV-Download automatischer DB-Import via match-tours.mjs --import",
+      "description": "Tourenabfrage-CSV per IMAP von gvlog@uxuix.de holen, dann automatisch in DB importieren.",
+      "next": [
+        "match-tours"
+      ],
+      "inputs": [
+        "imap:gvlog@uxuix.de"
+      ],
+      "outputs": [
+        "cache/Tourenabfrage_*.csv",
+        "supabase:fleetboard_arrivals(AUSSTEHEND)"
+      ],
+      "script": "fetch-tours.mjs"
     },
     {
-      "id": "match-tours", "lane": "pipeline", "module": "fleetboard2/match-tours", "label": "Tour-Matcher",
-      "frozen": true, "frozenAt": "2026-03-18", "frozenReason": "v2.2 — Liest AUSSTEHEND aus DB, UNIQUE Constraint, Auto-Deploy via Gist",
-      "description": "Liest AUSSTEHEND-Eintraege aus fleetboard_arrivals, matcht gegen GPS. Begegnungsverkehr-Fallback. Auto-Download vom Gist.",
-      "next": [], "inputs": ["supabase:fleetboard_arrivals(AUSSTEHEND)", "cache/geodata.json", "supabase:fleetboard_positions"], "outputs": ["supabase:fleetboard_arrivals", "supabase:workflow_runs"], "script": "match-tours.mjs"
+      "id": "match-tours",
+      "lane": "pipeline",
+      "module": "fleetboard2/match-tours",
+      "label": "Tour-Matcher",
+      "frozen": true,
+      "frozenAt": "2026-03-18",
+      "frozenReason": "v2.2 — Liest AUSSTEHEND aus DB, nicht mehr CSV. UNIQUE Constraint. Auto-Deploy via Gist. 46/55 (84%)",
+      "description": "Liest AUSSTEHEND-Eintraege aus fleetboard_arrivals, matcht gegen GPS. GVLOGMG per closest-to-soll, Rest per earliest-after-belVon. CSV nur noch fuer Import.",
+      "next": [],
+      "inputs": [
+        "supabase:fleetboard_arrivals(AUSSTEHEND)",
+        "cache/geodata.json",
+        "supabase:fleetboard_positions"
+      ],
+      "outputs": [
+        "supabase:fleetboard_arrivals",
+        "supabase:workflow_runs"
+      ],
+      "script": "match-tours.mjs"
     },
     {
-      "id": "shared-lib", "lane": "data", "module": "fleetboard2/lib", "label": "Shared Library",
-      "frozen": true, "frozenAt": "2026-03-17", "frozenReason": "Supabase-Client + .env + Cache. Stabil.",
+      "id": "shared-lib",
+      "lane": "data",
+      "module": "fleetboard2/lib",
+      "label": "Shared Library",
+      "frozen": true,
+      "frozenAt": "2026-03-17",
+      "frozenReason": "Supabase-Client + .env Auto-Loader + Cache-Funktionen. Stabil.",
       "description": "Gemeinsame Bibliothek: Supabase-Client, .env-Loader, Cache read/write.",
-      "next": [], "inputs": [".env"], "outputs": ["sb (Supabase Client)"], "script": "lib.mjs"
+      "next": [],
+      "inputs": [
+        ".env"
+      ],
+      "outputs": [
+        "sb (Supabase Client)"
+      ],
+      "script": "lib.mjs"
     }
   ],
   "supabaseTables": [
-    { "name": "fleetboard_areas", "purpose": "53 Gebiete mit Bounding-Boxes", "rw": "read" },
-    { "name": "fleetboard_mappings", "purpose": "Zustellreferenz -> Gebietsname", "rw": "rw" },
-    { "name": "fleetboard_unknown_refs", "purpose": "Unbekannte Refs fuer Monitor", "rw": "write" },
-    { "name": "fleetboard_arrivals", "purpose": "Tour-Stops mit Match-Ergebnissen (UNIQUE: tour_nr+zustellreferenz+soll_ankunft)", "rw": "rw" },
-    { "name": "fleetboard_positions", "purpose": "GPS-Positionen pro Minute pro Fahrzeug", "rw": "write" },
-    { "name": "fleetboard_vehicles", "purpose": "VehicleID -> Kennzeichen Cache", "rw": "rw" },
-    { "name": "workflow_runs", "purpose": "Monitoring pro Lauf", "rw": "write" }
+    {
+      "name": "fleetboard_areas",
+      "purpose": "53 Gebiete mit Bounding-Boxes (lat/lon)",
+      "rw": "read"
+    },
+    {
+      "name": "fleetboard_mappings",
+      "purpose": "Zustellreferenz -> Gebietsname",
+      "rw": "rw"
+    },
+    {
+      "name": "fleetboard_unknown_refs",
+      "purpose": "Unbekannte Refs fuer Monitor",
+      "rw": "write"
+    },
+    {
+      "name": "fleetboard_traces",
+      "purpose": "GPS-Punkte akkumuliert",
+      "rw": "rw"
+    },
+    {
+      "name": "fleetboard_arrivals",
+      "purpose": "Match-Ergebnisse",
+      "rw": "rw"
+    },
+    {
+      "name": "workflow_runs",
+      "purpose": "Monitoring pro Lauf",
+      "rw": "write"
+    },
+    {
+      "name": "fleetboard_positions",
+      "purpose": "GPS-Positionen pro Minute pro Fahrzeug",
+      "rw": "write"
+    },
+    {
+      "name": "fleetboard_vehicles",
+      "purpose": "VehicleID -> Kennzeichen Cache",
+      "rw": "rw"
+    }
   ],
   "errorHandling": {
     "strategy": "log-and-continue",

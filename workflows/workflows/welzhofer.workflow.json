@@ -10,7 +10,7 @@
     "type": "github-gist",
     "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
     "owner": "ExasyncOU",
-    "lastSynced": "2026-03-16T09:40:00Z",
+    "lastSynced": "2026-03-18T15:54:44.577Z",
     "vmPath": "C:\\Welzhofer\\",
     "mainScript": "scheduler.py",
     "startScript": "start-welzhofer.bat",
@@ -21,24 +21,58 @@
       "source": "github-gist"
     },
     "files": {
-      "welzhofer-smart-match.py": { "module": "welzhofer/smart-match", "description": "Smart Article Matching (Edit-Distance + Text-Similarity)" },
-      "welzhofer-smart-patch.py": { "module": "welzhofer/smart-patch", "description": "Patch-Installer: Smart Match in scheduler.py einbauen" },
-      "welzhofer-diagnose.py": { "module": "welzhofer/diagnose", "description": "Diagnose: Email-Ordner + Lern-Daten pruefen" },
-      "welzhofer-test-smart.py": { "module": "welzhofer/test-smart", "description": "Test: Smart Matching gegen Stammdaten" },
-      "welzhofer-scheduled-task.ps1": { "module": "welzhofer/scheduled-task", "description": "Windows Scheduled Task Setup (Mo-Fr 07:00-18:00)" },
-      "welzhofer-patch.ps1": { "module": "welzhofer/patch", "description": "Auto-Korrektur deaktivieren + Zeitplan-Patch" }
+      "welzhofer-smart-match.py": {
+        "module": "welzhofer/smart-match",
+        "description": "Smart Article Matching (Edit-Distance + Text-Similarity)",
+        "lines": 278
+      },
+      "welzhofer-smart-patch.py": {
+        "module": "welzhofer/smart-patch",
+        "description": "Patch-Installer: Smart Match in scheduler.py einbauen",
+        "lines": 339
+      },
+      "welzhofer-diagnose.py": {
+        "module": "welzhofer/diagnose",
+        "description": "Diagnose: Email-Ordner + Lern-Daten pruefen",
+        "lines": 227
+      },
+      "welzhofer-test-smart.py": {
+        "module": "welzhofer/test-smart",
+        "description": "Test: Smart Matching gegen Stammdaten",
+        "lines": 169
+      },
+      "welzhofer-scheduled-task.ps1": {
+        "module": "welzhofer/scheduled-task",
+        "description": "Windows Scheduled Task Setup (Mo-Fr 07:00-18:00)",
+        "lines": 74
+      },
+      "welzhofer-patch.ps1": {
+        "module": "welzhofer/patch",
+        "description": "Auto-Korrektur deaktivieren + Zeitplan-Patch",
+        "lines": 76
+      },
+      "welzhofer-self-update.ps1": {
+        "module": "welzhofer/self-update",
+        "description": "Self-Update: Zieht aktuelle Scripts vom Gist bei jedem Start",
+        "lines": 117
+      }
     },
     "moduleAliases": {
-      "welzhofer/scheduler": "welzhofer-scheduled-task.ps1",
+      "welzhofer/scheduler": "scheduler.py",
+      "welzhofer/email-client": "email_client.py",
+      "welzhofer/master-data": "master_data.py",
+      "welzhofer/learning": "learning.py",
+      "welzhofer/config": "config.json",
+      "welzhofer/self-update": "welzhofer-self-update.ps1",
       "welzhofer/webhook": null,
       "welzhofer/convertapi": null,
       "welzhofer/ocr": null,
       "welzhofer/supabase": null,
       "welzhofer/categorizer": "welzhofer-diagnose.py",
       "welzhofer/export": null,
-      "welzhofer/email": null,
       "welzhofer/metrics": null
-    }
+    },
+    "currentSHA": "08dc765cc1d413dd351764b0a24330ea992b809b"
   },
   "schedule": {
     "cron": "0 7 * * 1-5",
@@ -48,8 +82,17 @@
   },
   "guardrails": {
     "constraints": {
-      "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      "allowedHours": { "start": "07:00", "end": "18:00" },
+      "allowedDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday"
+      ],
+      "allowedHours": {
+        "start": "07:00",
+        "end": "18:00"
+      },
       "maxConcurrentRuns": 1,
       "timeoutMinutes": 660,
       "hardRules": [
@@ -60,19 +103,78 @@
       ]
     },
     "variables": [
-      { "name": "POLLING_INTERVAL", "type": "number", "default": 300, "description": "Email-Polling Intervall in Sekunden" },
-      { "name": "OPENAI_API_KEY", "type": "string", "default": "from_env", "locked": true, "description": "GPT-5.2 OCR API Key" },
-      { "name": "CONVERTAPI_KEY", "type": "string", "default": "from_env", "locked": true, "description": "ConvertAPI fuer PDF/JPG Konvertierung" },
-      { "name": "EMAIL_ACCOUNT", "type": "string", "default": "automation@welzhofer.eu", "description": "Email-Konto fuer Bestelleingang" },
-      { "name": "REPORT_RECIPIENTS", "type": "string[]", "default": ["amic@welzhofer.eu"], "description": "Empfaenger fuer verarbeitete Bestellungen" }
+      {
+        "name": "POLLING_INTERVAL",
+        "type": "number",
+        "default": 300,
+        "description": "Email-Polling Intervall in Sekunden"
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "type": "string",
+        "default": "from_env",
+        "locked": true,
+        "description": "GPT-5.2 OCR API Key"
+      },
+      {
+        "name": "CONVERTAPI_KEY",
+        "type": "string",
+        "default": "from_env",
+        "locked": true,
+        "description": "ConvertAPI fuer PDF/JPG Konvertierung"
+      },
+      {
+        "name": "EMAIL_ACCOUNT",
+        "type": "string",
+        "default": "automation@welzhofer.eu",
+        "description": "Email-Konto fuer Bestelleingang"
+      },
+      {
+        "name": "REPORT_RECIPIENTS",
+        "type": "string[]",
+        "default": [
+          "amic@welzhofer.eu"
+        ],
+        "description": "Empfaenger fuer verarbeitete Bestellungen"
+      }
     ]
   },
   "lanes": [
-    { "id": "scheduler", "label": "Scheduler", "icon": "⏰", "color": "#4A90D9", "description": "Start/Stop, Email-Polling, Orchestrierung" },
-    { "id": "intake", "label": "Bestelleingang", "icon": "📥", "color": "#27AE60", "description": "Email-Empfang, Webhook, Attachment-Extraktion" },
-    { "id": "processing", "label": "Verarbeitung", "icon": "🔍", "color": "#E67E22", "description": "OCR, Artikelzuordnung, Validierung" },
-    { "id": "data", "label": "Daten / Supabase", "icon": "📊", "color": "#8E44AD", "description": "Bestellungen speichern, Status, Metriken" },
-    { "id": "output", "label": "Ausgabe", "icon": "📧", "color": "#E74C3C", "description": "XLSX-Export, Email, OneDrive Upload" }
+    {
+      "id": "scheduler",
+      "label": "Scheduler",
+      "icon": "⏰",
+      "color": "#4A90D9",
+      "description": "Start/Stop, Email-Polling, Orchestrierung"
+    },
+    {
+      "id": "intake",
+      "label": "Bestelleingang",
+      "icon": "📥",
+      "color": "#27AE60",
+      "description": "Email-Empfang, Webhook, Attachment-Extraktion"
+    },
+    {
+      "id": "processing",
+      "label": "Verarbeitung",
+      "icon": "🔍",
+      "color": "#E67E22",
+      "description": "OCR, Artikelzuordnung, Validierung"
+    },
+    {
+      "id": "data",
+      "label": "Daten / Supabase",
+      "icon": "📊",
+      "color": "#8E44AD",
+      "description": "Bestellungen speichern, Status, Metriken"
+    },
+    {
+      "id": "output",
+      "label": "Ausgabe",
+      "icon": "📧",
+      "color": "#E74C3C",
+      "description": "XLSX-Export, Email, OneDrive Upload"
+    }
   ],
   "steps": [
     {
@@ -81,9 +183,16 @@
       "module": "welzhofer/scheduler",
       "label": "Scheduler starten",
       "description": "start-welzhofer.bat startet scheduler.py im Dauerbetrieb",
-      "next": ["email-poll", "webhook-listen"],
-      "inputs": ["scheduled-task:WelzhoferStart"],
-      "outputs": ["scheduler_running"]
+      "next": [
+        "email-poll",
+        "webhook-listen"
+      ],
+      "inputs": [
+        "scheduled-task:WelzhoferStart"
+      ],
+      "outputs": [
+        "scheduler_running"
+      ]
     },
     {
       "id": "email-poll",
@@ -91,9 +200,16 @@
       "module": "welzhofer/scheduler",
       "label": "Email-Polling",
       "description": "Alle 5 Min neue Emails in automation@welzhofer.eu pruefen (IMAP)",
-      "next": ["extract-attachment"],
-      "inputs": ["scheduler_running", "EMAIL_ACCOUNT"],
-      "outputs": ["new_emails[]"]
+      "next": [
+        "extract-attachment"
+      ],
+      "inputs": [
+        "scheduler_running",
+        "EMAIL_ACCOUNT"
+      ],
+      "outputs": [
+        "new_emails[]"
+      ]
     },
     {
       "id": "webhook-listen",
@@ -101,9 +217,15 @@
       "module": "welzhofer/webhook",
       "label": "Webhook empfangen",
       "description": "POST an receive-webhook-order — Bestellungen von externen Partnern",
-      "next": ["save-order"],
-      "inputs": ["webhook_payload"],
-      "outputs": ["order_id"],
+      "next": [
+        "save-order"
+      ],
+      "inputs": [
+        "webhook_payload"
+      ],
+      "outputs": [
+        "order_id"
+      ],
       "edgeFunction": "receive-webhook-order"
     },
     {
@@ -112,9 +234,15 @@
       "module": "welzhofer/scheduler",
       "label": "Attachment extrahieren",
       "description": "PDF/JPG Anhaenge aus Email extrahieren",
-      "next": ["convert-image"],
-      "inputs": ["new_emails[]"],
-      "outputs": ["attachments[]"]
+      "next": [
+        "convert-image"
+      ],
+      "inputs": [
+        "new_emails[]"
+      ],
+      "outputs": [
+        "attachments[]"
+      ]
     },
     {
       "id": "convert-image",
@@ -122,9 +250,16 @@
       "module": "welzhofer/convertapi",
       "label": "Bild konvertieren",
       "description": "PDF→PNG, JPG→PNG via ConvertAPI",
-      "next": ["ocr-extract"],
-      "inputs": ["attachments[]", "CONVERTAPI_KEY"],
-      "outputs": ["images[]"]
+      "next": [
+        "ocr-extract"
+      ],
+      "inputs": [
+        "attachments[]",
+        "CONVERTAPI_KEY"
+      ],
+      "outputs": [
+        "images[]"
+      ]
     },
     {
       "id": "ocr-extract",
@@ -132,9 +267,16 @@
       "module": "welzhofer/ocr",
       "label": "OCR Extraktion",
       "description": "GPT-5.2 Vision: Bestelldaten aus Bild extrahieren",
-      "next": ["article-match"],
-      "inputs": ["images[]", "OPENAI_API_KEY"],
-      "outputs": ["raw_order_data{}"]
+      "next": [
+        "article-match"
+      ],
+      "inputs": [
+        "images[]",
+        "OPENAI_API_KEY"
+      ],
+      "outputs": [
+        "raw_order_data{}"
+      ]
     },
     {
       "id": "article-match",
@@ -142,9 +284,17 @@
       "module": "welzhofer/smart-match",
       "label": "Artikel zuordnen",
       "description": "Smart Matching: Text+Nummern-Similarity, Learning Store, Kategorie-Zuordnung",
-      "next": ["save-order"],
-      "inputs": ["raw_order_data{}", "master_data", "learned_corrections"],
-      "outputs": ["validated_order{}"]
+      "next": [
+        "save-order"
+      ],
+      "inputs": [
+        "raw_order_data{}",
+        "master_data",
+        "learned_corrections"
+      ],
+      "outputs": [
+        "validated_order{}"
+      ]
     },
     {
       "id": "save-order",
@@ -152,9 +302,16 @@
       "module": "welzhofer/supabase",
       "label": "Bestellung speichern",
       "description": "INSERT in welzhofer_orders (status=pending), workflow_runs Eintrag",
-      "next": ["categorize"],
-      "inputs": ["validated_order{}", "order_id"],
-      "outputs": ["order_saved"]
+      "next": [
+        "categorize"
+      ],
+      "inputs": [
+        "validated_order{}",
+        "order_id"
+      ],
+      "outputs": [
+        "order_saved"
+      ]
     },
     {
       "id": "categorize",
@@ -162,9 +319,15 @@
       "module": "welzhofer/categorizer",
       "label": "Kategorisieren",
       "description": "Futterhaus, Fressnapf, Andere, Nachbestellung, Handnotizen, Art.-Problem, Fremd-Art., Ohne Auftragsnr.",
-      "next": ["xlsx-export"],
-      "inputs": ["validated_order{}"],
-      "outputs": ["category"]
+      "next": [
+        "xlsx-export"
+      ],
+      "inputs": [
+        "validated_order{}"
+      ],
+      "outputs": [
+        "category"
+      ]
     },
     {
       "id": "xlsx-export",
@@ -172,9 +335,17 @@
       "module": "welzhofer/export",
       "label": "XLSX Export",
       "description": "Bestellung als XLSX exportieren und auf OneDrive hochladen",
-      "next": ["send-email", "update-status"],
-      "inputs": ["validated_order{}", "category"],
-      "outputs": ["xlsx_file"]
+      "next": [
+        "send-email",
+        "update-status"
+      ],
+      "inputs": [
+        "validated_order{}",
+        "category"
+      ],
+      "outputs": [
+        "xlsx_file"
+      ]
     },
     {
       "id": "send-email",
@@ -182,9 +353,16 @@
       "module": "welzhofer/email",
       "label": "Email versenden",
       "description": "Verarbeitete Bestellung per Email an Welzhofer senden",
-      "next": ["log-metrics"],
-      "inputs": ["xlsx_file", "REPORT_RECIPIENTS"],
-      "outputs": ["email_sent"]
+      "next": [
+        "log-metrics"
+      ],
+      "inputs": [
+        "xlsx_file",
+        "REPORT_RECIPIENTS"
+      ],
+      "outputs": [
+        "email_sent"
+      ]
     },
     {
       "id": "update-status",
@@ -192,9 +370,16 @@
       "module": "welzhofer/supabase",
       "label": "Status aktualisieren",
       "description": "welzhofer_orders Status auf completed/error setzen",
-      "next": ["log-metrics"],
-      "inputs": ["order_id", "processing_result"],
-      "outputs": ["status_updated"],
+      "next": [
+        "log-metrics"
+      ],
+      "inputs": [
+        "order_id",
+        "processing_result"
+      ],
+      "outputs": [
+        "status_updated"
+      ],
       "edgeFunction": "welzhofer-order-status"
     },
     {
@@ -204,8 +389,13 @@
       "label": "Metriken loggen",
       "description": "workflow_runs Eintrag: items_processed, duration_ms, category, errors",
       "next": [],
-      "inputs": ["processing_result", "timing"],
-      "outputs": ["metrics_logged"]
+      "inputs": [
+        "processing_result",
+        "timing"
+      ],
+      "outputs": [
+        "metrics_logged"
+      ]
     }
   ],
   "workflowRunsMapping": {

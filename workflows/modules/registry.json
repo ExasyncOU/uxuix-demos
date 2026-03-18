@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-03-18T15:08:27.028Z",
+  "generatedAt": "2026-03-18T15:54:44.575Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
     "core/metrics-collector": {
@@ -73,9 +73,9 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "orchestrator.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
-        "lines": 1078,
-        "size": 44045
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
+        "lines": 1079,
+        "size": 44104
       },
       "gate": {
         "passed": true,
@@ -103,7 +103,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_browser.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 246,
         "size": 9664
       },
@@ -135,7 +135,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "picklist_generator.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 1216,
         "size": 49902
       },
@@ -178,7 +178,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "master_data.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 359,
         "size": 12571
       },
@@ -207,7 +207,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "overconfirmation.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 214,
         "size": 7854
       },
@@ -236,9 +236,9 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "daily_report.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
-        "lines": 255,
-        "size": 9881
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
+        "lines": 276,
+        "size": 10857
       },
       "gate": {
         "passed": true,
@@ -265,7 +265,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "printer.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 251,
         "size": 9532
       },
@@ -292,7 +292,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "config.json",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 71,
         "size": 2146
       },
@@ -715,9 +715,9 @@
         "owner": "ExasyncOU",
         "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
         "file": "sync-geodata.mjs",
-        "sha": "298c163a6e824df2f7c41febbbc898029ab369b2",
-        "lines": 82,
-        "size": 2800
+        "sha": "cf2a5fc2b718bf869ac846a24c817ab01b9a0dbf",
+        "lines": 90,
+        "size": 3021
       },
       "frozenAt": "2026-03-12T10:56:43.385Z",
       "gate": {
@@ -744,9 +744,9 @@
         "owner": "ExasyncOU",
         "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
         "file": "lib.mjs",
-        "sha": "298c163a6e824df2f7c41febbbc898029ab369b2",
-        "lines": 33,
-        "size": 1100
+        "sha": "cf2a5fc2b718bf869ac846a24c817ab01b9a0dbf",
+        "lines": 49,
+        "size": 1756
       },
       "frozenAt": "2026-03-12T10:56:43.385Z",
       "gate": {
@@ -773,9 +773,9 @@
         "owner": "ExasyncOU",
         "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
         "file": "check-refs.mjs",
-        "sha": "298c163a6e824df2f7c41febbbc898029ab369b2",
-        "lines": 96,
-        "size": 3200
+        "sha": "cf2a5fc2b718bf869ac846a24c817ab01b9a0dbf",
+        "lines": 112,
+        "size": 3788
       },
       "frozenAt": "2026-03-12T10:56:43.385Z",
       "gate": {
@@ -802,9 +802,9 @@
         "owner": "ExasyncOU",
         "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
         "file": "fetch-positions.mjs",
-        "sha": "298c163a6e824df2f7c41febbbc898029ab369b2",
-        "lines": 170,
-        "size": 5800
+        "sha": "cf2a5fc2b718bf869ac846a24c817ab01b9a0dbf",
+        "lines": 193,
+        "size": 7168
       }
     },
     "nacke/fulltest": {
@@ -823,7 +823,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "fulltest.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 501,
         "size": 21399
       },
@@ -851,9 +851,9 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_amend.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
-        "lines": 263,
-        "size": 9340
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
+        "lines": 296,
+        "size": 10807
       },
       "gate": {
         "passed": false,
@@ -879,7 +879,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_connect.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 176,
         "size": 6169
       },
@@ -907,7 +907,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_export.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 413,
         "size": 13992
       },
@@ -935,7 +935,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_login.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 171,
         "size": 5021
       },
@@ -963,7 +963,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_packaging.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 239,
         "size": 7744
       },
@@ -991,7 +991,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_save_back.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 116,
         "size": 3688
       },
@@ -1019,7 +1019,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_selectors.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 147,
         "size": 5773
       },
@@ -1047,9 +1047,9 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "nacke_email.py",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
-        "lines": 205,
-        "size": 8289
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
+        "lines": 220,
+        "size": 8942
       },
       "gate": {
         "passed": false,
@@ -1075,7 +1075,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "requirements.txt",
-        "sha": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "lines": 7,
         "size": 86
       },
@@ -1086,6 +1086,314 @@
         "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
       },
       "frozenAt": "2026-03-18T15:08:15.529Z"
+    },
+    "fleetboard/FleetboardMatcher-current": {
+      "id": "fleetboard/FleetboardMatcher-current",
+      "name": "FleetboardMatcher current",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "Auto-registriert aus Gist beb6e4606c1ea14911d8d71fe1ede38d",
+      "usedBy": [
+        "fleetboard"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "beb6e4606c1ea14911d8d71fe1ede38d",
+        "file": "FleetboardMatcher_current.ps1",
+        "sha": "0d1e65e9378026d9dd671b8c1093e0bbef32b044",
+        "lines": 1332,
+        "size": 56714
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:43.977Z"
+    },
+    "fleetboard2/fetch-tours": {
+      "id": "fleetboard2/fetch-tours",
+      "name": "Fetch-tours",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Auto-registriert aus Gist 771c490a2fde04847cacdb439a227966",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "771c490a2fde04847cacdb439a227966",
+        "file": "fetch-tours.mjs",
+        "sha": "cf2a5fc2b718bf869ac846a24c817ab01b9a0dbf",
+        "lines": 165,
+        "size": 4914
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.288Z"
+    },
+    "fleetboard2/match-tours": {
+      "id": "fleetboard2/match-tours",
+      "name": "Match-tours",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Auto-registriert aus Gist 771c490a2fde04847cacdb439a227966",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "771c490a2fde04847cacdb439a227966",
+        "file": "match-tours.mjs",
+        "sha": "cf2a5fc2b718bf869ac846a24c817ab01b9a0dbf",
+        "lines": 475,
+        "size": 18177
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.288Z"
+    },
+    "fleetboard2/package": {
+      "id": "fleetboard2/package",
+      "name": "Package",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "json",
+      "description": "Auto-registriert aus Gist 771c490a2fde04847cacdb439a227966",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "771c490a2fde04847cacdb439a227966",
+        "file": "package.json",
+        "sha": "cf2a5fc2b718bf869ac846a24c817ab01b9a0dbf",
+        "lines": 16,
+        "size": 343
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.288Z"
+    },
+    "welzhofer/welzhofer-diagnose": {
+      "id": "welzhofer/welzhofer-diagnose",
+      "name": "Welzhofer-diagnose",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-diagnose.py",
+        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "lines": 227,
+        "size": 8185
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-patch": {
+      "id": "welzhofer/welzhofer-patch",
+      "name": "Welzhofer-patch",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-patch.ps1",
+        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "lines": 76,
+        "size": 4373
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-scheduled-task": {
+      "id": "welzhofer/welzhofer-scheduled-task",
+      "name": "Welzhofer-scheduled-task",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-scheduled-task.ps1",
+        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "lines": 74,
+        "size": 4095
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-self-update": {
+      "id": "welzhofer/welzhofer-self-update",
+      "name": "Welzhofer-self-update",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-self-update.ps1",
+        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "lines": 117,
+        "size": 4748
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-smart-match": {
+      "id": "welzhofer/welzhofer-smart-match",
+      "name": "Welzhofer-smart-match",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-match.py",
+        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "lines": 278,
+        "size": 11144
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-smart-patch": {
+      "id": "welzhofer/welzhofer-smart-patch",
+      "name": "Welzhofer-smart-patch",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-patch.py",
+        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "lines": 339,
+        "size": 14654
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-test-smart": {
+      "id": "welzhofer/welzhofer-test-smart",
+      "name": "Welzhofer-test-smart",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-test-smart.py",
+        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "lines": 169,
+        "size": 5566
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
     }
   },
   "summary": {

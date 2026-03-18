@@ -10,11 +10,11 @@
     "type": "github-gist",
     "gistId": "d8fe35c43d948ed0e898e4eb76049934",
     "owner": "ExasyncOU",
-    "currentSHA": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
-    "lastSynced": "2026-03-18T15:08:27.030Z",
+    "currentSHA": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
+    "lastSynced": "2026-03-18T15:54:43.610Z",
     "files": {
       "orchestrator.py": {
-        "lines": 1078,
+        "lines": 1079,
         "module": "nacke/orchestrator",
         "logging": true
       },
@@ -39,7 +39,7 @@
         "logging": true
       },
       "idis_amend.py": {
-        "lines": 263,
+        "lines": 296,
         "module": "nacke/idis-amend",
         "logging": true
       },
@@ -69,7 +69,7 @@
         "logging": true
       },
       "daily_report.py": {
-        "lines": 255,
+        "lines": 276,
         "module": "nacke/daily-report",
         "logging": true
       },
@@ -79,7 +79,7 @@
         "logging": true
       },
       "nacke_email.py": {
-        "lines": 205,
+        "lines": 220,
         "module": "nacke/email-notifications",
         "logging": true
       },
@@ -147,7 +147,7 @@
       "frozenLogic": {
         "version": "7.0.0",
         "frozenAt": "2026-03-16",
-        "pipelineGistSHA": "1d861e205ac9a488f8b4b7523d7073ae87cb1611",
+        "pipelineGistSHA": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
         "deployGistSHA": "14fa2e61c5ec1ce54230623eb5b935e4e8fe759a",
         "bundleSource": "Col K (Einstellung RPR Kartonage), OL: OL Kartonage Sheet",
         "overconfirmationFactor": {
@@ -252,9 +252,15 @@
       "module": "nacke/config",
       "label": "Config laden",
       "description": "Config aus Supabase laden, validieren, config_version pruefen",
-      "next": ["master-data"],
-      "inputs": ["supabase:agent_configs"],
-      "outputs": ["config{}"]
+      "next": [
+        "master-data"
+      ],
+      "inputs": [
+        "supabase:agent_configs"
+      ],
+      "outputs": [
+        "config{}"
+      ]
     },
     {
       "id": "master-data",
@@ -262,9 +268,15 @@
       "module": "nacke/master-data",
       "label": "Stammdaten laden",
       "description": "Kundenstammdaten und Zuordnungstabellen aus Supabase",
-      "next": ["fetch-orders"],
-      "inputs": ["config.flow_name"],
-      "outputs": ["masterData{}"]
+      "next": [
+        "fetch-orders"
+      ],
+      "inputs": [
+        "config.flow_name"
+      ],
+      "outputs": [
+        "masterData{}"
+      ]
     },
     {
       "id": "fetch-orders",
@@ -272,9 +284,16 @@
       "module": "nacke/orchestrator",
       "label": "Auftraege abrufen",
       "description": "Offene Auftraege aus nacke_orders Tabelle laden",
-      "next": ["idis-connect"],
-      "inputs": ["config", "masterData"],
-      "outputs": ["orders[]"]
+      "next": [
+        "idis-connect"
+      ],
+      "inputs": [
+        "config",
+        "masterData"
+      ],
+      "outputs": [
+        "orders[]"
+      ]
     },
     {
       "id": "idis-connect",
@@ -282,9 +301,15 @@
       "module": "nacke/idis-connect",
       "label": "CDP verbinden",
       "description": "Chrome Debug Protocol Verbindung zum IDIS-Browser herstellen (Port 9222)",
-      "next": ["idis-login"],
-      "inputs": ["config.cdp_port"],
-      "outputs": ["cdp_session"]
+      "next": [
+        "idis-login"
+      ],
+      "inputs": [
+        "config.cdp_port"
+      ],
+      "outputs": [
+        "cdp_session"
+      ]
     },
     {
       "id": "idis-login",
@@ -292,9 +317,16 @@
       "module": "nacke/idis-login",
       "label": "IDIS Login",
       "description": "Login bei IDIS mit Credentials aus Vault, Session-Cookie sichern",
-      "next": ["idis-selectors"],
-      "inputs": ["cdp_session", "vault:idis_credentials"],
-      "outputs": ["browser_session"]
+      "next": [
+        "idis-selectors"
+      ],
+      "inputs": [
+        "cdp_session",
+        "vault:idis_credentials"
+      ],
+      "outputs": [
+        "browser_session"
+      ]
     },
     {
       "id": "idis-selectors",
@@ -302,9 +334,15 @@
       "module": "nacke/idis-selectors",
       "label": "Selektoren laden",
       "description": "JSF-Selektoren fuer IDIS-Formulare laden und validieren",
-      "next": ["idis-export"],
-      "inputs": ["browser_session"],
-      "outputs": ["selectors{}"]
+      "next": [
+        "idis-export"
+      ],
+      "inputs": [
+        "browser_session"
+      ],
+      "outputs": [
+        "selectors{}"
+      ]
     },
     {
       "id": "idis-export",
@@ -312,9 +350,17 @@
       "module": "nacke/idis-export",
       "label": "Auftraege exportieren",
       "description": "Offene Auftraege aus IDIS-Tabelle exportieren und parsen",
-      "next": ["idis-amend"],
-      "inputs": ["browser_session", "selectors", "orders[]"],
-      "outputs": ["export_data[]"]
+      "next": [
+        "idis-amend"
+      ],
+      "inputs": [
+        "browser_session",
+        "selectors",
+        "orders[]"
+      ],
+      "outputs": [
+        "export_data[]"
+      ]
     },
     {
       "id": "idis-amend",
@@ -322,9 +368,17 @@
       "module": "nacke/idis-amend",
       "label": "Amendments durchfuehren",
       "description": "Bestellmengen im IDIS-Formular aendern (Amend), Overconfirmation anwenden",
-      "next": ["idis-save-back"],
-      "inputs": ["export_data[]", "selectors", "NACKE_DRYRUN"],
-      "outputs": ["amended[]"]
+      "next": [
+        "idis-save-back"
+      ],
+      "inputs": [
+        "export_data[]",
+        "selectors",
+        "NACKE_DRYRUN"
+      ],
+      "outputs": [
+        "amended[]"
+      ]
     },
     {
       "id": "idis-save-back",
@@ -332,9 +386,16 @@
       "module": "nacke/idis-save-back",
       "label": "Save + Back",
       "description": "Aenderungen speichern (Save _idJsp159) und zurueck navigieren (_idJsp155)",
-      "next": ["overconfirmation"],
-      "inputs": ["amended[]", "selectors"],
-      "outputs": ["saved[]"]
+      "next": [
+        "overconfirmation"
+      ],
+      "inputs": [
+        "amended[]",
+        "selectors"
+      ],
+      "outputs": [
+        "saved[]"
+      ]
     },
     {
       "id": "overconfirmation",
@@ -342,9 +403,16 @@
       "module": "nacke/overconfirmation",
       "label": "Overconfirmation",
       "description": "Mengen auf Bundle-Size aufrunden: ceil(ordered/bundle)*bundle. Faktor IMMER 1.",
-      "next": ["idis-packaging"],
-      "inputs": ["saved[]", "masterData"],
-      "outputs": ["confirmed[]"]
+      "next": [
+        "idis-packaging"
+      ],
+      "inputs": [
+        "saved[]",
+        "masterData"
+      ],
+      "outputs": [
+        "confirmed[]"
+      ]
     },
     {
       "id": "idis-packaging",
@@ -352,9 +420,16 @@
       "module": "nacke/idis-packaging",
       "label": "Kartonage berechnen",
       "description": "Verpackungseinheiten (PPP/PCS) aus Col K berechnen, Bundle-Zuordnung",
-      "next": ["save-results"],
-      "inputs": ["confirmed[]", "masterData"],
-      "outputs": ["packaged[]"]
+      "next": [
+        "save-results"
+      ],
+      "inputs": [
+        "confirmed[]",
+        "masterData"
+      ],
+      "outputs": [
+        "packaged[]"
+      ]
     },
     {
       "id": "save-results",
@@ -362,9 +437,15 @@
       "module": "nacke/orchestrator",
       "label": "Ergebnis speichern",
       "description": "Bestaetigungsergebnisse zurueck nach Supabase schreiben",
-      "next": ["generate-picklists"],
-      "inputs": ["packaged[]"],
-      "outputs": ["saved_count"]
+      "next": [
+        "generate-picklists"
+      ],
+      "inputs": [
+        "packaged[]"
+      ],
+      "outputs": [
+        "saved_count"
+      ]
     },
     {
       "id": "generate-picklists",
@@ -372,9 +453,17 @@
       "module": "nacke/picklist-generator",
       "label": "Picklisten generieren",
       "description": "Excel + PDF Raussuchlisten generieren. Sortiert nach Class, Seitenumbruch vor Summenblock.",
-      "next": ["generate-report"],
-      "inputs": ["packaged[]", "config", "masterData"],
-      "outputs": ["picklists[]"]
+      "next": [
+        "generate-report"
+      ],
+      "inputs": [
+        "packaged[]",
+        "config",
+        "masterData"
+      ],
+      "outputs": [
+        "picklists[]"
+      ]
     },
     {
       "id": "print-picklists",
@@ -382,9 +471,16 @@
       "module": "nacke/printer",
       "label": "Picklisten drucken",
       "description": "Generierte Picklists auf dem Netzwerkdrucker der Nacke-VM ausgeben",
-      "next": ["generate-report"],
-      "inputs": ["picklists[]", "config.printer"],
-      "outputs": ["printed_count"]
+      "next": [
+        "generate-report"
+      ],
+      "inputs": [
+        "picklists[]",
+        "config.printer"
+      ],
+      "outputs": [
+        "printed_count"
+      ]
     },
     {
       "id": "generate-report",
@@ -392,9 +488,16 @@
       "module": "nacke/daily-report",
       "label": "Report erstellen",
       "description": "Tagesreport als HTML generieren mit Zusammenfassung aller Ergebnisse",
-      "next": ["send-email"],
-      "inputs": ["packaged[]", "config"],
-      "outputs": ["report_html"]
+      "next": [
+        "send-email"
+      ],
+      "inputs": [
+        "packaged[]",
+        "config"
+      ],
+      "outputs": [
+        "report_html"
+      ]
     },
     {
       "id": "send-email",
@@ -402,9 +505,17 @@
       "module": "nacke/nacke-email",
       "label": "Email senden",
       "description": "Report + Picklisten per SMTP an konfigurierte Empfaenger senden",
-      "next": ["log-metrics"],
-      "inputs": ["report_html", "picklists[]", "REPORT_RECIPIENTS"],
-      "outputs": ["email_sent"]
+      "next": [
+        "log-metrics"
+      ],
+      "inputs": [
+        "report_html",
+        "picklists[]",
+        "REPORT_RECIPIENTS"
+      ],
+      "outputs": [
+        "email_sent"
+      ]
     },
     {
       "id": "log-metrics",
@@ -413,8 +524,13 @@
       "label": "Metriken loggen",
       "description": "Laufzeit, Anzahl Auftraege, Fehler nach agent_metrics schreiben",
       "next": [],
-      "inputs": ["packaged[]", "timing"],
-      "outputs": ["metrics_logged"]
+      "inputs": [
+        "packaged[]",
+        "timing"
+      ],
+      "outputs": [
+        "metrics_logged"
+      ]
     }
   ],
   "errorHandling": {
