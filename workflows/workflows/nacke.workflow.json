@@ -252,15 +252,9 @@
       "module": "nacke/config",
       "label": "Config laden",
       "description": "Config aus Supabase laden, validieren, config_version pruefen",
-      "next": [
-        "master-data"
-      ],
-      "inputs": [
-        "supabase:agent_configs"
-      ],
-      "outputs": [
-        "config{}"
-      ]
+      "next": ["master-data"],
+      "inputs": ["supabase:agent_configs"],
+      "outputs": ["config{}"]
     },
     {
       "id": "master-data",
@@ -268,15 +262,9 @@
       "module": "nacke/master-data",
       "label": "Stammdaten laden",
       "description": "Kundenstammdaten und Zuordnungstabellen aus Supabase",
-      "next": [
-        "fetch-orders"
-      ],
-      "inputs": [
-        "config.flow_name"
-      ],
-      "outputs": [
-        "masterData{}"
-      ]
+      "next": ["fetch-orders"],
+      "inputs": ["config.flow_name"],
+      "outputs": ["masterData{}"]
     },
     {
       "id": "fetch-orders",
@@ -284,67 +272,89 @@
       "module": "nacke/orchestrator",
       "label": "Auftraege abrufen",
       "description": "Offene Auftraege aus nacke_orders Tabelle laden",
-      "next": [
-        "idis-login"
-      ],
-      "inputs": [
-        "config",
-        "masterData"
-      ],
-      "outputs": [
-        "orders[]"
-      ]
+      "next": ["idis-connect"],
+      "inputs": ["config", "masterData"],
+      "outputs": ["orders[]"]
+    },
+    {
+      "id": "idis-connect",
+      "lane": "idis",
+      "module": "nacke/idis-connect",
+      "label": "CDP verbinden",
+      "description": "Chrome Debug Protocol Verbindung zum IDIS-Browser herstellen (Port 9222)",
+      "next": ["idis-login"],
+      "inputs": ["config.cdp_port"],
+      "outputs": ["cdp_session"]
     },
     {
       "id": "idis-login",
       "lane": "idis",
-      "module": "nacke/idis-browser",
+      "module": "nacke/idis-login",
       "label": "IDIS Login",
-      "description": "Playwright startet Browser, navigiert zu IDIS, Login mit Credentials aus Vault",
-      "next": [
-        "navigate-page"
-      ],
-      "inputs": [
-        "config.idis_url",
-        "vault:idis_credentials"
-      ],
-      "outputs": [
-        "browser_session"
-      ]
+      "description": "Login bei IDIS mit Credentials aus Vault, Session-Cookie sichern",
+      "next": ["idis-selectors"],
+      "inputs": ["cdp_session", "vault:idis_credentials"],
+      "outputs": ["browser_session"]
     },
     {
-      "id": "navigate-page",
+      "id": "idis-selectors",
       "lane": "idis",
-      "module": "nacke/idis-browser",
-      "label": "Seite navigieren",
-      "description": "Zur Auftragsbestaetigung-Seite navigieren, Selektoren pruefen",
-      "next": [
-        "confirm-orders"
-      ],
-      "inputs": [
-        "browser_session"
-      ],
-      "outputs": [
-        "page_ready"
-      ]
+      "module": "nacke/idis-selectors",
+      "label": "Selektoren laden",
+      "description": "JSF-Selektoren fuer IDIS-Formulare laden und validieren",
+      "next": ["idis-export"],
+      "inputs": ["browser_session"],
+      "outputs": ["selectors{}"]
     },
     {
-      "id": "confirm-orders",
+      "id": "idis-export",
       "lane": "idis",
-      "module": "nacke/idis-browser",
-      "label": "Auftraege bestaetigen",
-      "description": "Schleife: Jeden Auftrag im IDIS bestaetigen (oder Dry-Run loggen)",
-      "next": [
-        "save-results"
-      ],
-      "inputs": [
-        "orders[]",
-        "page_ready",
-        "NACKE_DRYRUN"
-      ],
-      "outputs": [
-        "results[]"
-      ]
+      "module": "nacke/idis-export",
+      "label": "Auftraege exportieren",
+      "description": "Offene Auftraege aus IDIS-Tabelle exportieren und parsen",
+      "next": ["idis-amend"],
+      "inputs": ["browser_session", "selectors", "orders[]"],
+      "outputs": ["export_data[]"]
+    },
+    {
+      "id": "idis-amend",
+      "lane": "idis",
+      "module": "nacke/idis-amend",
+      "label": "Amendments durchfuehren",
+      "description": "Bestellmengen im IDIS-Formular aendern (Amend), Overconfirmation anwenden",
+      "next": ["idis-save-back"],
+      "inputs": ["export_data[]", "selectors", "NACKE_DRYRUN"],
+      "outputs": ["amended[]"]
+    },
+    {
+      "id": "idis-save-back",
+      "lane": "idis",
+      "module": "nacke/idis-save-back",
+      "label": "Save + Back",
+      "description": "Aenderungen speichern (Save _idJsp159) und zurueck navigieren (_idJsp155)",
+      "next": ["overconfirmation"],
+      "inputs": ["amended[]", "selectors"],
+      "outputs": ["saved[]"]
+    },
+    {
+      "id": "overconfirmation",
+      "lane": "data",
+      "module": "nacke/overconfirmation",
+      "label": "Overconfirmation",
+      "description": "Mengen auf Bundle-Size aufrunden: ceil(ordered/bundle)*bundle. Faktor IMMER 1.",
+      "next": ["idis-packaging"],
+      "inputs": ["saved[]", "masterData"],
+      "outputs": ["confirmed[]"]
+    },
+    {
+      "id": "idis-packaging",
+      "lane": "data",
+      "module": "nacke/idis-packaging",
+      "label": "Kartonage berechnen",
+      "description": "Verpackungseinheiten (PPP/PCS) aus Col K berechnen, Bundle-Zuordnung",
+      "next": ["save-results"],
+      "inputs": ["confirmed[]", "masterData"],
+      "outputs": ["packaged[]"]
     },
     {
       "id": "save-results",
@@ -352,68 +362,49 @@
       "module": "nacke/orchestrator",
       "label": "Ergebnis speichern",
       "description": "Bestaetigungsergebnisse zurueck nach Supabase schreiben",
-      "next": [
-        "generate-picklists"
-      ],
-      "inputs": [
-        "results[]"
-      ],
-      "outputs": [
-        "saved_count"
-      ]
+      "next": ["generate-picklists"],
+      "inputs": ["packaged[]"],
+      "outputs": ["saved_count"]
     },
     {
       "id": "generate-picklists",
       "lane": "reporting",
       "module": "nacke/picklist-generator",
       "label": "Picklisten generieren",
-      "description": "Excel + PDF Raussuchlisten aus Post-Export-Daten generieren. Sortiert nach Class, mit Seitenumbruch vor Summenblock.",
-      "next": [
-        "generate-report"
-      ],
-      "inputs": [
-        "results[]",
-        "config",
-        "masterData"
-      ],
-      "outputs": [
-        "picklists[]"
-      ]
+      "description": "Excel + PDF Raussuchlisten generieren. Sortiert nach Class, Seitenumbruch vor Summenblock.",
+      "next": ["generate-report"],
+      "inputs": ["packaged[]", "config", "masterData"],
+      "outputs": ["picklists[]"]
+    },
+    {
+      "id": "print-picklists",
+      "lane": "reporting",
+      "module": "nacke/printer",
+      "label": "Picklisten drucken",
+      "description": "Generierte Picklists auf dem Netzwerkdrucker der Nacke-VM ausgeben",
+      "next": ["generate-report"],
+      "inputs": ["picklists[]", "config.printer"],
+      "outputs": ["printed_count"]
     },
     {
       "id": "generate-report",
       "lane": "reporting",
       "module": "nacke/daily-report",
       "label": "Report erstellen",
-      "description": "Tagesreport als HTML generieren mit Zusammenfassung",
-      "next": [
-        "send-email"
-      ],
-      "inputs": [
-        "results[]",
-        "config"
-      ],
-      "outputs": [
-        "report_html"
-      ]
+      "description": "Tagesreport als HTML generieren mit Zusammenfassung aller Ergebnisse",
+      "next": ["send-email"],
+      "inputs": ["packaged[]", "config"],
+      "outputs": ["report_html"]
     },
     {
       "id": "send-email",
       "lane": "reporting",
-      "module": "nacke/daily-report",
+      "module": "nacke/nacke-email",
       "label": "Email senden",
-      "description": "Report per SMTP an konfigurierte Empfaenger senden",
-      "next": [
-        "log-metrics"
-      ],
-      "inputs": [
-        "report_html",
-        "REPORT_RECIPIENTS",
-        "SMTP_USER"
-      ],
-      "outputs": [
-        "email_sent"
-      ]
+      "description": "Report + Picklisten per SMTP an konfigurierte Empfaenger senden",
+      "next": ["log-metrics"],
+      "inputs": ["report_html", "picklists[]", "REPORT_RECIPIENTS"],
+      "outputs": ["email_sent"]
     },
     {
       "id": "log-metrics",
@@ -422,13 +413,8 @@
       "label": "Metriken loggen",
       "description": "Laufzeit, Anzahl Auftraege, Fehler nach agent_metrics schreiben",
       "next": [],
-      "inputs": [
-        "results[]",
-        "timing"
-      ],
-      "outputs": [
-        "metrics_logged"
-      ]
+      "inputs": ["packaged[]", "timing"],
+      "outputs": ["metrics_logged"]
     }
   ],
   "errorHandling": {
