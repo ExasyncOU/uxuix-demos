@@ -498,6 +498,7 @@ table.gist-versions a:hover { text-decoration: underline; }
   </table>
 
   <!-- Incident Timeline -->
+  <!-- Incident Timeline -->
   <h2 style="margin-top:32px; font-size:16px;">Incident Timeline</h2>
   <p style="font-size:12px; color:var(--text-muted); margin:8px 0 16px;">Alle relevanten Vorfaelle und Learnings aus Supabase.</p>
 
@@ -819,8 +820,9 @@ function renderSwimlane(wf) {
         html += '<h3>' + (step.label || step.id) + '</h3>';
         html += '<div class="sub">' + (step.description || '').slice(0, 60) + '</div>';
         const src = mod.source || {};
-        const fileInfo = src.type === 'github-gist'
-          ? src.file + ' (' + (src.lines || '?') + ' Zeilen) — Gist'
+        const isGist = src.type === 'github-gist' || src.gist_id || src.gistId;
+        const fileInfo = isGist
+          ? (src.file || modFile) + ' (' + (src.lines || '?') + ' Zeilen) — Gist'
           : src.type === 'vm-only'
           ? src.vmPath.split('\\').pop() + ' — nur VM'
           : (mod.language || '') + ' / ' + modFile;
@@ -949,6 +951,9 @@ async function loadAllData() {
       } catch(e) { console.warn('Workflow nicht geladen: ' + name, e); }
     }
 
+    // GIST_MAP dynamisch aus Workflow-JSONs + Registry erweitern
+    syncGistMapFromWorkflows();
+
     // Dropdown dynamisch befuellen + Initial rendern
     populateSelector();
     const initial = new URLSearchParams(window.location.search).get('workflow') || list[0] || 'nacke';
@@ -997,12 +1002,14 @@ async function openCode(moduleId) {
     codeContent.innerHTML = highlightCode(regMod.code, lang);
   }
   // 2. Gist-Referenz: Code live vom GitHub Gist laden (SHA mit HEAD-Fallback)
-  else if (regMod && regMod.source && regMod.source.type === 'github-gist') {
+  // Akzeptiert beide Formate: source.type === 'github-gist' ODER source.gist_id / source.gistId
+  else if (regMod && regMod.source && (regMod.source.type === 'github-gist' || regMod.source.gist_id || regMod.source.gistId)) {
     const src = regMod.source;
     const owner = src.owner || 'ExasyncOU';
+    const gistId = src.gistId || src.gist_id;
     const file = encodeURIComponent(src.file);
     const sha = src.sha || '';
-    const baseUrl = 'https://gist.githubusercontent.com/' + owner + '/' + src.gistId + '/raw/';
+    const baseUrl = 'https://gist.githubusercontent.com/' + owner + '/' + gistId + '/raw/';
     codeContent.innerHTML = '<span class="cmt"># Lade ' + src.file + ' vom Gist...</span>';
     overlay.classList.add('open');
     requestAnimationFrame(() => sheet.classList.add('open'));
@@ -1026,7 +1033,7 @@ async function openCode(moduleId) {
       codeContent.innerHTML = highlightCode(code, lang);
       codeTitle.textContent = title + ' — ' + src.file + ' (' + code.split('\n').length + ' Zeilen, ' + usedSha + ')';
     } catch (err) {
-      codeContent.innerHTML = '<span class="cmt"># Fehler beim Laden: ' + esc(String(err)) + '\n# Gist: https://gist.github.com/' + owner + '/' + src.gistId + '</span>';
+      codeContent.innerHTML = '<span class="cmt"># Fehler beim Laden: ' + esc(String(err)) + '\n# Gist: https://gist.github.com/' + owner + '/' + gistId + '</span>';
     }
     return;
   }
@@ -1881,12 +1888,36 @@ async function loadCredentials() {
 // ═══════════════════════════════════════════════════════════════
 // GIST VERSIONS — GitHub Gist commit history
 // ═══════════════════════════════════════════════════════════════
-// Hardcoded fallback — overridden by ops_customer_workflows if available
+// Hardcoded fallback — dynamisch erweitert aus workflow JSONs + ops_customer_workflows
 let GIST_MAP = {
   fleetboard: { id: 'beb6e4606c1ea14911d8d71fe1ede38d', name: 'Fleetboard Pipeline' },
   nacke: { id: 'd8fe35c43d948ed0e898e4eb76049934', name: 'NackeScript Pipeline' },
   'send-report': { id: '8c3618336714d5aa123794d9200eb77c', name: 'Fleetboard Report' }
 };
+
+// Dynamisch GIST_MAP aus geladenen Workflow-JSONs erweitern
+function syncGistMapFromWorkflows() {
+  Object.entries(STORE.workflows).forEach(([wfId, wf]) => {
+    if (wf.source && (wf.source.gistId || wf.source.gist_id) && !GIST_MAP[wfId]) {
+      GIST_MAP[wfId] = {
+        id: wf.source.gistId || wf.source.gist_id,
+        name: wf.name || wfId + ' Pipeline'
+      };
+    }
+  });
+  // Auch aus Registry: Module mit unterschiedlichen Gist-IDs als Sub-Pipelines
+  Object.values(STORE.registry).forEach(mod => {
+    const src = mod.source || {};
+    const gid = src.gistId || src.gist_id;
+    if (gid && mod.usedBy) {
+      mod.usedBy.forEach(wfId => {
+        if (!GIST_MAP[wfId] && gid) {
+          GIST_MAP[wfId] = { id: gid, name: (STORE.workflows[wfId] || {}).name || wfId + ' Pipeline' };
+        }
+      });
+    }
+  });
+}
 function populateGistSelector() {
   const sel = document.getElementById('gistPipelineSelect');
   if (!sel || sel.children.length > 0) return;
