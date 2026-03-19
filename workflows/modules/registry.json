@@ -1394,8 +1394,7 @@
         "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
       },
       "frozenAt": "2026-03-18T15:54:44.574Z"
-    }
-  },
+    },
     "ntl/edatagate-worker": {
       "id": "ntl/edatagate-worker",
       "name": "NTL e-datagate XML Worker",
