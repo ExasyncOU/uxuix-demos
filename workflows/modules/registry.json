@@ -1396,8 +1396,77 @@
       "frozenAt": "2026-03-18T15:54:44.574Z"
     }
   },
+    "ntl/edatagate-worker": {
+      "id": "ntl/edatagate-worker",
+      "name": "NTL e-datagate XML Worker",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Einzelner Account-Worker: Login → Akzeptieren → Fahrplan exportieren → Datum setzen → XML Download. Jeder Worker auf eigenem Chrome-Port (9230-9236).",
+      "usedBy": ["ntl"],
+      "dependencies": ["playwright"],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "00dcf34dcce25e7d7a5bb88c8f2ac101",
+        "file": "edatagate_worker.py",
+        "sha": "2b96907873cc7442067822b1ce276914cafa620c"
+      },
+      "gate": {
+        "passed": true,
+        "score": "9/11",
+        "checkedAt": "2026-03-19T17:11:00Z",
+        "notes": "7/7 Accounts getestet, parallel, alle erfolgreich. G3 Testdaten + G6 Backup ausstehend."
+      }
+    },
+    "ntl/orchestrator": {
+      "id": "ntl/orchestrator",
+      "name": "NTL Orchestrator",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Startet alle 7 Account-Worker parallel. Jeder Account eigener Chrome-Port. Sammelt Ergebnisse, loggt in JSON.",
+      "usedBy": ["ntl"],
+      "dependencies": ["ntl/edatagate-worker"],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "00dcf34dcce25e7d7a5bb88c8f2ac101",
+        "file": "orchestrator.py",
+        "sha": "2b96907873cc7442067822b1ce276914cafa620c"
+      },
+      "gate": {
+        "passed": true,
+        "score": "9/11",
+        "checkedAt": "2026-03-19T17:11:00Z",
+        "notes": "7/7 parallel in 15s getestet. G3 + G6 ausstehend."
+      }
+    },
+    "ntl/config": {
+      "id": "ntl/config",
+      "name": "NTL Pipeline Configuration",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "json",
+      "description": "Zentrale Config: 7 Accounts mit Ports 9230-9236, Schedule */15, Wochenzeitraum-Logik.",
+      "usedBy": ["ntl"],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "00dcf34dcce25e7d7a5bb88c8f2ac101",
+        "file": "config.json",
+        "sha": "2b96907873cc7442067822b1ce276914cafa620c"
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-19T17:11:00Z"
+      }
+    }
+  },
   "summary": {
-    "totalModules": 25,
+    "totalModules": 28,
     "byStatus": {
       "frozen": 23,
       "draft": 2
@@ -1413,7 +1482,8 @@
       "nacke": 8,
       "maut": 6,
       "linkedin": 6,
-      "fleetboard": 5
+      "fleetboard": 5,
+      "ntl": 3
     },
     "sharedModules": [
       {
