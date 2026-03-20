@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-03-18T15:54:44.575Z",
+  "generatedAt": "2026-03-20T06:41:43.587Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
     "core/metrics-collector": {
@@ -1215,7 +1215,7 @@
         "owner": "ExasyncOU",
         "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
         "file": "welzhofer-diagnose.py",
-        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
         "lines": 227,
         "size": 8185
       },
@@ -1243,7 +1243,7 @@
         "owner": "ExasyncOU",
         "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
         "file": "welzhofer-patch.ps1",
-        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
         "lines": 76,
         "size": 4373
       },
@@ -1271,7 +1271,7 @@
         "owner": "ExasyncOU",
         "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
         "file": "welzhofer-scheduled-task.ps1",
-        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
         "lines": 74,
         "size": 4095
       },
@@ -1299,7 +1299,7 @@
         "owner": "ExasyncOU",
         "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
         "file": "welzhofer-self-update.ps1",
-        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
         "lines": 117,
         "size": 4748
       },
@@ -1327,7 +1327,7 @@
         "owner": "ExasyncOU",
         "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
         "file": "welzhofer-smart-match.py",
-        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
         "lines": 278,
         "size": 11144
       },
@@ -1355,7 +1355,7 @@
         "owner": "ExasyncOU",
         "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
         "file": "welzhofer-smart-patch.py",
-        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
         "lines": 339,
         "size": 14654
       },
@@ -1383,7 +1383,7 @@
         "owner": "ExasyncOU",
         "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
         "file": "welzhofer-test-smart.py",
-        "sha": "08dc765cc1d413dd351764b0a24330ea992b809b",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
         "lines": 169,
         "size": 5566
       },
@@ -1478,10 +1478,346 @@
         "score": "11/11",
         "checkedAt": "2026-03-19T17:11:00Z"
       }
+    },
+    "welzhofer/scheduler": {
+      "id": "welzhofer/scheduler",
+      "name": "Scheduler",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Haupt-Scheduler: Email-Polling, OCR-Pipeline, Dauerbetrieb",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "scheduler.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 1130,
+        "size": 43185
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/email-client": {
+      "id": "welzhofer/email-client",
+      "name": "Email Client",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "IMAP Email-Client: Polling, Attachment-Extraktion",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "email_client.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 380,
+        "size": 13611
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/master-data": {
+      "id": "welzhofer/master-data",
+      "name": "Master Data",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Stammdaten-Verwaltung: Artikel, Kunden, Cache",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "master_data.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 430,
+        "size": 15971
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/learning": {
+      "id": "welzhofer/learning",
+      "name": "Learning",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Lern-System: Korrekturen speichern und anwenden",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "learning.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 230,
+        "size": 8325
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/config": {
+      "id": "welzhofer/config",
+      "name": "Config",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "json",
+      "description": "Konfiguration: Email, API-Keys, Pfade, Schwellwerte",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "config.json",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 65,
+        "size": 2420
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/document-processor": {
+      "id": "welzhofer/document-processor",
+      "name": "Document Processor",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Dokumenten-Verarbeitung: PDF/JPG Konvertierung, OCR via GPT",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "document_processor.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 480,
+        "size": 17625
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/order-processor": {
+      "id": "welzhofer/order-processor",
+      "name": "Order Processor",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Bestellverarbeitung: Artikelzuordnung, Validierung",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer_processor.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 450,
+        "size": 16464
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/export": {
+      "id": "welzhofer/export",
+      "name": "Export",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "XLSX-Export: Bestellungen als Excel exportieren",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "xlsx_exporter.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 340,
+        "size": 12203
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/analyzer": {
+      "id": "welzhofer/analyzer",
+      "name": "Analyzer",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Analyse: Bestellmuster, Kategorisierung, Statistiken",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "analyzer.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 320,
+        "size": 11737
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/start": {
+      "id": "welzhofer/start",
+      "name": "Start",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "batch",
+      "description": "Start-Script: scheduler.py starten",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "start-welzhofer.bat",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 3,
+        "size": 87
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/stop": {
+      "id": "welzhofer/stop",
+      "name": "Stop",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "batch",
+      "description": "Stop-Script: Python-Prozesse beenden",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "stop-welzhofer.bat",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 6,
+        "size": 175
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/requirements": {
+      "id": "welzhofer/requirements",
+      "name": "Requirements",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "text",
+      "description": "Python-Abhaengigkeiten",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "requirements.txt",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 10,
+        "size": 186
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
     }
   },
   "summary": {
-    "totalModules": 28,
+    "totalModules": 68,
     "byStatus": {
       "frozen": 23,
       "draft": 2
