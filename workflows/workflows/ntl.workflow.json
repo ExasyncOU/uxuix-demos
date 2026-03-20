@@ -2,7 +2,7 @@
   "$schema": "workflow-v1",
   "id": "ntl",
   "name": "NTL Pipeline",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Automatisierter XML-Abruf aus DHL e-datagate Portal. 7 Accounts parallel, alle 15 Min, Mo-So 24/7.",
   "owner": "ntl-agent",
   "vm": "UXUIX (157.180.78.163)",
@@ -40,13 +40,171 @@
     {"firmenkuerzel": "NTL47_T", "port": 9235, "label": "Depot 47 Test"},
     {"firmenkuerzel": "NTL36_T", "port": 9236, "label": "Depot 36 Test"}
   ],
-  "stages": [
-    {"id": "login", "name": "Portal Login", "type": "setup", "description": "e-datagate Portal Login (Firmenkuerzel + Nutzerkennung + Passwort)", "logging": true},
-    {"id": "akzeptieren", "name": "Bedingungen akzeptieren", "type": "setup", "description": "Nutzungsbedingungen akzeptieren falls Anmeldestatus-Seite angezeigt wird", "logging": true},
-    {"id": "navigate", "name": "Fahrplan exportieren", "type": "core", "description": "Navigation zum Menue Fahrplan exportieren", "logging": true},
-    {"id": "set_dates", "name": "Datumsbereich setzen", "type": "core", "description": "Leistungsdatum von/bis auf aktuelle Woche setzen (DD.MM.YYYY)", "logging": true},
-    {"id": "download", "name": "XML Fahrplan", "type": "output", "description": "Klick auf XML Fahrplan Button, Download speichern", "logging": true}
+  "guardrails": {
+    "constraints": {
+      "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      "allowedHours": {"start": "00:00", "end": "23:59"},
+      "maxConcurrentRuns": 7,
+      "timeoutMinutes": 10,
+      "hardRules": [
+        "7 Accounts IMMER parallel starten — nie sequentiell",
+        "Datumsbereich IMMER aktuelle Woche (Mo 00:00 bis So 23:59)",
+        "Bei Login-Fehler: 3x Retry mit 30s Pause, dann Alert",
+        "XML MUSS vor Speicherung auf Validitaet geprueft werden (Root-Element check)",
+        "Nutzungsbedingungen-Seite erkennen und automatisch akzeptieren"
+      ],
+      "frozenLogic": {
+        "version": "1.1.0",
+        "frozenAt": "2026-03-20",
+        "pipelineGistSHA": "2b96907873cc7442067822b1ce276914cafa620c"
+      }
+    },
+    "variables": [
+      {"name": "EDATAGATE_URL", "type": "string", "default": "https://e-datagate.dhl.com", "locked": true, "description": "e-datagate Portal URL"},
+      {"name": "ACCOUNTS_PARALLEL", "type": "number", "default": 7, "description": "Anzahl paralleler Accounts"},
+      {"name": "RETRY_COUNT", "type": "number", "default": 3, "description": "Login-Retries bei Fehler"},
+      {"name": "XML_OUTPUT_DIR", "type": "string", "default": "/data/ntl/xml", "description": "Zielordner fuer XML-Downloads"}
+    ]
+  },
+  "lanes": [
+    {
+      "id": "orchestrator",
+      "label": "Orchestrator",
+      "icon": "🎯",
+      "color": "#4A90D9",
+      "description": "Steuert 7 parallele Worker, Config, Error Handling"
+    },
+    {
+      "id": "browser",
+      "label": "e-datagate Browser",
+      "icon": "🌐",
+      "color": "#E67E22",
+      "description": "Playwright Browser-Automation im DHL e-datagate Portal"
+    },
+    {
+      "id": "data",
+      "label": "Daten / XML",
+      "icon": "📊",
+      "color": "#27AE60",
+      "description": "XML-Verarbeitung, Validierung, Speicherung"
+    },
+    {
+      "id": "reporting",
+      "label": "Monitoring",
+      "icon": "📧",
+      "color": "#8E44AD",
+      "description": "Metriken, Alerts, workflow_runs Logging"
+    }
   ],
+  "steps": [
+    {
+      "id": "config-load",
+      "lane": "orchestrator",
+      "module": "ntl/config",
+      "label": "Config laden",
+      "description": "Account-Liste, Ports, Credentials aus config.json laden",
+      "next": ["spawn-workers"],
+      "inputs": ["config.json"],
+      "outputs": ["config{}"]
+    },
+    {
+      "id": "spawn-workers",
+      "lane": "orchestrator",
+      "module": "ntl/orchestrator",
+      "label": "7 Worker starten",
+      "description": "Fuer jeden Account einen parallelen Browser-Worker spawnen (Ports 9230-9236)",
+      "next": ["portal-login"],
+      "inputs": ["config{}", "accounts[]"],
+      "outputs": ["workers[]"]
+    },
+    {
+      "id": "portal-login",
+      "lane": "browser",
+      "module": "ntl/edatagate-worker",
+      "label": "Portal Login",
+      "description": "e-datagate Login mit Firmenkuerzel + Nutzerkennung + Passwort",
+      "next": ["accept-terms"],
+      "inputs": ["worker", "credentials"],
+      "outputs": ["browser_session"]
+    },
+    {
+      "id": "accept-terms",
+      "lane": "browser",
+      "module": "ntl/edatagate-worker",
+      "label": "Bedingungen akzeptieren",
+      "description": "Nutzungsbedingungen automatisch akzeptieren falls Anmeldestatus-Seite erscheint",
+      "next": ["navigate-fahrplan"],
+      "inputs": ["browser_session"],
+      "outputs": ["session_active"]
+    },
+    {
+      "id": "navigate-fahrplan",
+      "lane": "browser",
+      "module": "ntl/edatagate-worker",
+      "label": "Fahrplan exportieren",
+      "description": "Navigation zum Menue Fahrplan exportieren",
+      "next": ["set-dates"],
+      "inputs": ["session_active"],
+      "outputs": ["export_page"]
+    },
+    {
+      "id": "set-dates",
+      "lane": "browser",
+      "module": "ntl/edatagate-worker",
+      "label": "Datumsbereich setzen",
+      "description": "Leistungsdatum von/bis auf aktuelle Woche setzen (Mo 00:00 - So 23:59, Format DD.MM.YYYY)",
+      "next": ["download-xml"],
+      "inputs": ["export_page", "current_week"],
+      "outputs": ["dates_set"]
+    },
+    {
+      "id": "download-xml",
+      "lane": "browser",
+      "module": "ntl/edatagate-worker",
+      "label": "XML herunterladen",
+      "description": "Klick auf XML Fahrplan Button, Download abwarten und speichern",
+      "next": ["validate-xml"],
+      "inputs": ["dates_set"],
+      "outputs": ["xml_file"]
+    },
+    {
+      "id": "validate-xml",
+      "lane": "data",
+      "module": "ntl/orchestrator",
+      "label": "XML validieren",
+      "description": "Heruntergeladene XML auf Validitaet pruefen (Root-Element, Encoding, Groesse > 0)",
+      "next": ["save-xml"],
+      "inputs": ["xml_file"],
+      "outputs": ["valid_xml"]
+    },
+    {
+      "id": "save-xml",
+      "lane": "data",
+      "module": "ntl/orchestrator",
+      "label": "XML speichern",
+      "description": "Validierte XML im Zielordner ablegen, Dateiname: {Firmenkuerzel}_{Datum}.xml",
+      "next": ["log-metrics"],
+      "inputs": ["valid_xml", "account"],
+      "outputs": ["saved_path"]
+    },
+    {
+      "id": "log-metrics",
+      "lane": "reporting",
+      "module": "core/metrics-collector",
+      "label": "Metriken loggen",
+      "description": "Laufzeit, Downloads pro Account, Fehler nach workflow_runs schreiben",
+      "next": [],
+      "inputs": ["workers[]", "timing"],
+      "outputs": ["metrics_logged"]
+    }
+  ],
+  "errorHandling": {
+    "module": "core/error-handler",
+    "strategy": "retry-then-alert",
+    "retries": 3,
+    "retryDelaySeconds": 30,
+    "escalation": "email-to-bodo"
+  },
   "monitoring": {
     "dashboard": "https://exasyncou.github.io/uxuix-demos/workflows",
     "workflowRunsTable": "workflow_runs",
@@ -59,9 +217,10 @@
     }
   },
   "config": {
-    "config_version": "1.0.0",
+    "config_version": "1.1.0",
     "changelog": [
-      "1.0.0 — Initiales Setup, 7/7 Accounts getestet (2026-03-19)"
+      "1.0.0 — Initiales Setup, 7/7 Accounts getestet (2026-03-19)",
+      "1.1.0 — Lanes + Steps + Guardrails fuer Workflow Monitor Swimlane (2026-03-20)"
     ]
   }
 }
