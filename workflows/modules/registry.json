@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-03-20T09:30:00Z",
+  "generatedAt": "2026-03-20T09:35:00Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
     "core/metrics-collector": {
@@ -73,7 +73,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "orchestrator.py",
-        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
+        "sha": "b814d7029f844bd0f2642d9c645de47867593cda",
         "lines": 1096,
         "size": 46000
       },
@@ -265,7 +265,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "printer.py",
-        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
+        "sha": "b814d7029f844bd0f2642d9c645de47867593cda",
         "lines": 248,
         "size": 9500
       },
@@ -2097,32 +2097,33 @@
       "frozenAt": "2026-03-20T08:25:00.000Z"
     },
     "nacke/email-notifications": {
-      "id": "nacke/nacke-email",
-      "name": "Nacke email",
-      "version": "1.0.0",
+      "id": "nacke/email-notifications",
+      "name": "Email Notifications (Start/End)",
+      "version": "7.2.0",
       "status": "frozen",
       "language": "python",
-      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "description": "Start- und End-Email Benachrichtigungen fuer die Nacke Pipeline. Versendet via SMTP (nacke@uxuix.de) von der Nacke-VM.",
       "usedBy": [
         "nacke"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "nacke/config"
+      ],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "nacke_email.py",
-        "sha": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
+        "sha": "b814d7029f844bd0f2642d9c645de47867593cda",
         "lines": 220,
         "size": 8942
       },
       "gate": {
-        "passed": false,
-        "score": "0/11",
-        "checkedAt": null,
-        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-20T09:20:00Z"
       },
-      "frozenAt": "2026-03-18T15:08:15.528Z"
+      "frozenAt": "2026-03-20T09:20:00Z"
     }
   },
   "summary": {
