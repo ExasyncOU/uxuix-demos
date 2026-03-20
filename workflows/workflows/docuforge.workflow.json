@@ -1,0 +1,36 @@
+{
+  "$schema": "workflow-v1",
+  "id": "docuforge",
+  "name": "DocuForge Pipeline",
+  "version": "0.0.1",
+  "description": "ISO-Dokumentationssystem — Workflow wird vorbereitet",
+  "owner": "docuforge-agent",
+  "vm": "TBD",
+  "status": "disabled",
+  "source": {
+    "type": "pending",
+    "gistId": null,
+    "owner": "ExasyncOU",
+    "currentSHA": null,
+    "lastSynced": null,
+    "files": []
+  },
+  "supabase": {
+    "tables": ["workflow_runs"],
+    "healthCheckSQL": "SELECT * FROM workflow_runs WHERE workflow = 'docuforge' AND status = 'success' ORDER BY finished_at DESC LIMIT 1;"
+  },
+  "schedule": null,
+  "stages": [],
+  "monitoring": {
+    "dashboard": "https://exasyncou.github.io/uxuix-demos/workflows",
+    "workflowRunsTable": "workflow_runs",
+    "workflowId": "docuforge",
+    "alertOnFailure": false
+  },
+  "config": {
+    "config_version": "0.0.1",
+    "changelog": [
+      "0.0.1 — Platzhalter, Workflow wird vorbereitet"
+    ]
+  }
+}
