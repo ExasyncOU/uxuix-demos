@@ -2,7 +2,7 @@
   "$schema": "workflow-v1",
   "id": "nacke",
   "name": "NackeScript IDIS Auftragsbestätigung",
-  "version": "7.1.0",
+  "version": "7.2.0",
   "description": "Automatische Auftragsbestaetigung + Overconfirmation in IDIS fuer Nacke Logistik",
   "owner": "nacke-agent",
   "vm": "UXUIX (Nacke-VM)",
@@ -10,8 +10,8 @@
     "type": "github-gist",
     "gistId": "d8fe35c43d948ed0e898e4eb76049934",
     "owner": "ExasyncOU",
-    "currentSHA": "655833bd6b9ca047f1466ac647491e9242f61eab",
-    "lastSynced": "2026-03-20T07:15:14Z",
+    "currentSHA": "b814d7029f844bd0f2642d9c645de47867593cda",
+    "lastSynced": "2026-03-20T09:20:00Z",
     "files": {
       "orchestrator.py": { "lines": 1096, "module": "nacke/orchestrator", "logging": true },
       "idis_selectors.py": { "lines": 147, "module": "nacke/idis-selectors", "logging": false },
@@ -25,7 +25,7 @@
       "master_data.py": { "lines": 359, "module": "nacke/master-data", "logging": true },
       "overconfirmation.py": { "lines": 214, "module": "nacke/overconfirmation", "logging": true },
       "daily_report.py": { "lines": 276, "module": "nacke/daily-report", "logging": true },
-      "printer.py": { "lines": 251, "module": "nacke/printer", "logging": true },
+      "printer.py": { "lines": 248, "module": "nacke/printer", "logging": true },
       "nacke_email.py": { "lines": 220, "module": "nacke/email-notifications", "logging": true },
       "config.json": { "lines": 71, "module": "nacke/config" },
       "fulltest.py": { "lines": 501, "module": "nacke/fulltest", "logging": true },
@@ -33,21 +33,14 @@
       "requirements.txt": { "lines": 7, "module": "nacke/requirements", "logging": true }
     }
   },
-  "schedule": {
-    "cron": "10 4 * * 1-4",
-    "human": "Montag-Donnerstag um 04:10 Uhr",
-    "timezone": "Europe/Berlin"
-  },
+  "schedule": { "cron": "10 4 * * 1-4", "human": "Montag-Donnerstag um 04:10 Uhr", "timezone": "Europe/Berlin" },
   "guardrails": {
     "constraints": {
       "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday"],
       "blockedDays": ["Friday", "Saturday", "Sunday"],
       "blockedReason": "Freitag-Sonntag: IDIS Wartungsfenster + Wochenabschluss",
       "allowedHours": { "start": "07:00", "end": "18:00" },
-      "maxConcurrentRuns": 1,
-      "timeoutMinutes": 120,
-      "maxOrdersPerRun": 200,
-      "dryRunDefault": true,
+      "maxConcurrentRuns": 1, "timeoutMinutes": 120, "maxOrdersPerRun": 200, "dryRunDefault": true,
       "hardRules": [
         "NIEMALS Production remote via AFK Task starten (Incident 06.03.2026)",
         "NIEMALS annehmen dass Env-Variable Dry-Run ausloest ohne Aufrufpfad-Verifikation",
@@ -60,12 +53,13 @@
         "Overconfirmation per JS im Amend-Form: ceil(ordered/bundle)*bundle PRO Destination",
         "Tabelle direkt iterieren — NIEMALS per Order-ID aus CSV matchen",
         "Nach Gist-Update IMMER SHA in run_nacke_v2.ps1 aktualisieren — sonst zieht Scheduler alte Version",
-        "Emails NUR von Nacke-VM senden (nacke@uxuix.de) — Geo-Restriktion beim Provider"
+        "Emails NUR von Nacke-VM senden (nacke@uxuix.de) — Geo-Restriktion beim Provider",
+        "Druck NUR via LPR (lpr.exe) — NIEMALS Out-Printer fuer PDFs, NIEMALS SumatraPDF (haengt headless)"
       ],
       "frozenLogic": {
-        "version": "7.1.0",
+        "version": "7.2.0",
         "frozenAt": "2026-03-20",
-        "pipelineGistSHA": "655833bd6b9ca047f1466ac647491e9242f61eab",
+        "pipelineGistSHA": "b814d7029f844bd0f2642d9c645de47867593cda",
         "deployGistSHA": "14fa2e61c5ec1ce54230623eb5b935e4e8fe759a",
         "bundleSource": "Col K (Einstellung RPR Kartonage), OL: OL Kartonage Sheet",
         "overconfirmationFactor": { "PCS": 1, "PPP": 1 },
@@ -73,16 +67,18 @@
         "browserModules": ["idis_selectors", "idis_connect", "idis_login", "idis_export", "idis_amend", "idis_save_back"],
         "smtpUser": "nacke@uxuix.de",
         "smtpVia": "Direkt SMTP von Nacke-VM (nacke_email.py)",
-        "emailIntegration": "orchestrator.py importiert nacke_email.py, test_mode=False (Production-Verteiler)"
+        "emailIntegration": "orchestrator.py importiert nacke_email.py, test_mode=False (Production-Verteiler)",
+        "printMethod": "LPR via lpr.exe -S 192.168.5.25 -P lp -o l (headless, kein GUI)"
       }
     },
     "variables": [
-      { "name": "NACKE_DRYRUN", "type": "boolean", "default": true, "description": "Dry-Run Modus (keine echten Bestaetigungen)", "locked": true, "lockReason": "Sicherheitskritisch - nur manuell aenderbar" },
+      { "name": "NACKE_DRYRUN", "type": "boolean", "default": true, "description": "Dry-Run Modus", "locked": true, "lockReason": "Sicherheitskritisch" },
       { "name": "NACKE_MAX_ORDERS", "type": "number", "default": 50, "min": 1, "max": 200, "description": "Max Auftraege pro Lauf" },
       { "name": "IDIS_URL", "type": "string", "default": "https://idis.nacke.de", "locked": true, "description": "IDIS Server URL" },
       { "name": "IDIS_USER", "type": "string", "default": "from_vault", "locked": true, "description": "IDIS Login (aus credential_vault)" },
-      { "name": "REPORT_RECIPIENTS", "type": "string[]", "default": ["aros@nacke-logistik.de", "o.basedow@nacke-logistik.de"], "description": "Email-Empfaenger fuer Reports (CC: ch.walter, bodo)" },
-      { "name": "SMTP_USER", "type": "string", "default": "nacke@uxuix.de", "locked": true, "description": "SMTP Absender (nur von Nacke-VM, Geo-Restriktion)" }
+      { "name": "REPORT_RECIPIENTS", "type": "string[]", "default": ["aros@nacke-logistik.de", "o.basedow@nacke-logistik.de"], "description": "Email-Empfaenger (CC: ch.walter, bodo)" },
+      { "name": "SMTP_USER", "type": "string", "default": "nacke@uxuix.de", "locked": true, "description": "SMTP Absender (nur Nacke-VM)" },
+      { "name": "PRINTER_IP", "type": "string", "default": "192.168.5.25", "locked": true, "description": "Canon Drucker IP fuer LPR" }
     ]
   },
   "lanes": [
@@ -92,28 +88,24 @@
     { "id": "reporting", "label": "Reporting", "icon": "\ud83d\udce7", "color": "#8E44AD", "description": "Email-Reports, Metriken, Logging" }
   ],
   "steps": [
-    { "id": "config-load", "lane": "orchestrator", "module": "nacke/config", "label": "Config laden", "description": "Config aus Supabase laden, validieren, config_version pruefen", "next": ["send-start-email"], "inputs": ["supabase:agent_configs"], "outputs": ["config{}"] },
-    { "id": "send-start-email", "lane": "reporting", "module": "nacke/email-notifications", "label": "Start-Email senden", "description": "Benachrichtigung dass Pipeline gestartet wurde (Modus, Maschine, Zeitstempel)", "next": ["master-data"], "inputs": ["config", "mode"], "outputs": ["start_email_sent"] },
-    { "id": "master-data", "lane": "data", "module": "nacke/master-data", "label": "Stammdaten laden", "description": "Kundenstammdaten und Zuordnungstabellen aus Supabase", "next": ["fetch-orders"], "inputs": ["config.flow_name"], "outputs": ["masterData{}"] },
-    { "id": "fetch-orders", "lane": "data", "module": "nacke/orchestrator", "label": "Auftraege abrufen", "description": "Offene Auftraege aus nacke_orders Tabelle laden", "next": ["idis-connect"], "inputs": ["config", "masterData"], "outputs": ["orders[]"] },
-    { "id": "idis-connect", "lane": "idis", "module": "nacke/idis-connect", "label": "CDP verbinden", "description": "Chrome Debug Protocol Verbindung zum IDIS-Browser herstellen (Port 9222)", "next": ["idis-login"], "inputs": ["config.cdp_port"], "outputs": ["cdp_session"] },
-    { "id": "idis-login", "lane": "idis", "module": "nacke/idis-login", "label": "IDIS Login", "description": "Login bei IDIS mit Credentials aus Vault, Session-Cookie sichern", "next": ["idis-selectors"], "inputs": ["cdp_session", "vault:idis_credentials"], "outputs": ["browser_session"] },
-    { "id": "idis-selectors", "lane": "idis", "module": "nacke/idis-selectors", "label": "Selektoren laden", "description": "JSF-Selektoren fuer IDIS-Formulare laden und validieren", "next": ["idis-export"], "inputs": ["browser_session"], "outputs": ["selectors{}"] },
-    { "id": "idis-export", "lane": "idis", "module": "nacke/idis-export", "label": "Auftraege exportieren", "description": "Offene Auftraege aus IDIS-Tabelle exportieren und parsen", "next": ["idis-amend"], "inputs": ["browser_session", "selectors", "orders[]"], "outputs": ["export_data[]"] },
-    { "id": "idis-amend", "lane": "idis", "module": "nacke/idis-amend", "label": "Amendments durchfuehren", "description": "Bestellmengen im IDIS-Formular aendern (Amend), Overconfirmation anwenden", "next": ["idis-save-back"], "inputs": ["export_data[]", "selectors", "NACKE_DRYRUN"], "outputs": ["amended[]"] },
-    { "id": "idis-save-back", "lane": "idis", "module": "nacke/idis-save-back", "label": "Save + Back", "description": "Aenderungen speichern (Save _idJsp159) und zurueck navigieren (_idJsp155)", "next": ["overconfirmation"], "inputs": ["amended[]", "selectors"], "outputs": ["saved[]"] },
-    { "id": "overconfirmation", "lane": "data", "module": "nacke/overconfirmation", "label": "Overconfirmation", "description": "Mengen auf Bundle-Size aufrunden: ceil(ordered/bundle)*bundle. Faktor IMMER 1.", "next": ["idis-packaging"], "inputs": ["saved[]", "masterData"], "outputs": ["confirmed[]"] },
-    { "id": "idis-packaging", "lane": "data", "module": "nacke/idis-packaging", "label": "Kartonage berechnen", "description": "Verpackungseinheiten (PPP/PCS) aus Col K berechnen, Bundle-Zuordnung", "next": ["save-results"], "inputs": ["confirmed[]", "masterData"], "outputs": ["packaged[]"] },
-    { "id": "save-results", "lane": "data", "module": "nacke/orchestrator", "label": "Ergebnis speichern", "description": "Bestaetigungsergebnisse zurueck nach Supabase schreiben", "next": ["generate-picklists"], "inputs": ["packaged[]"], "outputs": ["saved_count"] },
-    { "id": "generate-picklists", "lane": "reporting", "module": "nacke/picklist-generator", "label": "Picklisten generieren", "description": "Excel + PDF Raussuchlisten generieren. Sortiert nach Class, Seitenumbruch vor Summenblock.", "next": ["generate-report"], "inputs": ["packaged[]", "config", "masterData"], "outputs": ["picklists[]"] },
-    { "id": "print-picklists", "lane": "reporting", "module": "nacke/printer", "label": "Picklisten drucken", "description": "Generierte Picklists auf dem Netzwerkdrucker der Nacke-VM ausgeben", "next": ["generate-report"], "inputs": ["picklists[]", "config.printer"], "outputs": ["printed_count"] },
-    { "id": "generate-report", "lane": "reporting", "module": "nacke/daily-report", "label": "Report erstellen", "description": "Tagesreport als HTML generieren mit Zusammenfassung aller Ergebnisse", "next": ["send-end-email"], "inputs": ["packaged[]", "config"], "outputs": ["report_html"] },
-    { "id": "send-end-email", "lane": "reporting", "module": "nacke/email-notifications", "label": "End-Email senden", "description": "Report-Email mit Ergebnis (Amendments, Picklisten, Fehler) per SMTP senden", "next": ["log-metrics"], "inputs": ["result{}", "REPORT_RECIPIENTS"], "outputs": ["end_email_sent"] },
-    { "id": "log-metrics", "lane": "orchestrator", "module": "core/metrics-collector", "label": "Metriken loggen", "description": "Laufzeit, Anzahl Auftraege, Fehler nach agent_metrics schreiben", "next": [], "inputs": ["packaged[]", "timing"], "outputs": ["metrics_logged"] }
+    { "id": "config-load", "lane": "orchestrator", "module": "nacke/config", "label": "Config laden", "description": "Config laden und validieren", "next": ["send-start-email"], "inputs": ["supabase:agent_configs"], "outputs": ["config{}"] },
+    { "id": "send-start-email", "lane": "reporting", "module": "nacke/email-notifications", "label": "Start-Email senden", "description": "Benachrichtigung dass Pipeline gestartet wurde", "next": ["master-data"], "inputs": ["config", "mode"], "outputs": ["start_email_sent"] },
+    { "id": "master-data", "lane": "data", "module": "nacke/master-data", "label": "Stammdaten laden", "description": "Kundenstammdaten und Zuordnungstabellen", "next": ["fetch-orders"], "inputs": ["config.flow_name"], "outputs": ["masterData{}"] },
+    { "id": "fetch-orders", "lane": "data", "module": "nacke/orchestrator", "label": "Auftraege abrufen", "description": "Offene Auftraege laden", "next": ["idis-connect"], "inputs": ["config", "masterData"], "outputs": ["orders[]"] },
+    { "id": "idis-connect", "lane": "idis", "module": "nacke/idis-connect", "label": "CDP verbinden", "description": "Chrome Debug Protocol Verbindung herstellen", "next": ["idis-login"], "inputs": ["config.cdp_port"], "outputs": ["cdp_session"] },
+    { "id": "idis-login", "lane": "idis", "module": "nacke/idis-login", "label": "IDIS Login", "description": "Login bei IDIS mit Credentials aus Vault", "next": ["idis-selectors"], "inputs": ["cdp_session", "vault:idis_credentials"], "outputs": ["browser_session"] },
+    { "id": "idis-selectors", "lane": "idis", "module": "nacke/idis-selectors", "label": "Selektoren laden", "description": "JSF-Selektoren laden und validieren", "next": ["idis-export"], "inputs": ["browser_session"], "outputs": ["selectors{}"] },
+    { "id": "idis-export", "lane": "idis", "module": "nacke/idis-export", "label": "Auftraege exportieren", "description": "Offene Auftraege aus IDIS exportieren", "next": ["idis-amend"], "inputs": ["browser_session", "selectors", "orders[]"], "outputs": ["export_data[]"] },
+    { "id": "idis-amend", "lane": "idis", "module": "nacke/idis-amend", "label": "Amendments durchfuehren", "description": "Bestellmengen im IDIS-Formular aendern", "next": ["idis-save-back"], "inputs": ["export_data[]", "selectors", "NACKE_DRYRUN"], "outputs": ["amended[]"] },
+    { "id": "idis-save-back", "lane": "idis", "module": "nacke/idis-save-back", "label": "Save + Back", "description": "Aenderungen speichern und zurueck navigieren", "next": ["overconfirmation"], "inputs": ["amended[]", "selectors"], "outputs": ["saved[]"] },
+    { "id": "overconfirmation", "lane": "data", "module": "nacke/overconfirmation", "label": "Overconfirmation", "description": "Mengen auf Bundle-Size aufrunden", "next": ["idis-packaging"], "inputs": ["saved[]", "masterData"], "outputs": ["confirmed[]"] },
+    { "id": "idis-packaging", "lane": "data", "module": "nacke/idis-packaging", "label": "Kartonage berechnen", "description": "Verpackungseinheiten berechnen", "next": ["save-results"], "inputs": ["confirmed[]", "masterData"], "outputs": ["packaged[]"] },
+    { "id": "save-results", "lane": "data", "module": "nacke/orchestrator", "label": "Ergebnis speichern", "description": "Ergebnisse nach Supabase schreiben", "next": ["generate-picklists"], "inputs": ["packaged[]"], "outputs": ["saved_count"] },
+    { "id": "generate-picklists", "lane": "reporting", "module": "nacke/picklist-generator", "label": "Picklisten generieren", "description": "Excel + PDF Raussuchlisten generieren", "next": ["print-picklists"], "inputs": ["packaged[]", "config", "masterData"], "outputs": ["picklists[]"] },
+    { "id": "print-picklists", "lane": "reporting", "module": "nacke/printer", "label": "Picklisten drucken (LPR)", "description": "PDFs via LPR an Canon 192.168.5.25 senden (headless)", "next": ["generate-report"], "inputs": ["picklists[]", "PRINTER_IP"], "outputs": ["printed_count"] },
+    { "id": "generate-report", "lane": "reporting", "module": "nacke/daily-report", "label": "Report erstellen", "description": "Tagesreport als HTML generieren", "next": ["send-end-email"], "inputs": ["packaged[]", "config"], "outputs": ["report_html"] },
+    { "id": "send-end-email", "lane": "reporting", "module": "nacke/email-notifications", "label": "End-Email senden", "description": "Report-Email mit Ergebnis per SMTP senden", "next": ["log-metrics"], "inputs": ["result{}", "REPORT_RECIPIENTS"], "outputs": ["end_email_sent"] },
+    { "id": "log-metrics", "lane": "orchestrator", "module": "core/metrics-collector", "label": "Metriken loggen", "description": "Laufzeit, Auftraege, Fehler loggen", "next": [], "inputs": ["packaged[]", "timing"], "outputs": ["metrics_logged"] }
   ],
-  "errorHandling": {
-    "module": "core/error-handler",
-    "strategy": "log-and-report",
-    "escalation": "email-to-bodo"
-  }
+  "errorHandling": { "module": "core/error-handler", "strategy": "log-and-report", "escalation": "email-to-bodo" }
 }
