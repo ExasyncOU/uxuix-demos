@@ -1814,26 +1814,257 @@
         "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
       },
       "frozenAt": "2026-03-20T06:12:03.000Z"
+    },
+    "welzhofer/categorizer": {
+      "id": "welzhofer/categorizer",
+      "name": "Kategorisierung",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-diagnose.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 227,
+        "size": 8185
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/smart-match": {
+      "id": "welzhofer/smart-match",
+      "name": "Smart Match",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-match.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 278,
+        "size": 11144
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/convertapi": {
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Embedded in scheduler.py"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z",
+      "id": "welzhofer/convertapi",
+      "name": "ConvertAPI",
+      "description": "PDF/JPG Konvertierung via ConvertAPI",
+      "source": {
+        "type": "embedded",
+        "embeddedIn": "scheduler.py",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "owner": "ExasyncOU",
+        "file": "scheduler.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 1130,
+        "size": 43185
+      }
+    },
+    "welzhofer/ocr": {
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Embedded in scheduler.py"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z",
+      "id": "welzhofer/ocr",
+      "name": "OCR",
+      "description": "OCR via GPT-5.2 Vision API",
+      "source": {
+        "type": "embedded",
+        "embeddedIn": "scheduler.py",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "owner": "ExasyncOU",
+        "file": "scheduler.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 1130,
+        "size": 43185
+      }
+    },
+    "welzhofer/supabase": {
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Embedded in scheduler.py"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z",
+      "id": "welzhofer/supabase",
+      "name": "Supabase",
+      "description": "Supabase Bestellungen speichern + Status",
+      "source": {
+        "type": "embedded",
+        "embeddedIn": "scheduler.py",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "owner": "ExasyncOU",
+        "file": "scheduler.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 1130,
+        "size": 43185
+      }
+    },
+    "welzhofer/email": {
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Embedded in email_client.py"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z",
+      "id": "welzhofer/email",
+      "name": "Email",
+      "description": "Email-Versand verarbeiteter Bestellungen",
+      "source": {
+        "type": "embedded",
+        "embeddedIn": "email_client.py",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "owner": "ExasyncOU",
+        "file": "email_client.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 1130,
+        "size": 43185
+      }
+    },
+    "welzhofer/metrics": {
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Embedded in scheduler.py"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z",
+      "id": "welzhofer/metrics",
+      "name": "Metrics",
+      "description": "workflow_runs Metriken loggen",
+      "source": {
+        "type": "embedded",
+        "embeddedIn": "scheduler.py",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "owner": "ExasyncOU",
+        "file": "scheduler.py",
+        "sha": "f8c9c5161cb1d55538a16002adb16f005093ec77",
+        "lines": 1130,
+        "size": 43185
+      }
+    },
+    "welzhofer/webhook": {
+      "id": "welzhofer/webhook",
+      "name": "Webhook",
+      "version": "0.0.0",
+      "status": "planned",
+      "language": "python",
+      "description": "Webhook-Empfang fuer externe Partner-Bestellungen",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "planned",
+        "lines": 0,
+        "size": 0
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Noch nicht implementiert"
+      },
+      "frozenAt": "2026-03-20T06:12:03.000Z"
     }
   },
   "summary": {
-    "totalModules": 68,
+    "totalModules": 76,
     "byStatus": {
-      "frozen": 23,
-      "draft": 2
+      "frozen": 69,
+      "draft": 2,
+      "active": 4,
+      "planned": 1
     },
     "byLanguage": {
-      "python": 15,
-      "javascript": 5,
-      "powershell": 4,
-      "json": 1
+      "python": 47,
+      "json": 5,
+      "javascript": 12,
+      "powershell": 8,
+      "unknown": 1,
+      "batch": 2,
+      "text": 1
     },
     "byWorkflow": {
-      "core": 2,
-      "nacke": 8,
-      "maut": 6,
-      "linkedin": 6,
-      "fleetboard": 5,
+      "nacke": 20,
+      "maut": 9,
+      "fleetboard": 7,
+      "linkedin": 7,
+      "fleetboard2": 7,
+      "welzhofer": 27,
       "ntl": 3
     },
     "sharedModules": [
