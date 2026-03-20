@@ -10,98 +10,27 @@
     "type": "github-gist",
     "gistId": "d8fe35c43d948ed0e898e4eb76049934",
     "owner": "ExasyncOU",
-    "currentSHA": "ef81e1920120d8b07d409b87f7f6966197b3c9a9",
-    "lastSynced": "2026-03-20T07:06:53Z",
+    "currentSHA": "655833bd6b9ca047f1466ac647491e9242f61eab",
+    "lastSynced": "2026-03-20T07:15:14Z",
     "files": {
-      "orchestrator.py": {
-        "lines": 1096,
-        "module": "nacke/orchestrator",
-        "logging": true
-      },
-      "idis_selectors.py": {
-        "lines": 147,
-        "module": "nacke/idis-selectors",
-        "logging": false
-      },
-      "idis_connect.py": {
-        "lines": 176,
-        "module": "nacke/idis-connect",
-        "logging": true
-      },
-      "idis_login.py": {
-        "lines": 171,
-        "module": "nacke/idis-login",
-        "logging": true
-      },
-      "idis_export.py": {
-        "lines": 413,
-        "module": "nacke/idis-export",
-        "logging": true
-      },
-      "idis_amend.py": {
-        "lines": 296,
-        "module": "nacke/idis-amend",
-        "logging": true
-      },
-      "idis_save_back.py": {
-        "lines": 116,
-        "module": "nacke/idis-save-back",
-        "logging": true
-      },
-      "idis_browser.py": {
-        "lines": 246,
-        "module": "nacke/idis-browser-wrapper",
-        "logging": true
-      },
-      "picklist_generator.py": {
-        "lines": 1216,
-        "module": "nacke/picklist-generator",
-        "logging": true
-      },
-      "master_data.py": {
-        "lines": 359,
-        "module": "nacke/master-data",
-        "logging": true
-      },
-      "overconfirmation.py": {
-        "lines": 214,
-        "module": "nacke/overconfirmation",
-        "logging": true
-      },
-      "daily_report.py": {
-        "lines": 276,
-        "module": "nacke/daily-report",
-        "logging": true
-      },
-      "printer.py": {
-        "lines": 251,
-        "module": "nacke/printer",
-        "logging": true
-      },
-      "nacke_email.py": {
-        "lines": 220,
-        "module": "nacke/email-notifications",
-        "logging": true
-      },
-      "config.json": {
-        "lines": 71,
-        "module": "nacke/config"
-      },
-      "fulltest.py": {
-        "lines": 501,
-        "module": "nacke/fulltest",
-        "logging": true
-      },
-      "idis_packaging.py": {
-        "lines": 239,
-        "module": "nacke/idis-packaging",
-        "logging": true
-      },
-      "requirements.txt": {
-        "lines": 7,
-        "module": "nacke/requirements",
-        "logging": true
-      }
+      "orchestrator.py": { "lines": 1096, "module": "nacke/orchestrator", "logging": true },
+      "idis_selectors.py": { "lines": 147, "module": "nacke/idis-selectors", "logging": false },
+      "idis_connect.py": { "lines": 176, "module": "nacke/idis-connect", "logging": true },
+      "idis_login.py": { "lines": 171, "module": "nacke/idis-login", "logging": true },
+      "idis_export.py": { "lines": 413, "module": "nacke/idis-export", "logging": true },
+      "idis_amend.py": { "lines": 296, "module": "nacke/idis-amend", "logging": true },
+      "idis_save_back.py": { "lines": 116, "module": "nacke/idis-save-back", "logging": true },
+      "idis_browser.py": { "lines": 246, "module": "nacke/idis-browser-wrapper", "logging": true },
+      "picklist_generator.py": { "lines": 1216, "module": "nacke/picklist-generator", "logging": true },
+      "master_data.py": { "lines": 359, "module": "nacke/master-data", "logging": true },
+      "overconfirmation.py": { "lines": 214, "module": "nacke/overconfirmation", "logging": true },
+      "daily_report.py": { "lines": 276, "module": "nacke/daily-report", "logging": true },
+      "printer.py": { "lines": 251, "module": "nacke/printer", "logging": true },
+      "nacke_email.py": { "lines": 220, "module": "nacke/email-notifications", "logging": true },
+      "config.json": { "lines": 71, "module": "nacke/config" },
+      "fulltest.py": { "lines": 501, "module": "nacke/fulltest", "logging": true },
+      "idis_packaging.py": { "lines": 239, "module": "nacke/idis-packaging", "logging": true },
+      "requirements.txt": { "lines": 7, "module": "nacke/requirements", "logging": true }
     }
   },
   "schedule": {
@@ -130,19 +59,21 @@
         "Save = mainForm:_idJsp159, Back = mainForm:_idJsp155 — NIEMALS vertauschen!",
         "Overconfirmation per JS im Amend-Form: ceil(ordered/bundle)*bundle PRO Destination",
         "Tabelle direkt iterieren — NIEMALS per Order-ID aus CSV matchen",
-        "Nach Gist-Update IMMER SHA in run_nacke_v2.ps1 aktualisieren — sonst zieht Scheduler alte Version"
+        "Nach Gist-Update IMMER SHA in run_nacke_v2.ps1 aktualisieren — sonst zieht Scheduler alte Version",
+        "Emails NUR von Nacke-VM senden (nacke@uxuix.de) — Geo-Restriktion beim Provider"
       ],
       "frozenLogic": {
-        "version": "7.0.0",
-        "frozenAt": "2026-03-16",
-        "pipelineGistSHA": "faa225948f99f0426d15bac8d2ce1a675f3b410c",
+        "version": "7.1.0",
+        "frozenAt": "2026-03-20",
+        "pipelineGistSHA": "655833bd6b9ca047f1466ac647491e9242f61eab",
         "deployGistSHA": "14fa2e61c5ec1ce54230623eb5b935e4e8fe759a",
         "bundleSource": "Col K (Einstellung RPR Kartonage), OL: OL Kartonage Sheet",
         "overconfirmationFactor": { "PCS": 1, "PPP": 1 },
         "browserStrategy": "fresh-context-per-country-parallel",
         "browserModules": ["idis_selectors", "idis_connect", "idis_login", "idis_export", "idis_amend", "idis_save_back"],
         "smtpUser": "nacke@uxuix.de",
-        "smtpVia": "Direkt SMTP von Nacke-VM (nacke_email.py)"
+        "smtpVia": "Direkt SMTP von Nacke-VM (nacke_email.py)",
+        "emailIntegration": "orchestrator.py importiert nacke_email.py, test_mode=False (Production-Verteiler)"
       }
     },
     "variables": [
@@ -150,7 +81,7 @@
       { "name": "NACKE_MAX_ORDERS", "type": "number", "default": 50, "min": 1, "max": 200, "description": "Max Auftraege pro Lauf" },
       { "name": "IDIS_URL", "type": "string", "default": "https://idis.nacke.de", "locked": true, "description": "IDIS Server URL" },
       { "name": "IDIS_USER", "type": "string", "default": "from_vault", "locked": true, "description": "IDIS Login (aus credential_vault)" },
-      { "name": "REPORT_RECIPIENTS", "type": "string[]", "default": ["bodo.buschick@uxuix.de"], "description": "Email-Empfaenger fuer Reports" },
+      { "name": "REPORT_RECIPIENTS", "type": "string[]", "default": ["aros@nacke-logistik.de", "o.basedow@nacke-logistik.de"], "description": "Email-Empfaenger fuer Reports (CC: ch.walter, bodo)" },
       { "name": "SMTP_USER", "type": "string", "default": "nacke@uxuix.de", "locked": true, "description": "SMTP Absender (nur von Nacke-VM, Geo-Restriktion)" }
     ]
   },
