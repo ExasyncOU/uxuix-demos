@@ -1402,14 +1402,20 @@
       "status": "active",
       "language": "python",
       "description": "Einzelner Account-Worker: Login → Akzeptieren → Fahrplan exportieren → Datum setzen → XML Download. Jeder Worker auf eigenem Chrome-Port (9230-9236).",
-      "usedBy": ["ntl"],
-      "dependencies": ["playwright"],
+      "usedBy": [
+        "ntl"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
         "gistId": "00dcf34dcce25e7d7a5bb88c8f2ac101",
         "file": "edatagate_worker.py",
-        "sha": "2b96907873cc7442067822b1ce276914cafa620c"
+        "sha": "2b96907873cc7442067822b1ce276914cafa620c",
+        "lines": 180,
+        "size": 5400
       },
       "gate": {
         "passed": true,
@@ -1425,14 +1431,20 @@
       "status": "active",
       "language": "python",
       "description": "Startet alle 7 Account-Worker parallel. Jeder Account eigener Chrome-Port. Sammelt Ergebnisse, loggt in JSON.",
-      "usedBy": ["ntl"],
-      "dependencies": ["ntl/edatagate-worker"],
+      "usedBy": [
+        "ntl"
+      ],
+      "dependencies": [
+        "ntl/edatagate-worker"
+      ],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
         "gistId": "00dcf34dcce25e7d7a5bb88c8f2ac101",
         "file": "orchestrator.py",
-        "sha": "2b96907873cc7442067822b1ce276914cafa620c"
+        "sha": "2b96907873cc7442067822b1ce276914cafa620c",
+        "lines": 130,
+        "size": 3900
       },
       "gate": {
         "passed": true,
@@ -1448,14 +1460,18 @@
       "status": "active",
       "language": "json",
       "description": "Zentrale Config: 7 Accounts mit Ports 9230-9236, Schedule */15, Wochenzeitraum-Logik.",
-      "usedBy": ["ntl"],
+      "usedBy": [
+        "ntl"
+      ],
       "dependencies": [],
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
         "gistId": "00dcf34dcce25e7d7a5bb88c8f2ac101",
         "file": "config.json",
-        "sha": "2b96907873cc7442067822b1ce276914cafa620c"
+        "sha": "2b96907873cc7442067822b1ce276914cafa620c",
+        "lines": 45,
+        "size": 1350
       },
       "gate": {
         "passed": true,
