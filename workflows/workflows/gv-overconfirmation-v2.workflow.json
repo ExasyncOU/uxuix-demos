@@ -1,0 +1,309 @@
+{
+  "$schema": "workflow-v1",
+  "id": "gv-overconfirmation-v2",
+  "name": "GV Overconfirmation v2.0 (Modular)",
+  "version": "2.0.0",
+  "description": "Modulare Aufteilung in 8 Einzelmodule. Gleiche Logik wie v1.4.1, aber wartbar und testbar.",
+  "owner": "gv-overconfirmation-agent",
+  "vm": "UXUIX (157.180.78.163)",
+  "vmPath": "C:\\GVOverconfirmation\\v2\\",
+  "source": {
+    "type": "github-repo",
+    "repo": "ExasyncOU/uxuix-demos",
+    "path": "workflows/scripts/gv-overconfirmation-v2/",
+    "lastSynced": "2026-03-23T08:15:00Z",
+    "files": {
+      "config.py": {
+        "module": "gv-overconfirmation-v2/config",
+        "lines": 92
+      },
+      "browser.py": {
+        "module": "gv-overconfirmation-v2/browser",
+        "lines": 73
+      },
+      "idis.py": {
+        "module": "gv-overconfirmation-v2/idis",
+        "lines": 52
+      },
+      "orders.py": {
+        "module": "gv-overconfirmation-v2/orders",
+        "lines": 59
+      },
+      "overconfirmation.py": {
+        "module": "gv-overconfirmation-v2/overconfirmation",
+        "lines": 78
+      },
+      "processor.py": {
+        "module": "gv-overconfirmation-v2/processor",
+        "lines": 222
+      },
+      "report.py": {
+        "module": "gv-overconfirmation-v2/report",
+        "lines": 210
+      },
+      "main.py": {
+        "module": "gv-overconfirmation-v2/main",
+        "lines": 231
+      }
+    },
+    "currentSHA": "pending-deploy"
+  },
+  "schedule": {
+    "cron": "0 4 * * 1,2,3",
+    "human": "Mo, Di, Mi um 04:00 CET (nach v2 Deploy)",
+    "timezone": "Europe/Berlin",
+    "managedBy": "uxuix_schedules"
+  },
+  "guardrails": {
+    "constraints": {
+      "allowedDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday"
+      ],
+      "allowedHours": {
+        "start": "04:00",
+        "end": "06:00"
+      },
+      "maxConcurrentRuns": 1,
+      "timeoutMinutes": 30,
+      "hardRules": [
+        "Sequentielle User-Verarbeitung (NICHT parallel)",
+        "Depot-Filter (destinationTypeFilter=D) MUSS gesetzt sein",
+        "PYTHONIOENCODING=utf-8 in run_multi.ps1 UND im Python-Code",
+        "Save=_idJsp159, Back=_idJsp155 - NIEMALS verwechseln",
+        "VM config.json ist Source of Truth"
+      ]
+    },
+    "frozenLogic": {
+      "version": "2.0.0",
+      "frozenAt": "2026-03-23",
+      "overconfirmationFormula": "ceil(ordered / bundle) * bundle",
+      "earlyStopThreshold": 3,
+      "saveSelector": "mainForm:_idJsp159",
+      "backSelector": "mainForm:_idJsp155"
+    },
+    "variables": [
+      {
+        "name": "IDIS_USER",
+        "type": "string",
+        "values": [
+          "IDIS155",
+          "IDIS735",
+          "IDIS736"
+        ],
+        "locked": true
+      },
+      {
+        "name": "CDP_PORT",
+        "type": "number",
+        "values": [
+          9222,
+          9223,
+          9224
+        ],
+        "locked": true
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "config",
+      "label": "Config",
+      "icon": "settings",
+      "color": "#95A5A6"
+    },
+    {
+      "id": "browser",
+      "label": "Browser",
+      "icon": "globe",
+      "color": "#3498DB"
+    },
+    {
+      "id": "idis",
+      "label": "IDIS",
+      "icon": "log-in",
+      "color": "#E67E22"
+    },
+    {
+      "id": "orders",
+      "label": "Orders",
+      "icon": "list",
+      "color": "#2ECC71"
+    },
+    {
+      "id": "processing",
+      "label": "Processing",
+      "icon": "zap",
+      "color": "#F39C12"
+    },
+    {
+      "id": "reporting",
+      "label": "Reporting",
+      "icon": "bar-chart",
+      "color": "#E74C3C"
+    },
+    {
+      "id": "pipeline",
+      "label": "Pipeline",
+      "icon": "git-merge",
+      "color": "#8E44AD"
+    }
+  ],
+  "steps": [
+    {
+      "id": "config-load",
+      "lane": "config",
+      "module": "gv-overconfirmation-v2/config",
+      "label": "Config laden",
+      "description": "CLI Args, .env, config.json, Report-Dict.",
+      "next": [
+        "browser-start"
+      ],
+      "inputs": [
+        "ENV_FILE"
+      ],
+      "outputs": [
+        "CFG",
+        "REPORT"
+      ],
+      "script": "config.py"
+    },
+    {
+      "id": "browser-start",
+      "lane": "browser",
+      "module": "gv-overconfirmation-v2/browser",
+      "label": "Chrome CDP starten",
+      "description": "Chrome detached starten, CDP verbinden, verwaiste Contexts aufraumen.",
+      "next": [
+        "idis-login"
+      ],
+      "inputs": [
+        "CDP_PORT"
+      ],
+      "outputs": [
+        "browser",
+        "pw"
+      ],
+      "script": "browser.py"
+    },
+    {
+      "id": "idis-login",
+      "lane": "idis",
+      "module": "gv-overconfirmation-v2/idis",
+      "label": "IDIS Login",
+      "description": "Login mit j_username/j_password. Dual-Context fuer bidirektional.",
+      "next": [
+        "aros-navigate"
+      ],
+      "inputs": [
+        "IDIS_USER",
+        "IDIS_PASS"
+      ],
+      "outputs": [
+        "login_ok"
+      ],
+      "script": "idis.py"
+    },
+    {
+      "id": "aros-navigate",
+      "lane": "idis",
+      "module": "gv-overconfirmation-v2/idis",
+      "label": "AROS Navigation",
+      "description": "Process AROS Orders oeffnen, Show Result.",
+      "next": [
+        "read-orders"
+      ],
+      "inputs": [
+        "page"
+      ],
+      "outputs": [
+        "aros_page"
+      ],
+      "script": "idis.py"
+    },
+    {
+      "id": "read-orders",
+      "lane": "orders",
+      "module": "gv-overconfirmation-v2/orders",
+      "label": "Orders lesen + klassifizieren",
+      "description": "Tabelle parsen, Orders in valid/skipped aufteilen.",
+      "next": [
+        "process-orders"
+      ],
+      "inputs": [
+        "page"
+      ],
+      "outputs": [
+        "valid_orders"
+      ],
+      "script": "orders.py"
+    },
+    {
+      "id": "process-orders",
+      "lane": "processing",
+      "module": "gv-overconfirmation-v2/processor",
+      "label": "Bidirektional verarbeiten",
+      "description": "TOP+BOT parallel. Amend, Overconfirmation, Save/Back. Zigzag-Fallback.",
+      "next": [
+        "generate-report"
+      ],
+      "inputs": [
+        "valid_orders"
+      ],
+      "outputs": [
+        "stats"
+      ],
+      "script": "processor.py"
+    },
+    {
+      "id": "generate-report",
+      "lane": "reporting",
+      "module": "gv-overconfirmation-v2/report",
+      "label": "Report + Email",
+      "description": "HTML-Report generieren, via Edge Function senden.",
+      "next": [
+        "pipeline-finish"
+      ],
+      "inputs": [
+        "REPORT"
+      ],
+      "outputs": [
+        "html",
+        "email_sent"
+      ],
+      "script": "report.py"
+    },
+    {
+      "id": "pipeline-finish",
+      "lane": "pipeline",
+      "module": "gv-overconfirmation-v2/main",
+      "label": "Pipeline abschliessen",
+      "description": "Report-Dateien speichern, Contexts schliessen.",
+      "next": [],
+      "inputs": [
+        "all_results"
+      ],
+      "outputs": [
+        "done"
+      ],
+      "script": "main.py"
+    }
+  ],
+  "supabaseTables": [
+    {
+      "name": "gvsped_reports",
+      "purpose": "Reports",
+      "rw": "rw"
+    },
+    {
+      "name": "workflow_runs",
+      "purpose": "Monitoring",
+      "rw": "write"
+    }
+  ],
+  "errorHandling": {
+    "module": "core/error-handler",
+    "strategy": "log-and-continue"
+  }
+}
