@@ -821,11 +821,14 @@ function renderSwimlane(wf) {
         html += '<div class="sub">' + (step.description || '').slice(0, 60) + '</div>';
         const src = mod.source || {};
         const isGist = src.type === 'github-gist' || src.gist_id || src.gistId;
+        const isRepo = src.type === 'github-repo';
         const fileInfo = isGist
           ? (src.file || modFile) + ' (' + (src.lines || '?') + ' Zeilen) — Gist'
+          : isRepo
+          ? modFile + ' (' + (src.lines || '?') + ' Zeilen) — Repo'
           : src.type === 'vm-only'
           ? src.vmPath.split('\\').pop() + ' — nur VM'
-          : (mod.language || '') + ' / ' + modFile;
+          : (mod.language || '') + ' / ' + modFile + (src.lines ? ' (' + src.lines + ' Zeilen)' : '');
         html += '<div class="file-tag">' + fileInfo + '</div>';
         html += '</div></div>';
       } else {
