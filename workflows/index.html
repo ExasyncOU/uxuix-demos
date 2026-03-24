@@ -498,7 +498,6 @@ table.gist-versions a:hover { text-decoration: underline; }
   </table>
 
   <!-- Incident Timeline -->
-  <!-- Incident Timeline -->
   <h2 style="margin-top:32px; font-size:16px;">Incident Timeline</h2>
   <p style="font-size:12px; color:var(--text-muted); margin:8px 0 16px;">Alle relevanten Vorfaelle und Learnings aus Supabase.</p>
 
@@ -821,14 +820,11 @@ function renderSwimlane(wf) {
         html += '<div class="sub">' + (step.description || '').slice(0, 60) + '</div>';
         const src = mod.source || {};
         const isGist = src.type === 'github-gist' || src.gist_id || src.gistId;
-        const isRepo = src.type === 'github-repo';
         const fileInfo = isGist
           ? (src.file || modFile) + ' (' + (src.lines || '?') + ' Zeilen) — Gist'
-          : isRepo
-          ? modFile + ' (' + (src.lines || '?') + ' Zeilen) — Repo'
           : src.type === 'vm-only'
           ? src.vmPath.split('\\').pop() + ' — nur VM'
-          : (mod.language || '') + ' / ' + modFile + (src.lines ? ' (' + src.lines + ' Zeilen)' : '');
+          : (mod.language || '') + ' / ' + modFile;
         html += '<div class="file-tag">' + fileInfo + '</div>';
         html += '</div></div>';
       } else {
