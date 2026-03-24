@@ -475,10 +475,10 @@
       "id": "generate-picklists",
       "lane": "reporting",
       "module": "nacke/picklist-generator",
-      "label": "Picklisten generieren",
-      "description": "Excel + PDF Raussuchlisten generieren. Sortiert nach Class, Seitenumbruch vor Summenblock.",
+      "label": "Picklisten generieren (Excel)",
+      "description": "Excel-Raussuchlisten generieren. Sortiert nach Class, PCS/PPP-Templates, Summenblock.",
       "next": [
-        "generate-report"
+        "generate-pdfs"
       ],
       "inputs": [
         "packaged[]",
@@ -487,6 +487,22 @@
       ],
       "outputs": [
         "picklists[]"
+      ]
+    },
+    {
+      "id": "generate-pdfs",
+      "lane": "reporting",
+      "module": "nacke/picklist-pdf",
+      "label": "PDF generieren",
+      "description": "Excel-Picklisten als A4-Landscape-PDF rendern. Summenblock-Seitenumbruch, Footer mit Seitenzahlen.",
+      "next": [
+        "print-picklists"
+      ],
+      "inputs": [
+        "picklists[]"
+      ],
+      "outputs": [
+        "pdfs[]"
       ]
     },
     {
