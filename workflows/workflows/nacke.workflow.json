@@ -10,7 +10,7 @@
     "type": "github-gist",
     "gistId": "d8fe35c43d948ed0e898e4eb76049934",
     "owner": "ExasyncOU",
-    "currentSHA": "2badac1bde8a98916feb6043d98a5ca470c5604d",
+    "currentSHA": "bbf6c66ed8d88e422b5b14ec7428ba9fe94acc7e",
     "lastSynced": "2026-03-24T06:33:39Z",
     "files": {
       "orchestrator.py": {
@@ -153,7 +153,7 @@
       "frozenLogic": {
         "version": "7.3.0",
         "frozenAt": "2026-03-24",
-        "pipelineGistSHA": "2badac1bde8a98916feb6043d98a5ca470c5604d",
+        "pipelineGistSHA": "bbf6c66ed8d88e422b5b14ec7428ba9fe94acc7e",
         "deployGistSHA": "8b8d550ba97432e611a3f7e53dd67a7dbe7b86f8",
         "bundleSource": "Col K (Einstellung RPR Kartonage), OL: OL Kartonage Sheet",
         "overconfirmationFactor": {
