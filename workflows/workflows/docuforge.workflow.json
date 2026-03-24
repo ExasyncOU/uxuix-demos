@@ -1,36 +1,146 @@
 {
   "$schema": "workflow-v1",
   "id": "docuforge",
-  "name": "DocuForge Pipeline",
-  "version": "0.0.1",
-  "description": "ISO-Dokumentationssystem — Workflow wird vorbereitet",
-  "owner": "docuforge-agent",
-  "vm": "TBD",
-  "status": "disabled",
+  "name": "DocuForge — ISO Documentation Generator",
+  "version": "1.0.0",
+  "description": "Generiert ISO-zertifizierungsfaehige Dokumentation aus Workflow-Monitor-Daten als Upselling-Produkt",
+  "owner": "Kalamos (CDO)",
+  "vm": "B-Lab",
   "source": {
-    "type": "pending",
-    "gistId": null,
-    "owner": "ExasyncOU",
-    "currentSHA": null,
-    "lastSynced": null,
-    "files": []
+    "type": "local",
+    "path": "Projekte/DocuForge"
   },
-  "supabase": {
-    "tables": ["workflow_runs"],
-    "healthCheckSQL": "SELECT * FROM workflow_runs WHERE workflow = 'docuforge' AND status = 'success' ORDER BY finished_at DESC LIMIT 1;"
+  "schedule": {
+    "cron": "0 6 1 * *",
+    "human": "Jeden 1. des Monats um 06:00 UTC",
+    "timezone": "Europe/Berlin"
   },
-  "schedule": null,
-  "stages": [],
-  "monitoring": {
-    "dashboard": "https://exasyncou.github.io/uxuix-demos/workflows",
-    "workflowRunsTable": "workflow_runs",
-    "workflowId": "docuforge",
-    "alertOnFailure": false
+  "guardrails": {
+    "constraints": [
+      "READ-ONLY auf alle Supabase-Tabellen — keine Produktiv-Daten veraendern",
+      "Strikte Mandantentrennung — kein Cross-Customer-Data-Leak",
+      "Alle Dokumente muessen 10 ISO-Pflichtmetadaten tragen",
+      "Aufbewahrungsfrist minimum 3 Jahre"
+    ],
+    "frozenLogic": [],
+    "variables": {
+      "retention_years": { "value": 3, "locked": false },
+      "default_sla_target": { "value": 95, "locked": false },
+      "max_incidents_per_report": { "value": 50, "locked": false }
+    }
   },
-  "config": {
-    "config_version": "0.0.1",
-    "changelog": [
-      "0.0.1 — Platzhalter, Workflow wird vorbereitet"
+  "lanes": [
+    { "id": "data", "label": "Daten", "icon": "database", "color": "#4fc3f7", "description": "Datenabfrage aus Supabase" },
+    { "id": "transform", "label": "Transformation", "icon": "transform", "color": "#b388ff", "description": "Aggregation und ISO-Mapping" },
+    { "id": "render", "label": "Rendering", "icon": "document", "color": "#00d4aa", "description": "Template-Rendering und PDF-Generierung" },
+    { "id": "deliver", "label": "Delivery", "icon": "send", "color": "#ffab40", "description": "Speicherung und Versand" }
+  ],
+  "steps": [
+    {
+      "id": "load-customers",
+      "lane": "data",
+      "label": "Kunden laden",
+      "description": "Alle aktiven Kunden mit DocuForge-Abo aus ops_customers laden",
+      "next": ["load-workflows"],
+      "inputs": ["ops_customers"],
+      "outputs": ["customer_list"]
+    },
+    {
+      "id": "load-workflows",
+      "lane": "data",
+      "label": "Workflows laden",
+      "description": "Zugeordnete Workflows pro Kunde aus ops_customer_workflows laden",
+      "next": ["fetch-runs"],
+      "inputs": ["customer_list", "ops_customer_workflows"],
+      "outputs": ["workflow_config"]
+    },
+    {
+      "id": "fetch-runs",
+      "lane": "data",
+      "label": "Runs abrufen",
+      "description": "workflow_runs fuer aktuellen + Vormonat je Kunde abfragen",
+      "next": ["aggregate"],
+      "inputs": ["workflow_config", "workflow_runs"],
+      "outputs": ["raw_runs", "prior_runs"]
+    },
+    {
+      "id": "aggregate",
+      "lane": "transform",
+      "label": "Aggregieren",
+      "description": "Runs gruppieren, KPIs berechnen, Trends ermitteln, Fehler klassifizieren",
+      "next": ["map-iso-fields"],
+      "inputs": ["raw_runs", "prior_runs"],
+      "outputs": ["aggregated_data"]
+    },
+    {
+      "id": "map-iso-fields",
+      "lane": "transform",
+      "label": "ISO-Mapping",
+      "description": "Aggregierte Daten auf ISO-Pflichtfelder mappen (field-mapping.json)",
+      "next": ["render-html"],
+      "inputs": ["aggregated_data", "field-mapping.json"],
+      "outputs": ["iso_data"]
+    },
+    {
+      "id": "render-html",
+      "lane": "render",
+      "label": "HTML rendern",
+      "description": "ISO-Templates mit Daten befuellen, Metadaten injizieren",
+      "next": ["convert-pdf"],
+      "inputs": ["iso_data", "templates/"],
+      "outputs": ["html_documents"]
+    },
+    {
+      "id": "convert-pdf",
+      "lane": "render",
+      "label": "PDF erzeugen",
+      "description": "HTML zu PDF konvertieren (Puppeteer / wkhtmltopdf)",
+      "next": ["store-output"],
+      "inputs": ["html_documents"],
+      "outputs": ["pdf_documents"]
+    },
+    {
+      "id": "store-output",
+      "lane": "deliver",
+      "label": "Speichern",
+      "description": "Dokumente in data/generated/{customer}/{YYYY-MM}/ ablegen",
+      "next": ["send-email"],
+      "inputs": ["pdf_documents", "html_documents"],
+      "outputs": ["stored_paths"]
+    },
+    {
+      "id": "send-email",
+      "lane": "deliver",
+      "label": "Versenden",
+      "description": "Dokumente per E-Mail an Kunden-Verteiler senden",
+      "next": ["log-run"],
+      "inputs": ["stored_paths", "customer.recipients"],
+      "outputs": ["delivery_confirmation"]
+    },
+    {
+      "id": "log-run",
+      "lane": "deliver",
+      "label": "Loggen",
+      "description": "Eigenen Run in workflow_runs eintragen (Dogfooding)",
+      "next": [],
+      "inputs": ["delivery_confirmation"],
+      "outputs": ["workflow_runs_entry"]
+    }
+  ],
+  "supabaseTables": [
+    "workflow_runs",
+    "workflow_incidents",
+    "ops_customers",
+    "ops_customer_workflows",
+    "worker_registry"
+  ],
+  "errorHandling": {
+    "strategy": "retry-once-then-alert",
+    "escalation": ["hermes-coo", "prometheus-cio"],
+    "alarmRules": [
+      { "condition": "customer_data_leak", "action": "STOP + notify themis-ciso", "severity": "critical" },
+      { "condition": "template_render_fail", "action": "retry 1x, then alert prometheus", "severity": "high" },
+      { "condition": "no_runs_for_customer", "action": "warning in report + notify hermes", "severity": "medium" }
     ]
   }
 }
