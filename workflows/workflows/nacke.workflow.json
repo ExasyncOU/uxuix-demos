@@ -2,7 +2,7 @@
   "$schema": "workflow-v1",
   "id": "nacke",
   "name": "NackeScript IDIS Auftragsbestätigung",
-  "version": "7.4.0",
+  "version": "7.5.0",
   "description": "Automatische Auftragsbestaetigung + Overconfirmation in IDIS fuer Nacke Logistik",
   "owner": "nacke-agent",
   "vm": "UXUIX (Nacke-VM)",
@@ -10,7 +10,7 @@
     "type": "github-gist",
     "gistId": "d8fe35c43d948ed0e898e4eb76049934",
     "owner": "ExasyncOU",
-    "currentSHA": "231b97aaa7f48ecd0d4f01f6cf85d4b7fa4da4cc",
+    "currentSHA": "307f3d7479059ea899a4152ea2bea5db5c8f302d",
     "lastSynced": "2026-03-24T06:33:39Z",
     "files": {
       "orchestrator.py": {
@@ -151,9 +151,9 @@
         "Druck NUR via LPR (lpr.exe) — NIEMALS Out-Printer fuer PDFs, NIEMALS SumatraPDF (haengt headless)"
       ],
       "frozenLogic": {
-        "version": "7.4.0",
+        "version": "7.5.0",
         "frozenAt": "2026-03-24",
-        "pipelineGistSHA": "231b97aaa7f48ecd0d4f01f6cf85d4b7fa4da4cc",
+        "pipelineGistSHA": "307f3d7479059ea899a4152ea2bea5db5c8f302d",
         "deployGistSHA": "0b026c34902224d608b645ea463658d3715be167",
         "bundleSource": "Col K (Einstellung RPR Kartonage), OL: OL Kartonage Sheet",
         "overconfirmationFactor": {
