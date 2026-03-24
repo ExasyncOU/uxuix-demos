@@ -221,35 +221,35 @@
     {
       "id": "scheduler",
       "label": "Scheduler",
-      "icon": "\u23f0",
+      "icon": "⏰",
       "color": "#4A90D9",
       "description": "Start/Stop, Email-Polling, Orchestrierung"
     },
     {
       "id": "intake",
       "label": "Bestelleingang",
-      "icon": "\ud83d\udce5",
+      "icon": "📥",
       "color": "#27AE60",
       "description": "Email-Empfang, Webhook, Attachment-Extraktion"
     },
     {
       "id": "processing",
       "label": "Verarbeitung",
-      "icon": "\ud83d\udd0d",
+      "icon": "🔍",
       "color": "#E67E22",
       "description": "OCR, Artikelzuordnung, Validierung"
     },
     {
       "id": "data",
       "label": "Daten / Supabase",
-      "icon": "\ud83d\udcca",
+      "icon": "📊",
       "color": "#8E44AD",
       "description": "Bestellungen speichern, Status, Metriken"
     },
     {
       "id": "output",
       "label": "Ausgabe",
-      "icon": "\ud83d\udce7",
+      "icon": "📧",
       "color": "#E74C3C",
       "description": "XLSX-Export, Email, OneDrive Upload"
     }
@@ -294,7 +294,7 @@
       "lane": "intake",
       "module": "welzhofer/webhook",
       "label": "Webhook empfangen",
-      "description": "POST an receive-webhook-order \u2014 Bestellungen von externen Partnern",
+      "description": "POST an receive-webhook-order — Bestellungen von externen Partnern",
       "next": [
         "save-order"
       ],
@@ -327,7 +327,7 @@
       "lane": "processing",
       "module": "welzhofer/convertapi",
       "label": "Bild konvertieren",
-      "description": "PDF\u2192PNG, JPG\u2192PNG via ConvertAPI",
+      "description": "PDF→PNG, JPG→PNG via ConvertAPI",
       "next": [
         "ocr-extract"
       ],
