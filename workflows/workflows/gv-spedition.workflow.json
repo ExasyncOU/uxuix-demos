@@ -1,0 +1,121 @@
+{
+  "$schema": "workflow-v1",
+  "id": "gv-spedition",
+  "name": "GV Spedition Differenzfracht",
+  "version": "2.0.0",
+  "description": "Differenzfracht-Analyse: Excel-Export aus BNS OnRoad → Storno/Nachlieferung filtern → Direkte identifizieren → Smart-Merge OLE/DFUE-Paare → Ort-Level Differenzberechnung → XLSX-Report",
+  "owner": "gv-spedition-agent",
+  "vm": "B-Lab (bodob)",
+  "vmPath": "C:\\Users\\bodob\\OneDrive\\Kunden\\GV Spedition\\Differenzfracht\\",
+  "source": {
+    "type": "local",
+    "basePath": "Kunden/GV Spedition/Differenzfracht/scripts/",
+    "files": {
+      "step1_filter_storno.py": {
+        "module": "gv-spedition/filter-storno",
+        "lines": 95
+      },
+      "step3_merge_same_ort.py": {
+        "module": "gv-spedition/analyzer-v2",
+        "lines": 480
+      },
+      "step4_block_decision.py": {
+        "module": "gv-spedition/block-decision",
+        "lines": 270
+      },
+      "create_xlsx_report.py": {
+        "module": "gv-spedition/xlsx-report",
+        "lines": 150
+      }
+    }
+  },
+  "schedule": {
+    "cron": "manual",
+    "human": "Manuell — taeglich nach Excel-Export aus BNS OnRoad",
+    "timezone": "Europe/Berlin",
+    "managedBy": "manuell / geplant: UiPath Orchestrator oder Scheduled Task"
+  },
+  "guardrails": {
+    "constraints": {
+      "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "maxConcurrentRuns": 1,
+      "timeoutMinutes": 10
+    },
+    "dualScript": {
+      "prod": "step3_merge_same_ort.py",
+      "test": "tests/test_step3_vs_gt.py"
+    },
+    "gates": {
+      "G1_script_exists": true,
+      "G2_test_exists": true,
+      "G7_metrics": true,
+      "G9_no_silent_exceptions": true,
+      "G10_no_hardcoded_paths": true
+    }
+  },
+  "lanes": [
+    {"id": "input", "name": "Datenerfassung", "color": "#4A90D9"},
+    {"id": "filter", "name": "Filterung", "color": "#F5A623"},
+    {"id": "analyze", "name": "Analyse", "color": "#7ED321"},
+    {"id": "output", "name": "Ausgabe", "color": "#BD10E0"},
+    {"id": "validate", "name": "Validierung", "color": "#D0021B"}
+  ],
+  "steps": [
+    {
+      "id": "export",
+      "lane": "input",
+      "module": "gv-spedition/onroad-export",
+      "label": "BNS OnRoad Excel-Export",
+      "description": "Fehlfrachtanlageabrechnung.xls aus OnRoad exportieren (aktuell manuell oder UiPath)",
+      "next": ["filter-storno"],
+      "status": "planned"
+    },
+    {
+      "id": "filter-storno",
+      "lane": "filter",
+      "module": "gv-spedition/filter-storno",
+      "label": "Storno + Nachlieferung filtern",
+      "description": "Zeilen mit 'geloescht' (AQ) und 'NACHLIEFERUNG' (AB) entfernen",
+      "next": ["analyze-v2"],
+      "status": "active"
+    },
+    {
+      "id": "analyze-v2",
+      "lane": "analyze",
+      "module": "gv-spedition/analyzer-v2",
+      "label": "Differenzfracht-Analyse v2",
+      "description": "Smart-Merge (OLE/DFUE-Paare) + Direkte-Matching + Ort-Level >= 10%",
+      "next": ["xlsx-report"],
+      "status": "active"
+    },
+    {
+      "id": "xlsx-report",
+      "lane": "output",
+      "module": "gv-spedition/xlsx-report",
+      "label": "XLSX-Report erstellen",
+      "description": "Kundenfertige Excel-Datei mit Zusammenfassung, Werk-Details, Erklaerungen",
+      "next": ["validate-gt"],
+      "status": "active"
+    },
+    {
+      "id": "validate-gt",
+      "lane": "validate",
+      "module": "gv-spedition/gt-validation",
+      "label": "Ground Truth Validierung",
+      "description": "Vergleich gegen manuell bereinigte GT-Datei (Precision, Recall, F1)",
+      "next": [],
+      "status": "active"
+    }
+  ],
+  "monitoring": {
+    "healthCheck": "SELECT * FROM workflow_runs WHERE workflow = 'gv-spedition' ORDER BY started_at DESC LIMIT 5",
+    "metrics": {
+      "precision": 34.1,
+      "recall": 98.8,
+      "f1_score": 50.6,
+      "false_positives": 153,
+      "version": "v2-smart-merge"
+    },
+    "lastRun": "2026-03-24T07:31:24Z"
+  }
+}
