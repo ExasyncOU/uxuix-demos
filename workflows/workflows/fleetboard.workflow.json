@@ -33,7 +33,7 @@
         "vmPath": "C:\\FleetboardScript\\config.json"
       }
     },
-    "currentSHA": "0d1e65e9378026d9dd671b8c1093e0bbef32b044"
+    "currentSHA": "109d4604b9ea8fe32ecb83db314e5b93b6542392"
   },
   "schedule": {
     "cron": "*/5 * * * *",
