@@ -13,8 +13,8 @@
     "gistId": "771c490a2fde04847cacdb439a227966",
     "gistUrl": "https://gist.github.com/ExasyncOU/771c490a2fde04847cacdb439a227966",
     "repoBackup": "fleetboard2/",
-    "currentSHA": "cf2a5fc2b718bf869ac846a24c817ab01b9a0dbf",
-    "lastSynced": "2026-03-18T15:54:44.290Z",
+    "currentSHA": "8e83d44fadeee1190fb303a777ae30d288ede764",
+    "lastSynced": "2026-03-27T08:10:00.000Z",
     "files": {
       "check-refs.mjs": {
         "lines": 112,
@@ -37,7 +37,7 @@
         "logging": true
       },
       "match-tours.mjs": {
-        "lines": 475,
+        "lines": 515,
         "module": "fleetboard2/match-tours",
         "logging": true
       },
