@@ -1,1 +1,1652 @@
-PLACEHOLDER
+{
+  "$schema": "module-registry-v1",
+  "version": "1.0.0",
+  "generatedAt": "2026-03-26T11:25:00.000Z",
+  "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
+  "modules": {
+    "core/metrics-collector": {
+      "id": "core/metrics-collector",
+      "name": "Metrics Collector",
+      "version": "1.3.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Sammelt Laufzeit-Metriken und schreibt sie in die agent_metrics Tabelle. Wird von allen Workflows am Ende aufgerufen.",
+      "usedBy": [
+        "nacke",
+        "maut",
+        "fleetboard",
+        "linkedin"
+      ],
+      "dependencies": [
+        "supabase-py"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-08"
+      },
+      "code": "import time\nfrom datetime import datetime, timezone\nfrom supabase import Client\n\ndef collect_metrics(sb: Client, workflow_id: str, results: list, start_time: float):\n    \"\"\"Metriken sammeln und in Supabase speichern.\n    \n    Args:\n        sb: Supabase Client-Instanz\n        workflow_id: z.B. 'nacke', 'maut', 'fleetboard'\n        results: Liste der Ergebnis-Dicts aus dem Workflow\n        start_time: Zeitstempel vom Start (time.time())\n    \"\"\"\n    # Laufzeit berechnen\n    duration_sec = round(time.time() - start_time, 2)\n    \n    # Erfolge und Fehler zaehlen\n    success_count = sum(1 for r in results if r.get('status') == 'ok')\n    error_count = sum(1 for r in results if r.get('status') == 'error')\n    \n    # Metrik-Datensatz zusammenbauen\n    metric = {\n        'workflow_id': workflow_id,\n        'run_date': datetime.now(timezone.utc).isoformat(),\n        'duration_seconds': duration_sec,\n        'total_items': len(results),\n        'success_count': success_count,\n        'error_count': error_count,\n        'success_rate': round(success_count / max(len(results), 1) * 100, 1)\n    }\n    \n    # In Supabase einfuegen\n    sb.table('agent_metrics').insert(metric).execute()\n    \n    return metric"
+    },
+    "core/error-handler": {
+      "id": "core/error-handler",
+      "name": "Error Handler",
+      "version": "1.1.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Zentraler Error Handler mit Logging, Email-Eskalation und Retry-Logik. Faengt Exceptions ab und entscheidet ob Retry, Skip oder Abbruch.",
+      "usedBy": [
+        "nacke",
+        "maut"
+      ],
+      "dependencies": [
+        "supabase-py",
+        "smtplib"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-08"
+      },
+      "code": "import traceback\nimport logging\nfrom datetime import datetime, timezone\n\nlogger = logging.getLogger('exasync')\n\nclass WorkflowError(Exception):\n    \"\"\"Basis-Fehler fuer alle Workflow-Probleme.\"\"\"\n    def __init__(self, message, step_id=None, recoverable=True):\n        super().__init__(message)\n        self.step_id = step_id\n        self.recoverable = recoverable\n\ndef handle_error(error: Exception, workflow_id: str, step_id: str, sb=None):\n    \"\"\"Fehler behandeln: loggen, speichern, ggf. eskalieren.\n    \n    Strategie:\n    - recoverable=True  -> loggen + weitermachen (skip item)\n    - recoverable=False -> loggen + Workflow abbrechen + Email an Bodo\n    \"\"\"\n    is_recoverable = getattr(error, 'recoverable', True)\n    \n    error_record = {\n        'workflow_id': workflow_id,\n        'step_id': step_id,\n        'error_type': type(error).__name__,\n        'error_message': str(error),\n        'traceback': traceback.format_exc(),\n        'recoverable': is_recoverable,\n        'timestamp': datetime.now(timezone.utc).isoformat()\n    }\n    \n    logger.error(f'[{workflow_id}/{step_id}] {error}', exc_info=True)\n    \n    # In DB speichern wenn Supabase verfuegbar\n    if sb:\n        sb.table('agent_errors').insert(error_record).execute()\n    \n    if not is_recoverable:\n        raise WorkflowError(f'Fataler Fehler in {step_id}: {error}', step_id, False)"
+    },
+    "nacke/orchestrator": {
+      "id": "nacke/orchestrator",
+      "name": "NackeScript Orchestrator",
+      "version": "5.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Pipeline-Controller: 8 Schritte (Config, Masterdaten, Export, Picklists, Overconfirmation, Amend, Report, Print). Retry-Logik, Fehlerbehandlung, Metriken-Sammlung.",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config",
+        "nacke/master-data",
+        "nacke/idis-browser",
+        "nacke/picklist-generator",
+        "nacke/picklist-pdf",
+        "nacke/overconfirmation",
+        "nacke/daily-report",
+        "nacke/printer"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "orchestrator.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 1079,
+        "size": 44104
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
+      "frozenAt": "2026-03-11T08:00:00Z"
+    },
+    "nacke/idis-browser": {
+      "id": "nacke/idis-browser",
+      "name": "IDIS Browser Automation",
+      "version": "5.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Playwright CDP Browser-Automation fuer IDIS: Login, Export-Seite navigieren, Auftraege exportieren, Amendments durchfuehren. Frischer Browser pro Land (sequentiell).",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "playwright",
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_browser.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 246,
+        "size": 9664
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
+      "frozenAt": "2026-03-11T08:00:00Z"
+    },
+    "nacke/picklist-generator": {
+      "id": "nacke/picklist-generator",
+      "name": "Picklist Generator (Raussuchlisten)",
+      "version": "7.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Generiert Excel-Raussuchlisten aus IDIS-Export. v7: PDF-Rendering ausgelagert nach picklist_pdf.py.",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "openpyxl",
+        "nacke/config",
+        "nacke/master-data",
+        "nacke/picklist-pdf"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "picklist_generator.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 1020,
+        "size": 42500
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-24T06:11:53Z",
+        "checkedBy": "claude-code",
+        "notes": "v7.0.0: PDF-Teil ausgelagert nach picklist_pdf.py, Excel-Logik unveraendert, Import-Wrapper fuer Rueckwaertskompatibilitaet."
+      },
+      "frozenAt": "2026-03-24T06:11:53.000Z",
+      "frozenBy": "workflow-engine",
+      "unfreezeReason": "v7 Split: PDF-Rendering in eigenes Modul ausgelagert",
+      "unfrozenAt": "2026-03-24T06:00:00.000Z",
+      "changelog": [
+        {
+          "version": "7.0.0",
+          "date": "2026-03-24",
+          "changes": "PDF-Rendering in picklist_pdf.py ausgelagert. fpdf-Import entfernt, picklist_pdf.export_pdf importiert. _export_pdf() ist jetzt ein 3-Zeilen-Wrapper."
+        },
+        {
+          "version": "6.1.0",
+          "date": "2026-03-12",
+          "changes": "PDF-Fix: Header ueber volle Breite (merge_cells), Footer mit Dateiname + Seitenzahlen, Summenblock+Groessenleiste immer zusammen auf einer Seite (row_breaks)"
+        }
+      ],
+      "fileHash": null
+    },
+    "nacke/picklist-pdf": {
+      "id": "nacke/picklist-pdf",
+      "name": "Picklist PDF Renderer",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Rendert fertige xlsx-Picklisten als A4-Landscape-PDF. Ausgelagert aus picklist_generator.py v7.",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "fpdf",
+        "openpyxl"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "picklist_pdf.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 212,
+        "size": 7800
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-24T06:11:53Z",
+        "checkedBy": "claude-code",
+        "notes": "v1.0.0: Exakter Code aus picklist_generator.py _export_pdf() extrahiert. Keine Logik-Aenderungen."
+      },
+      "frozenAt": "2026-03-24T06:11:53.000Z",
+      "frozenBy": "workflow-engine",
+      "changelog": [
+        {
+          "version": "1.0.0",
+          "date": "2026-03-24",
+          "changes": "Initiale Version: PDF-Rendering aus picklist_generator.py ausgelagert. export_pdf() als Top-Level-Funktion."
+        }
+      ],
+      "fileHash": null
+    },
+    "nacke/master-data": {
+      "id": "nacke/master-data",
+      "name": "Masterdatei Loader",
+      "version": "5.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Laedt die Masterdatei (K:\\Masterdatei Orders.xlsx) mit Kunden-Zuordnungen, Artikel-Mapping und Depot-Konfiguration fuer die Picklist-Generierung.",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "openpyxl",
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "master_data.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 359,
+        "size": 12571
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
+      "frozenAt": "2026-03-11T08:00:00Z"
+    },
+    "nacke/overconfirmation": {
+      "id": "nacke/overconfirmation",
+      "name": "Overconfirmation Calculator",
+      "version": "5.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Berechnet Overconfirmation-Mengen: Rundet Bestellmengen auf Bundle-Size auf (Col K). Faktor IMMER 1 (PCS=1, PPP=1). Nur Col K als Bundle-Quelle.",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "overconfirmation.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 214,
+        "size": 7854
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
+      "frozenAt": "2026-03-11T08:00:00Z"
+    },
+    "nacke/daily-report": {
+      "id": "nacke/daily-report",
+      "name": "Daily Report Generator",
+      "version": "5.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Generiert JSON- und HTML-Tagesreports mit Zusammenfassung: Auftraege, Amendments, Fehler, Laufzeit. Versand via Edge Function nacke-report (bot@uxuix.de).",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "daily_report.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 276,
+        "size": 10857
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
+      "frozenAt": "2026-03-11T08:00:00Z"
+    },
+    "nacke/printer": {
+      "id": "nacke/printer",
+      "name": "Windows Printer Integration",
+      "version": "5.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Windows-Drucker-Integration: Druckt generierte Picklists auf dem konfigurierten Netzwerkdrucker der Nacke-VM.",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [
+        "nacke/config"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "printer.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 251,
+        "size": 9532
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
+      "frozenAt": "2026-03-11T08:00:00Z"
+    },
+    "nacke/config": {
+      "id": "nacke/config",
+      "name": "Pipeline Configuration v6.0",
+      "version": "6.0.0",
+      "status": "frozen",
+      "language": "json",
+      "description": "Zentrale Pipeline-Konfiguration: IDIS-URLs, Laender, Drucker, Pfade, Feature-Flags, Schedule. Single source of truth fuer alle Nacke-Module.",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "config.json",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 71,
+        "size": 2146
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-11T08:00:00Z"
+      },
+      "frozenAt": "2026-03-11T08:00:00Z"
+    },
+    "maut/date-calculator": {
+      "id": "maut/date-calculator",
+      "name": "Maut Zeitraum-Rechner",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Berechnet den Abfrage-Zeitraum fuer die Mautdaten. Standard: heute -9 bis heute -3 Tage. So werden nur vollstaendig abgerechnete Tage abgefragt.",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
+      "code": "from datetime import datetime, timedelta\n\ndef calculate_date_range(start_offset: int = -9, end_offset: int = -3) -> dict:\n    \"\"\"Zeitraum fuer Mautabfrage berechnen.\n    \n    Offsets sind negative Tage ab heute:\n    - start_offset = -9 -> vor 9 Tagen\n    - end_offset = -3   -> vor 3 Tagen\n    \n    Wir nehmen NICHT die letzten 2 Tage, weil Shell Fleet Hub\n    die Daten erst mit 2-3 Tagen Verzoegerung bereitstellt.\n    \n    Returns:\n        Dict mit 'start' und 'end' als formatierte Strings (DD.MM.YYYY)\n    \"\"\"\n    today = datetime.now()\n    \n    date_start = today + timedelta(days=start_offset)\n    date_end = today + timedelta(days=end_offset)\n    \n    # Shell Fleet Hub erwartet deutsches Datumsformat\n    return {\n        'start': date_start.strftime('%d.%m.%Y'),\n        'end': date_end.strftime('%d.%m.%Y'),\n        'start_iso': date_start.strftime('%Y-%m-%d'),\n        'end_iso': date_end.strftime('%Y-%m-%d')\n    }"
+    },
+    "maut/shell-login": {
+      "id": "maut/shell-login",
+      "name": "Shell Fleet Hub Login",
+      "version": "1.2.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Login bei Shell Fleet Hub mit Email, Passwort und TOTP (2-Faktor). TOTP wird dynamisch aus dem Secret generiert, NIEMALS gecacht.",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "playwright",
+        "pyotp"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
+      "code": "import pyotp\nfrom playwright.sync_api import sync_playwright\nimport logging\n\nlogger = logging.getLogger('maut')\n\ndef shell_login(email: str, password: str, totp_secret: str) -> dict:\n    \"\"\"Login bei Shell Fleet Hub mit 2-Faktor-Authentifizierung.\n    \n    Schritte:\n    1. Email eingeben + Next\n    2. Passwort eingeben + Submit\n    3. TOTP-Code dynamisch generieren + eingeben\n    \n    WICHTIG: TOTP wird JEDES MAL frisch generiert!\n    Niemals den Code cachen - er ist nur 30 Sekunden gueltig.\n    \"\"\"\n    pw = sync_playwright().start()\n    browser = pw.chromium.launch(headless=True)\n    page = browser.new_page()\n    \n    page.goto('https://shell-fleet-hub.shell.com/login')\n    logger.info('Shell Fleet Hub Login-Seite geladen')\n    \n    # Schritt 1: Email\n    page.fill('input[type=\"email\"]', email)\n    page.click('button:has-text(\"Next\")')\n    page.wait_for_timeout(2000)\n    \n    # Schritt 2: Passwort\n    page.fill('input[type=\"password\"]', password)\n    page.click('button:has-text(\"Sign in\")')\n    page.wait_for_timeout(3000)\n    \n    # Schritt 3: TOTP - frisch generieren!\n    totp = pyotp.TOTP(totp_secret)\n    code = totp.now()  # 6-stelliger Code, 30 Sek gueltig\n    page.fill('input[name=\"otp\"]', code)\n    page.click('button:has-text(\"Verify\")')\n    \n    # Warten auf Dashboard\n    page.wait_for_selector('.dashboard', timeout=15000)\n    logger.info('Shell Fleet Hub Login erfolgreich')\n    \n    return {'browser': browser, 'page': page, 'playwright': pw}"
+    },
+    "maut/select-account": {
+      "id": "maut/select-account",
+      "name": "Maut Account-Auswahl",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Waehlt den richtigen Account im Shell Fleet Hub aus. Aktuell ist nur Account (M) DE26731323 aktiv. Der Selektor klickt auf den Account-Dropdown und waehlt den richtigen.",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
+      "code": "import logging\n\nlogger = logging.getLogger('maut')\n\n# Der einzige aktive Account\nACTIVE_ACCOUNT = 'DE26731323'\nACCOUNT_LABEL = 'Account (M)'\n\ndef select_account(session: dict) -> dict:\n    \"\"\"Den richtigen Account im Shell Fleet Hub auswaehlen.\n    \n    Shell Fleet Hub zeigt oben rechts einen Account-Dropdown.\n    Wir muessen Account (M) DE26731323 auswaehlen.\n    \n    ACHTUNG: Es gibt mehrere Accounts. NUR DE26731323 ist aktiv!\n    \"\"\"\n    page = session['page']\n    \n    # Account-Dropdown oeffnen\n    page.click('.account-selector')\n    page.wait_for_timeout(1000)\n    \n    # Den richtigen Account per Text finden und klicken\n    account_option = page.query_selector(f'text={ACTIVE_ACCOUNT}')\n    \n    if not account_option:\n        raise RuntimeError(f'Account {ACTIVE_ACCOUNT} nicht im Dropdown gefunden!')\n    \n    account_option.click()\n    page.wait_for_timeout(2000)\n    \n    # Verifizieren dass der richtige Account aktiv ist\n    selected = page.text_content('.account-selector .selected')\n    if ACTIVE_ACCOUNT not in selected:\n        raise RuntimeError(f'Falscher Account ausgewaehlt: {selected}')\n    \n    logger.info(f'Account {ACCOUNT_LABEL} ({ACTIVE_ACCOUNT}) ausgewaehlt')\n    session['account'] = ACTIVE_ACCOUNT\n    return session"
+    },
+    "maut/download-data": {
+      "id": "maut/download-data",
+      "name": "Mautdaten Download",
+      "version": "1.1.0",
+      "status": "draft",
+      "language": "python",
+      "description": "Laedt die Toll4Europe Mautliste als Excel-Datei herunter. Setzt den Datumsfilter, wartet auf den Export, und speichert die Datei lokal. DRAFT: Download-Selektor muss nach Shell-Update angepasst werden.",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": false,
+        "score": "9/11",
+        "lastCheck": "2026-03-09",
+        "failures": [
+          "G3: Testdaten-Snapshot fehlt noch",
+          "G5: config_version nicht genutzt"
+        ]
+      },
+      "code": "import os\nimport logging\n\nlogger = logging.getLogger('maut')\n\ndef download_maut_data(session: dict, date_start: str, date_end: str) -> str:\n    \"\"\"Mautdaten-Excel aus Shell Fleet Hub herunterladen.\n    \n    Schritte:\n    1. Zum Toll4Europe-Bereich navigieren\n    2. Datumsfilter setzen (DD.MM.YYYY Format)\n    3. Export als Excel anstossen\n    4. Download abwarten und Pfad zurueckgeben\n    \n    TODO: Download-Selektor nach Shell-Update pruefen!\n    \"\"\"\n    page = session['page']\n    download_dir = os.path.join(os.environ.get('TEMP', '/tmp'), 'maut_downloads')\n    os.makedirs(download_dir, exist_ok=True)\n    \n    # Zum Maut-Bereich navigieren\n    page.click('a[href*=\"toll\"]')\n    page.wait_for_selector('.toll-data-table', timeout=15000)\n    \n    # Datumsfilter setzen\n    page.fill('#date-from', date_start)\n    page.fill('#date-to', date_end)\n    page.click('button:has-text(\"Apply\")')\n    page.wait_for_timeout(3000)\n    \n    # Excel-Export starten und Download abfangen\n    with page.expect_download() as download_info:\n        page.click('button:has-text(\"Export\")')  # TODO: Selektor pruefen!\n    \n    download = download_info.value\n    filepath = os.path.join(download_dir, download.suggested_filename)\n    download.save_as(filepath)\n    \n    logger.info(f'Mautdaten heruntergeladen: {filepath}')\n    return filepath"
+    },
+    "maut/calculate-tolls": {
+      "id": "maut/calculate-tolls",
+      "name": "Maut-Berechnung",
+      "version": "1.2.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Liest die heruntergeladene Excel-Datei, berechnet Maut pro Kilometer fuer jedes Fahrzeug, und erkennt Anomalien (z.B. ungewoehnlich hohe Maut/km). Nutzt openpyxl fuer Excel-Parsing.",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "openpyxl"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
+      "code": "import openpyxl\nimport logging\n\nlogger = logging.getLogger('maut')\n\n# Schwellwert fuer Anomalie-Erkennung: ueber 0.25 EUR/km ist verdaechtig\nANOMALY_THRESHOLD_EUR_PER_KM = 0.25\n\ndef calculate_tolls(excel_path: str) -> tuple:\n    \"\"\"Maut/km fuer jedes Fahrzeug berechnen.\n    \n    Die Excel-Datei hat Spalten:\n    A=Kennzeichen, B=Strecke, C=km, D=Maut(EUR), E=Datum\n    \n    Returns:\n        Tuple (calculations, anomalies)\n        - calculations: Liste aller Berechnungen\n        - anomalies: Liste verdaechtiger Eintraege\n    \"\"\"\n    wb = openpyxl.load_workbook(excel_path, read_only=True)\n    ws = wb.active\n    \n    calculations = []\n    anomalies = []\n    \n    # Erste Zeile ist Header, ab Zeile 2 kommen die Daten\n    for row in ws.iter_rows(min_row=2, values_only=True):\n        plate, route, km, toll_eur, date = row[0], row[1], row[2], row[3], row[4]\n        \n        if not km or km == 0:\n            continue  # Division durch 0 vermeiden\n        \n        toll_per_km = round(toll_eur / km, 4)\n        \n        entry = {\n            'plate': plate, 'route': route,\n            'km': km, 'toll_eur': toll_eur,\n            'toll_per_km': toll_per_km, 'date': str(date)\n        }\n        calculations.append(entry)\n        \n        # Anomalie erkennen\n        if toll_per_km > ANOMALY_THRESHOLD_EUR_PER_KM:\n            entry['anomaly_reason'] = f'Maut/km {toll_per_km} > {ANOMALY_THRESHOLD_EUR_PER_KM}'\n            anomalies.append(entry)\n    \n    logger.info(f'{len(calculations)} Eintraege berechnet, {len(anomalies)} Anomalien')\n    return calculations, anomalies"
+    },
+    "maut/upload-results": {
+      "id": "maut/upload-results",
+      "name": "Maut Ergebnis Upload",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Schreibt die berechneten Mautdaten nach Supabase in die maut_calculations Tabelle. Nutzt Upsert um bei erneutem Lauf keine Duplikate zu erzeugen.",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "supabase-py"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
+      "code": "from supabase import Client\nimport logging\n\nlogger = logging.getLogger('maut')\n\ndef upload_results(sb: Client, calculations: list) -> int:\n    \"\"\"Berechnungsergebnisse in Supabase speichern.\n    \n    Nutzt UPSERT statt INSERT:\n    - Wenn ein Eintrag (plate + date) schon existiert, wird er aktualisiert\n    - Wenn nicht, wird er neu eingefuegt\n    - So koennen wir den Job gefahrlos mehrmals laufen lassen\n    \"\"\"\n    if not calculations:\n        logger.warning('Keine Berechnungen zum Hochladen')\n        return 0\n    \n    # Supabase Upsert mit Conflict-Spalten\n    # on_conflict='plate,date' -> wenn plate+date schon existiert, updaten\n    result = sb.table('maut_calculations') \\\n        .upsert(calculations, on_conflict='plate,date') \\\n        .execute()\n    \n    count = len(result.data)\n    logger.info(f'{count} Maut-Berechnungen in Supabase gespeichert')\n    return count"
+    },
+    "maut/send-report": {
+      "id": "maut/send-report",
+      "name": "Maut Report Versand",
+      "version": "1.1.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Generiert einen Maut-Report und sendet ihn per Email. Zeigt Zusammenfassung, Anomalien und eine Tabelle aller Berechnungen. Nutzt das shared nacke/send-email Modul fuer den SMTP-Versand.",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [
+        "smtplib"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-05"
+      },
+      "code": "import logging\n\nlogger = logging.getLogger('maut')\n\ndef build_maut_report(calculations: list, anomalies: list) -> str:\n    \"\"\"Maut-Report als HTML generieren.\n    \n    Zeigt:\n    - Zusammenfassung (Gesamt-km, Gesamt-Maut, Durchschnitt EUR/km)\n    - Anomalien-Warnung (falls vorhanden)\n    - Tabelle aller Eintraege\n    \"\"\"\n    total_km = sum(c['km'] for c in calculations)\n    total_eur = sum(c['toll_eur'] for c in calculations)\n    avg_per_km = round(total_eur / max(total_km, 1), 4)\n    \n    # Tabellen-Zeilen generieren\n    rows = ''\n    for c in calculations:\n        color = '#e74c3c' if c in anomalies else '#333'\n        rows += f\"\"\"<tr style=\"color:{color}\">\n          <td>{c['plate']}</td><td>{c['route']}</td>\n          <td>{c['km']}</td><td>{c['toll_eur']:.2f}</td>\n          <td>{c['toll_per_km']:.4f}</td><td>{c['date']}</td>\n        </tr>\"\"\"\n    \n    anomaly_warning = ''\n    if anomalies:\n        anomaly_warning = f'<p style=\"color:#e74c3c;\"><strong>{len(anomalies)} Anomalien erkannt!</strong></p>'\n    \n    return f\"\"\"\n    <html><body style=\"font-family:Arial;\">\n      <h2>Mautberechnung Wochenreport</h2>\n      <p>Gesamt: {total_km:.0f} km | {total_eur:.2f} EUR | {avg_per_km:.4f} EUR/km</p>\n      {anomaly_warning}\n      <table border=\"1\" cellpadding=\"4\">\n        <tr><th>KZ</th><th>Strecke</th><th>km</th><th>Maut</th><th>EUR/km</th><th>Datum</th></tr>\n        {rows}\n      </table>\n    </body></html>\"\"\""
+    },
+    "linkedin/load-accounts": {
+      "id": "linkedin/load-accounts",
+      "name": "LinkedIn Accounts Laden",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Laedt aktive LinkedIn-Accounts aus der Supabase linkedin_accounts Tabelle. Filtert nach Status 'active' und prueft ob Cookies vorhanden sind.",
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "@supabase/supabase-js"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-06"
+      },
+      "code": "import { createClient } from '@supabase/supabase-js';\n\n/**\n * Aktive LinkedIn-Accounts aus Supabase laden.\n * \n * Jeder Account hat:\n * - id, email, display_name\n * - cookies_json: gespeicherte Browser-Cookies (fuer Session-Wiederherstellung)\n * - status: 'active', 'cooldown', 'banned'\n * - last_session_at: wann die letzte Session war\n */\nexport async function loadAccounts(sb) {\n  // Nur aktive Accounts laden (nicht gebannt oder im Cooldown)\n  const { data, error } = await sb\n    .from('linkedin_accounts')\n    .select('id, email, display_name, cookies_json, last_session_at')\n    .eq('status', 'active')\n    .order('last_session_at', { ascending: true }); // Aelteste Session zuerst\n  \n  if (error) throw new Error(`Accounts laden fehlgeschlagen: ${error.message}`);\n  \n  // Accounts ohne Cookies rausfiltern (brauchen manuellen Login)\n  const valid = data.filter(a => a.cookies_json && a.cookies_json.length > 10);\n  \n  console.log(`${valid.length}/${data.length} Accounts mit gueltigem Cookie`);\n  return valid;\n}"
+    },
+    "linkedin/account-guard": {
+      "id": "linkedin/account-guard",
+      "name": "LinkedIn Account Guard",
+      "version": "2.1.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Prueft Rate Limits und Ban-Risiko bevor eine Session gestartet wird. 7-Tage Rolling Window, Tages-Limit, Stunden-Limit. Verhindert Account-Sperrungen.",
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "@supabase/supabase-js"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-06"
+      },
+      "code": "/**\n * Rate Limits pruefen und den besten Account fuer diese Session waehlen.\n * \n * Limits:\n * - Max 100 Connects in 7 Tagen (Rolling Window)\n * - Max 25 Connects pro Tag\n * - Max 8 Connects pro Stunde\n * - Min 30 Minuten zwischen Sessions\n * \n * Bei Ueberschreitung: Account wird auf 'cooldown' gesetzt.\n */\nexport async function checkLimits(sb, accounts) {\n  const now = new Date();\n  const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();\n  const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();\n  const oneHourAgo = new Date(now - 60 * 60 * 1000).toISOString();\n  \n  for (const account of accounts) {\n    // Connects der letzten 7 Tage zaehlen\n    const { count: week } = await sb\n      .from('linkedin_activity')\n      .select('*', { count: 'exact', head: true })\n      .eq('account_id', account.id)\n      .eq('action_type', 'connect')\n      .gte('created_at', sevenDaysAgo);\n    \n    // Connects heute zaehlen\n    const { count: today } = await sb\n      .from('linkedin_activity')\n      .select('*', { count: 'exact', head: true })\n      .eq('account_id', account.id)\n      .eq('action_type', 'connect')\n      .gte('created_at', oneDayAgo);\n    \n    // Pruefen ob alle Limits OK sind\n    if (week < 100 && today < 25) {\n      console.log(`Account ${account.display_name}: ${week}/100 Woche, ${today}/25 Tag -> OK`);\n      return { ...account, weekCount: week, dayCount: today };\n    }\n    \n    console.log(`Account ${account.display_name}: Limit erreicht (${week}/100)`);\n  }\n  \n  throw new Error('Alle Accounts am Limit - kein Connect moeglich');\n}"
+    },
+    "linkedin/start-session": {
+      "id": "linkedin/start-session",
+      "name": "LinkedIn Session Starten",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Startet eine humanisierte Playwright-Session mit gespeicherten Cookies. Simuliert menschliches Verhalten: zufaellige Viewport-Groesse, User-Agent, Mausbewegungen.",
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-06"
+      },
+      "code": "import { chromium } from 'playwright';\n\n/**\n * Humanisierte LinkedIn-Session starten.\n * \n * Wichtig fuer Ban-Vermeidung:\n * - Zufaellige Viewport-Groesse (nicht immer 1920x1080)\n * - Gespeicherte Cookies laden (kein Login-Formular)\n * - Gauss-verteilte Delays zwischen Aktionen\n */\nexport async function startSession(account) {\n  // Zufaellige, aber realistische Viewport-Groesse\n  const width = 1280 + Math.floor(Math.random() * 640);  // 1280-1920\n  const height = 720 + Math.floor(Math.random() * 360);  // 720-1080\n  \n  const browser = await chromium.launch({ headless: true });\n  const context = await browser.newContext({\n    viewport: { width, height },\n    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',\n    locale: 'de-DE',\n    timezoneId: 'Europe/Berlin'\n  });\n  \n  // Gespeicherte Cookies laden (vermeidet Login-Seite)\n  const cookies = JSON.parse(account.cookies_json);\n  await context.addCookies(cookies);\n  \n  const page = await context.newPage();\n  await page.goto('https://www.linkedin.com/feed/', { waitUntil: 'domcontentloaded' });\n  \n  // Pruefen ob Login noch gueltig ist\n  const isLoggedIn = await page.$('.feed-identity-module');\n  if (!isLoggedIn) {\n    throw new Error(`Cookies abgelaufen fuer Account ${account.display_name}`);\n  }\n  \n  console.log(`Session gestartet: ${account.display_name} (${width}x${height})`);\n  return { browser, context, page, account };\n}"
+    },
+    "linkedin/search-targets": {
+      "id": "linkedin/search-targets",
+      "name": "LinkedIn Zielsuche",
+      "version": "1.3.0",
+      "status": "draft",
+      "language": "javascript",
+      "description": "Sucht potenzielle Kontakte auf LinkedIn mit Keywords und Geo-Filter. DRAFT: Geo-Filter-Selektor muss nach LinkedIn UI-Update angepasst werden.",
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": false,
+        "score": "10/11",
+        "lastCheck": "2026-03-09",
+        "failures": [
+          "G3: Testdaten-Snapshot fehlt"
+        ]
+      },
+      "code": "/**\n * Potenzielle Kontakte auf LinkedIn suchen.\n * \n * Nutzt die LinkedIn-Suche mit:\n * - Keywords (z.B. 'CEO', 'CTO')\n * - Geo-Filter (DACH, Nordics, etc.)\n * - 2nd-Degree Filter (nur Kontakte 2. Grades)\n * \n * TODO: Geo-Filter Selektor nach LinkedIn UI-Update pruefen!\n */\nexport async function searchTargets(session, keywords, targetGeo) {\n  const { page } = session;\n  const targets = [];\n  \n  for (const keyword of keywords) {\n    // LinkedIn-Suche aufrufen\n    const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(keyword)}&network=%5B%22S%22%5D`;\n    await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });\n    \n    // Humanisierte Wartezeit (2-4 Sekunden, Gauss-verteilt)\n    await page.waitForTimeout(2000 + Math.random() * 2000);\n    \n    // Ergebnis-Cards sammeln\n    const cards = await page.$$('.entity-result__item');\n    \n    for (const card of cards.slice(0, 10)) {\n      const name = await card.$eval('.entity-result__title-text a', el => el.textContent.trim()).catch(() => null);\n      const title = await card.$eval('.entity-result__primary-subtitle', el => el.textContent.trim()).catch(() => null);\n      const profileUrl = await card.$eval('.entity-result__title-text a', el => el.href).catch(() => null);\n      \n      if (name && profileUrl) {\n        targets.push({ name, title, profileUrl, keyword });\n      }\n    }\n    \n    console.log(`Keyword '${keyword}': ${cards.length} Ergebnisse gefunden`);\n  }\n  \n  return targets;\n}"
+    },
+    "linkedin/send-connects": {
+      "id": "linkedin/send-connects",
+      "name": "LinkedIn Connect Senden",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Sendet Verbindungsanfragen mit humanisierten Delays (Gauss-Verteilung). Erkennt Ban-Indikatoren und bricht bei Verdacht sofort ab.",
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-06"
+      },
+      "code": "/**\n * Verbindungsanfragen senden mit menschenaehnlichem Verhalten.\n * \n * Sicherheits-Features:\n * - Gauss-verteilte Delays (nicht gleichmaessig!)\n * - Ban-Erkennung: \"Restrict\" oder Captcha -> sofort stoppen\n * - 12% Browse-Only Wahrscheinlichkeit (Session ohne Connects)\n * - Max Connects pro Run begrenzt\n */\nfunction gaussDelay(minMs, maxMs) {\n  // Box-Muller Transform fuer Gauss-Verteilung\n  const u1 = Math.random();\n  const u2 = Math.random();\n  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);\n  const mean = (minMs + maxMs) / 2;\n  const stddev = (maxMs - minMs) / 6;\n  return Math.max(minMs, Math.min(maxMs, Math.round(mean + z * stddev)));\n}\n\nexport async function sendConnects(session, targets, maxPerRun = 8, minDelay = 3000) {\n  const { page } = session;\n  const results = [];\n  \n  // 12% Chance auf Browse-Only Session\n  if (Math.random() < 0.12) {\n    console.log('Browse-Only Session (kein Connect)');\n    return [{ action: 'browse-only', status: 'ok' }];\n  }\n  \n  const toSend = targets.slice(0, maxPerRun);\n  \n  for (const target of toSend) {\n    await page.goto(target.profileUrl, { waitUntil: 'domcontentloaded' });\n    \n    // Ban-Check: Captcha oder Restriction-Seite?\n    const restricted = await page.$('text=restricted').catch(() => null);\n    if (restricted) {\n      console.error('BAN VERDACHT! Session wird sofort beendet.');\n      break;\n    }\n    \n    const connectBtn = await page.$('button:has-text(\"Connect\")');\n    if (connectBtn) {\n      await connectBtn.click();\n      await page.click('button:has-text(\"Send\")');\n      results.push({ name: target.name, action: 'connect', status: 'ok' });\n    }\n    \n    // Humanisierter Delay zwischen Aktionen\n    await page.waitForTimeout(gaussDelay(minDelay, minDelay * 3));\n  }\n  \n  return results;\n}"
+    },
+    "linkedin/log-activity": {
+      "id": "linkedin/log-activity",
+      "name": "LinkedIn Activity Logger",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Loggt alle LinkedIn-Aktionen in die linkedin_activity Tabelle. Wichtig fuer das 7-Tage Rolling Window und Ban-Analyse.",
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "@supabase/supabase-js"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-06"
+      },
+      "code": "/**\n * Alle Aktionen einer Session in Supabase loggen.\n * \n * Jede Aktion wird als einzelne Zeile gespeichert:\n * - account_id: welcher Account\n * - action_type: 'connect', 'browse', 'search'\n * - target_name: Name des Kontakts\n * - created_at: Zeitstempel (automatisch von Supabase)\n * \n * Diese Daten nutzt der Account Guard fuer Rate Limit Checks.\n */\nexport async function logActivity(sb, accountId, results) {\n  if (!results || results.length === 0) return;\n  \n  // Alle Ergebnisse in Activity-Records umwandeln\n  const records = results.map(r => ({\n    account_id: accountId,\n    action_type: r.action || 'unknown',\n    target_name: r.name || null,\n    status: r.status,\n    metadata: JSON.stringify(r)\n  }));\n  \n  // Batch-Insert in Supabase\n  const { data, error } = await sb\n    .from('linkedin_activity')\n    .insert(records);\n  \n  if (error) {\n    console.error(`Activity-Log Fehler: ${error.message}`);\n    throw error;\n  }\n  \n  console.log(`${records.length} Aktionen geloggt fuer Account ${accountId}`);\n  return data;\n}"
+    },
+    "fleetboard/scheduler": {
+      "id": "fleetboard/scheduler",
+      "name": "Fleetboard Scheduler / Orchestrator",
+      "version": "1.8.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "run_scheduler.ps1: Orchestriert den gesamten Fleetboard-Lauf (Fetch+Match+Report). Lock-Management, Timeout-Kontrolle, workflow_runs INSERT am Ende.",
+      "usedBy": [
+        "fleetboard"
+      ],
+      "dependencies": [
+        "fleetboard/imap-fetch",
+        "fleetboard/matcher",
+        "fleetboard/send-report"
+      ],
+      "source": {
+        "type": "vm-only",
+        "vmPath": "C:\\FleetboardScript\\run_scheduler.ps1",
+        "vm": "UXUIX (157.180.78.163)",
+        "note": "Nur auf VM vorhanden, nicht im Gist. Muss in Gist hochgeladen werden fuer Live-View."
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-10"
+      },
+      "frozenAt": "2026-03-10T12:00:00Z"
+    },
+    "fleetboard/imap-fetch": {
+      "id": "fleetboard/imap-fetch",
+      "name": "Fleetboard IMAP Fetch",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "fetch_tours_email.ps1: IMAP-Fetch von automation@uxuix.de (Kasserver, TLS 1.2, Cert-Bypass). Extrahiert Tourenabfrage-CSV aus Email-Anhang. Vault-Support mit .env Fallback.",
+      "usedBy": [
+        "fleetboard"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "vm-only",
+        "vmPath": "C:\\FleetboardScript\\fetch_tours_email.ps1",
+        "vm": "UXUIX (157.180.78.163)",
+        "note": "Nur auf VM vorhanden, nicht im Gist. Muss in Gist hochgeladen werden fuer Live-View."
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-10"
+      },
+      "frozenAt": "2026-03-10T12:00:00Z"
+    },
+    "fleetboard/matcher": {
+      "id": "fleetboard/matcher",
+      "name": "Fleetboard GPS Matcher",
+      "version": "1.8.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "FleetboardMatcher_current.ps1 v1.8: CSV parsen, GPS-Traces via SOAP API sammeln (1h-Fenster), in fleetboard_traces akkumulieren, Bounding-Box + Distanz-Fallback (15km) Matching, GVLOGMG 3-fach Validierung, Ergebnisse nach fleetboard_arrivals mit RESTORE-Logik.",
+      "usedBy": [
+        "fleetboard"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "beb6e4606c1ea14911d8d71fe1ede38d",
+        "file": "FleetboardMatcher_current.ps1",
+        "sha": "109d4604b9ea8fe32ecb83db314e5b93b6542392",
+        "lines": 1332,
+        "size": 56667
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-10"
+      },
+      "frozenAt": "2026-03-10T12:00:00Z"
+    },
+    "fleetboard/send-report": {
+      "id": "fleetboard/send-report",
+      "name": "Fleetboard Report Versand",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "send_report.ps1 v2.0: HTML-Report via Edge Function fleetboard-email (VM-IP auf DNSBL, kein direkter SMTP). CSV + JSON Output nach C:\\FleetboardScript\\output\\.",
+      "usedBy": [
+        "fleetboard"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "8c3618336714d5aa123794d9200eb77c",
+        "file": "send_report.ps1",
+        "sha": "b1ee3e36f53de6b3981b4fdacb7783fb660a6c2a",
+        "lines": 458,
+        "size": 23168
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-10"
+      },
+      "frozenAt": "2026-03-10T12:00:00Z"
+    },
+    "fleetboard/config": {
+      "id": "fleetboard/config",
+      "name": "Fleetboard Configuration",
+      "version": "1.8.0",
+      "status": "frozen",
+      "language": "json",
+      "description": "config.json: Pfade, Filter, Gebiets-Config, distance_threshold_km (15), schedule.interval_minutes (5), vehicleId-Mapping. Single source of truth auf der VM.",
+      "usedBy": [
+        "fleetboard"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "vm-only",
+        "vmPath": "C:\\FleetboardScript\\config.json",
+        "vm": "UXUIX (157.180.78.163)",
+        "note": "Nur auf VM vorhanden, nicht im Gist. Muss in Gist hochgeladen werden fuer Live-View."
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-03-10"
+      },
+      "frozenAt": "2026-03-10T12:00:00Z"
+    },
+    "fleetboard2/sync-geodata": {
+      "id": "fleetboard2/sync-geodata",
+      "name": "Geodaten Sync",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Laedt Areas (53 Bounding-Boxes) + Mappings (Zustellreferenz -> Gebiet) aus Supabase, cached lokal als JSON. Prueft CSV-Refs und meldet Unbekannte an fleetboard_unknown_refs (Monitor).",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [
+        "@supabase/supabase-js"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
+        "file": "sync-geodata.mjs",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 90,
+        "size": 3021
+      },
+      "frozenAt": "2026-03-12T10:56:43.385Z",
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-12T10:56:43.385Z"
+      }
+    },
+    "fleetboard2/lib": {
+      "id": "fleetboard2/lib",
+      "name": "Shared Library",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Supabase-Client, Cache-Pfade, Cache lesen/schreiben. Wird von allen Fleetboard 2.0 Scripts importiert.",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [
+        "@supabase/supabase-js"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
+        "file": "lib.mjs",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 49,
+        "size": 1756
+      },
+      "frozenAt": "2026-03-12T10:56:43.385Z",
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-12T10:56:43.385Z"
+      }
+    },
+    "fleetboard2/check-refs": {
+      "id": "fleetboard2/check-refs",
+      "name": "Zustellreferenzen pruefen",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Prueft Tourenabfrage-CSV auf unbekannte Zustellreferenzen. Meldet Unbekannte an fleetboard_unknown_refs (Monitor-sichtbar).",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [
+        "fleetboard2/lib"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
+        "file": "check-refs.mjs",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 112,
+        "size": 3788
+      },
+      "frozenAt": "2026-03-12T10:56:43.385Z",
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-12T10:56:43.385Z"
+      }
+    },
+    "fleetboard2/fetch-positions": {
+      "id": "fleetboard2/fetch-positions",
+      "name": "GPS Fetch",
+      "version": "2.0.0",
+      "status": "active",
+      "language": "javascript",
+      "description": "Ruft aktuelle GPS-Position aller Fahrzeuge via Fleetboard SOAP API ab. Speichert in fleetboard_positions (Supabase). Laeuft jede Minute.",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [
+        "fleetboard2/lib"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "c18098d4f23967e0a3b5dbf6ae647536",
+        "file": "fetch-positions.mjs",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 193,
+        "size": 7168
+      }
+    },
+    "nacke/fulltest": {
+      "id": "nacke/fulltest",
+      "name": "Fulltest",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "fulltest.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 501,
+        "size": 21399
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:08:15.527Z"
+    },
+    "nacke/idis-amend": {
+      "id": "nacke/idis-amend",
+      "name": "Idis amend",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_amend.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 296,
+        "size": 10807
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:08:15.527Z"
+    },
+    "nacke/idis-connect": {
+      "id": "nacke/idis-connect",
+      "name": "Idis connect",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_connect.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 176,
+        "size": 6169
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:08:15.528Z"
+    },
+    "nacke/idis-export": {
+      "id": "nacke/idis-export",
+      "name": "Idis export",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_export.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 413,
+        "size": 13992
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:08:15.528Z"
+    },
+    "nacke/idis-login": {
+      "id": "nacke/idis-login",
+      "name": "Idis login",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_login.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 171,
+        "size": 5021
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:08:15.528Z"
+    },
+    "nacke/idis-packaging": {
+      "id": "nacke/idis-packaging",
+      "name": "Idis packaging",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_packaging.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 239,
+        "size": 7744
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:08:15.528Z"
+    },
+    "nacke/idis-save-back": {
+      "id": "nacke/idis-save-back",
+      "name": "Idis save back",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_save_back.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 116,
+        "size": 3688
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:08:15.528Z"
+    },
+    "nacke/idis-selectors": {
+      "id": "nacke/idis-selectors",
+      "name": "Idis selectors",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "idis_selectors.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 147,
+        "size": 5773
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:08:15.528Z"
+    },
+    "nacke/nacke-email": {
+      "id": "nacke/nacke-email",
+      "name": "Nacke email",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "nacke_email.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 220,
+        "size": 8942
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:08:15.528Z"
+    },
+    "nacke/requirements": {
+      "id": "nacke/requirements",
+      "name": "Requirements",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "unknown",
+      "description": "Auto-registriert aus Gist d8fe35c43d948ed0e898e4eb76049934",
+      "usedBy": [
+        "nacke"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "d8fe35c43d948ed0e898e4eb76049934",
+        "file": "requirements.txt",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 7,
+        "size": 86
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:08:15.529Z"
+    },
+    "fleetboard2/fetch-tours": {
+      "id": "fleetboard2/fetch-tours",
+      "name": "Fetch-tours",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Auto-registriert aus Gist 771c490a2fde04847cacdb439a227966",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "771c490a2fde04847cacdb439a227966",
+        "file": "fetch-tours.mjs",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 165,
+        "size": 4914
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.288Z"
+    },
+    "fleetboard2/match-tours": {
+      "id": "fleetboard2/match-tours",
+      "name": "Match-tours",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "javascript",
+      "description": "Auto-registriert aus Gist 771c490a2fde04847cacdb439a227966",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "771c490a2fde04847cacdb439a227966",
+        "file": "match-tours.mjs",
+        "sha": "8e83d44fadeee1190fb303a777ae30d288ede764",
+        "lines": 515,
+        "size": 20242
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.288Z"
+    },
+    "fleetboard2/package": {
+      "id": "fleetboard2/package",
+      "name": "Package",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "json",
+      "description": "Auto-registriert aus Gist 771c490a2fde04847cacdb439a227966",
+      "usedBy": [
+        "fleetboard2"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "771c490a2fde04847cacdb439a227966",
+        "file": "package.json",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 16,
+        "size": 343
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.288Z"
+    },
+    "welzhofer/welzhofer-diagnose": {
+      "id": "welzhofer/welzhofer-diagnose",
+      "name": "Welzhofer-diagnose",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-diagnose.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 227,
+        "size": 8185
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-patch": {
+      "id": "welzhofer/welzhofer-patch",
+      "name": "Welzhofer-patch",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-patch.ps1",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 76,
+        "size": 4373
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-scheduled-task": {
+      "id": "welzhofer/welzhofer-scheduled-task",
+      "name": "Welzhofer-scheduled-task",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-scheduled-task.ps1",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 74,
+        "size": 4095
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-self-update": {
+      "id": "welzhofer/welzhofer-self-update",
+      "name": "Welzhofer-self-update",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "powershell",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-self-update.ps1",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 117,
+        "size": 4748
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-smart-match": {
+      "id": "welzhofer/welzhofer-smart-match",
+      "name": "Welzhofer-smart-match",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-match.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 278,
+        "size": 11144
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-smart-patch": {
+      "id": "welzhofer/welzhofer-smart-patch",
+      "name": "Welzhofer-smart-patch",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-smart-patch.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 339,
+        "size": 14654
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "welzhofer/welzhofer-test-smart": {
+      "id": "welzhofer/welzhofer-test-smart",
+      "name": "Welzhofer-test-smart",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist cc65fdbdb6e48b0c3739aca4826b8474",
+      "usedBy": [
+        "welzhofer"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
+        "file": "welzhofer-test-smart.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9",
+        "lines": 169,
+        "size": 5566
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-03-18T15:54:44.574Z"
+    },
+    "ntl/edatagate-worker": {
+      "id": "ntl/edatagate-worker",
+      "name": "NTL e-datagate XML Worker",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Einzelner Account-Worker: Login → Akzeptieren → Fahrplan exportieren → Datum setzen → XML Download. Jeder Worker auf eigenem Chrome-Port (9230-9236).",
+      "usedBy": [
+        "ntl"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "00dcf34dcce25e7d7a5bb88c8f2ac101",
+        "file": "edatagate_worker.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9"
+      },
+      "gate": {
+        "passed": true,
+        "score": "9/11",
+        "checkedAt": "2026-03-19T17:11:00Z",
+        "notes": "7/7 Accounts getestet, parallel, alle erfolgreich. G3 Testdaten + G6 Backup ausstehend."
+      }
+    },
+    "ntl/orchestrator": {
+      "id": "ntl/orchestrator",
+      "name": "NTL Orchestrator",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Startet alle 7 Account-Worker parallel. Jeder Account eigener Chrome-Port. Sammelt Ergebnisse, loggt in JSON.",
+      "usedBy": [
+        "ntl"
+      ],
+      "dependencies": [
+        "ntl/edatagate-worker"
+      ],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "00dcf34dcce25e7d7a5bb88c8f2ac101",
+        "file": "orchestrator.py",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9"
+      },
+      "gate": {
+        "passed": true,
+        "score": "9/11",
+        "checkedAt": "2026-03-19T17:11:00Z",
+        "notes": "7/7 parallel in 15s getestet. G3 + G6 ausstehend."
+      }
+    },
+    "ntl/config": {
+      "id": "ntl/config",
+      "name": "NTL Pipeline Configuration",
+      "version": "1.0.0",
+      "status": "active",
+      "language": "json",
+      "description": "Zentrale Config: 7 Accounts mit Ports 9230-9236, Schedule */15, Wochenzeitraum-Logik.",
+      "usedBy": [
+        "ntl"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "00dcf34dcce25e7d7a5bb88c8f2ac101",
+        "file": "config.json",
+        "sha": "0b4a6436fcffef299e24211f8bce1c91ffbed1a9"
+      },
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "checkedAt": "2026-03-19T17:11:00Z"
+      }
+    },
+    "gv-spedition/onroad-export": {
+      "id": "gv-spedition/onroad-export",
+      "name": "BNS OnRoad Excel-Export",
+      "version": "2.0.0",
+      "status": "planned",
+      "language": "unknown",
+      "description": "Fehlfrachtanlageabrechnung.xls aus OnRoad exportieren (aktuell manuell oder UiPath)",
+      "usedBy": [
+        "gv-spedition"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "local",
+        "lines": 0,
+        "size": 0
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "lastCheck": "2026-03-24"
+      },
+      "code": "# BNS OnRoad Excel-Export\n# Status: planned\n# Kein lokaler Code gefunden"
+    },
+    "gv-spedition/filter-storno": {
+      "id": "gv-spedition/filter-storno",
+      "name": "Storno + Nachlieferung filtern",
+      "version": "2.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Zeilen mit 'geloescht' (AQ) und 'NACHLIEFERUNG' (AB) entfernen",
+      "usedBy": [
+        "gv-spedition"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "local",
+        "lines": 137,
+        "size": 4805
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "lastCheck": "2026-03-24"
+      },
+      "code": "\"\"\"\nSCHRITT 1: Stornierte Sendungen herausfiltern\n==============================================\nZeilen mit 'gelöscht' in Spalte AQ (42) werden vor der Analyse entfernt.\nDiese Sendungen existieren nicht mehr und duerfen nicht in die Differenzberechnung einfliessen.\n\nAufruf: python step1_filter_storno.py <input.xls> [output.json]\n\"\"\"\nimport xlrd\nimport json\nimport os\nimport sys\nimport logging\nfrom datetime import datetime\n\n# === LOGGING ===\nlog_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'logs')\nos.makedirs(log_dir, exist_ok=True)\nlogging.basicConfig(\n    level=logging.INFO,\n    format='[%(asctime)s] [%(levelname)s] %(message)s',\n    handlers=[\n        logging.StreamHandler(sys.stdout),\n        logging.FileHandler(os.path.join(log_dir, f'{datetime.now():%Y-%m-%d}_step1_storno.log'),\n                            encoding='utf-8', mode='a')\n    ]\n)\nlog = logging.getLogger(__name__)\n\nCOL_MATCHCODE = 5         # F — OLE.../4913_...\nCOL_AUSRUFEZEICHEN = 42   # AQ — !!!!!!  / gelöscht\nCOL_NACHLIEFERUNG = 27    # AB — NACHLIEFERUNG\n\n\ndef safe_str(val):\n    if val is None or val == '':\n        return ''\n    s = str(val).strip()\n    return '' if s in ('0.0', 'nan') else s\n\n\ndef find_storno_rows(sh):\n    \"\"\"Findet alle Zeilen die storniert sind (AQ = 'gelöscht')\"\"\"\n    storno_rows = set()\n    for r in range(4, sh.nrows):\n        aq_val = safe_str(sh.cell_value(r, COL_AUSRUFEZEICHEN))\n        if 'gelöscht' in aq_val.lower() or 'geloescht' in aq_val.lower():\n            mc = safe_str(sh.cell_value(r, COL_MATCHCODE))\n            storno_rows.add(r)\n            log.info(f'  STORNO gefunden: Zeile {r}, Matchcode={mc}, AQ={aq_val}')\n    return storno_rows\n\n\ndef find_nachlieferung_rows(sh):\n    \"\"\"Findet alle Zeilen die Nachlieferungen sind (AB = 'NACHLIEFERUNG...')\"\"\"\n    nl_rows = set()\n    for r in range(4, sh.nrows):\n        ab_val = safe_str(sh.cell_value(r, COL_NACHLIEFERUNG))\n        if 'nachlieferung' in ab_val.lower():\n            mc = safe_str(sh.cell_value(r, COL_MATCHCODE))\n            nl_rows.add(r)\n            log.info(f'  NACHLIEFERUNG gefunden: Zeile {r}, Matchcode={mc}, AB={ab_val}')\n    return nl_rows\n\n\ndef analyze_exclusions(input_path, output_path=None):\n    \"\"\"Hauptfunktion: Identifiziert alle auszuschliessenden Zeilen\"\"\"\n    log.info('=== SCHRITT 1: STORNO + NACHLIEFERUNG FILTER ===')\n    log.info(f'Eingabe: {input_path}')\n\n    wb = xlrd.open_workbook(input_path)\n    sh = wb.sheet_by_index(0)\n    log.info(f'  {sh.nrows} Zeilen, {sh.ncols} Spalten')\n\n    storno_rows = find_storno_rows(sh)\n    nl_rows = find_nachlieferung_rows(sh)\n    all_excluded = storno_rows | nl_rows\n\n    # Sammle Details\n    exclusions = []\n    for r in sorted(all_excluded):\n        mc = safe_str(sh.cell_value(r, COL_MATCHCODE))\n        aq = safe_str(sh.cell_value(r, COL_AUSRUFEZEICHEN))\n        ab = safe_str(sh.cell_value(r, COL_NACHLIEFERUNG))\n        reason = 'storno' if r in storno_rows else 'nachlieferung'\n        exclusions.append({\n            'row': r,\n            'matchcode': mc,\n            'reason': reason,\n            'aq_value': aq,\n            'ab_value': ab\n        })\n\n    result = {\n        'input_file': os.path.basename(input_path),\n        'total_rows': sh.nrows,\n        'excluded_rows': sorted(list(all_excluded)),\n        'storno_count': len(storno_rows),\n        'nachlieferung_count': len(nl_rows),\n        'total_excluded': len(all_excluded),\n        'exclusions': exclusions,\n        'timestamp': datetime.now().isoformat()\n    }\n\n    log.info(f'  Stornos:         {len(storno_rows)} Zeilen')\n    log.info(f'  Nachlieferungen: {len(nl_rows)} Zeilen')\n    log.info(f'  GESAMT:          {len(all_excluded)} Zeilen werden ausgeschlossen')\n\n    if output_path:\n        os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else '.', exist_ok=True)\n        with open(output_path, 'w', encoding='utf-8') as f:\n            json.dump(result, f, indent=2, ensure_ascii=False)\n        log.info(f'  Ergebnis gespeichert: {output_path}')\n\n    log.info('=== SCHRITT 1 FERTIG ===')\n    return result\n\n\nif __name__ == '__main__':\n    sys.stdout.reconfigure(encoding='utf-8', errors='replace')\n\n    if len(sys.argv) < 2:\n        print('Usage: python step1_filter_storno.py <input.xls> [output.json]')\n        sys.exit(1)\n\n    input_path = sys.argv[1]\n    output_path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(\n        os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'step1_exclusions.json'\n    )\n\n    result = analyze_exclusions(input_path, output_path)\n    print(f'\\n{\"=\"*60}')\n    print(f'ERGEBNIS: {result[\"total_excluded\"]} Zeilen ausgeschlossen')\n    print(f'  - {result[\"storno_count\"]} Stornos')\n    print(f'  - {result[\"nachlieferung_count\"]} Nachlieferungen')\n    print(f'{\"=\"*60}')\n"
+    },
+    "gv-spedition/analyzer-v2": {
+      "id": "gv-spedition/analyzer-v2",
+      "name": "Differenzfracht-Analyse v2",
+      "version": "2.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Smart-Merge (OLE/DFUE-Paare) + Direkte-Matching + Ort-Level >= 10%",
+      "usedBy": [
+        "gv-spedition"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "local",
+        "lines": 558,
+        "size": 20287
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "lastCheck": "2026-03-24"
+      },
+      "code": "\"\"\"\nSCHRITT 3: Gleiche Orte innerhalb eines Blocks zusammenlegen\n============================================================\nDas Hauptproblem: In der Excel-Datei kommt derselbe Ort oft MEHRFACH vor,\nz.B. \"Bremen\" mit OLE=2004, DFUE=0 und nochmal \"Bremen\" mit OLE=0, DFUE=2004.\n\nUnser alter Analyzer behandelt diese als separate Orte und sieht jeweils 100% Differenz.\nIn Wahrheit gehoeren sie zusammen: OLE=2004, DFUE=2004 → 0% Differenz → LOESCHEN.\n\nDieses Script demonstriert den Impact dieser Zusammenlegung.\n\nAufruf: python step3_merge_same_ort.py <input.xls> [output.json]\n\"\"\"\nimport xlrd\nimport re\nimport json\nimport os\nimport sys\nimport logging\nfrom datetime import datetime\nfrom collections import defaultdict\n\n# === LOGGING ===\nlog_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'logs')\nos.makedirs(log_dir, exist_ok=True)\nlogging.basicConfig(\n    level=logging.INFO,\n    format='[%(asctime)s] [%(levelname)s] %(message)s',\n    handlers=[\n        logging.StreamHandler(sys.stdout),\n        logging.FileHandler(os.path.join(log_dir, f'{datetime.now():%Y-%m-%d}_step3_merge.log'),\n                            encoding='utf-8', mode='a')\n    ]\n)\nlog = logging.getLogger(__name__)\n\n# === KONFIGURATION ===\nCOL_MARKER = 0\nCOL_KUNDE = 2\nCOL_MATCHCODE = 5\nCOL_OLE_GEWICHT = 18\nCOL_ORT = 20\nCOL_OLE_IST = 24\nCOL_DFUE_WERT = 30\nCOL_DIFFERENZ = 36\nCOL_DIREKTE = 39\nCOL_AUSRUFEZEICHEN = 42\nCOL_NACHLIEFERUNG = 27\n\nSTART_ROW = 4\nPLZ_PATTERN = re.compile(r'^\\d{3,5}$')\nGEWICHT_TOLERANZ_KG = 10.0\nGEWICHT_TOLERANZ_PCT = 2.0\nDIFFERENZ_THRESHOLD = 10.0\n\nDIREKTE_PATTERNS = [\n    re.compile(r'.*//\\s*D\\s*$'),\n    re.compile(r'.*-\\s*D\\s*$'),\n    re.compile(r'.*dummy.*direkt.*', re.IGNORECASE),  # DIREKT statt DIREKTE — beides matchen\n    # WICHTIG: \"Dummy\", \"Dummy1\", \"DUMMY\" allein ist KEINE Direkte!\n]\n\n\ndef safe_str(val):\n    if val is None or val == '':\n        return ''\n    s = str(val).strip()\n    return '' if s in ('0.0', 'nan') else s\n\n\ndef safe_float(val):\n    try:\n        return float(val) if val else 0.0\n    except (ValueError, TypeError):\n        return 0.0\n\n\ndef safe_int_str(val):\n    s = safe_str(val)\n    if s and '.' in s:\n        try:\n            return str(int(float(s)))\n        except (ValueError, TypeError):\n            pass\n    return s\n\n\ndef is_direkte(an_value):\n    s = safe_str(an_value)\n    if not s:\n        return False\n    for pat in DIREKTE_PATTERNS:\n        if pat.match(s):\n            return True\n    return False\n\n\ndef is_storno(sh, row):\n    \"\"\"Prueft ob eine Zeile storniert ist\"\"\"\n    aq = safe_str(sh.cell_value(row, COL_AUSRUFEZEICHEN))\n    return 'gelöscht' in aq.lower() or 'geloescht' in aq.lower()\n\n\ndef is_nachlieferung(sh, row):\n    \"\"\"Prueft ob eine Zeile eine Nachlieferung ist\"\"\"\n    ab = safe_str(sh.cell_value(row, COL_NACHLIEFERUNG))\n    return 'nachlieferung' in ab.lower()\n\n\ndef cell(sh, r, c):\n    if r < 0 or r >= sh.nrows or c < 0 or c >= sh.ncols:\n        return ''\n    return sh.cell_value(r, c)\n\n\ndef find_blocks(sh):\n    blocks = []\n    for i in range(START_ROW, sh.nrows - 1):\n        marker = safe_str(cell(sh, i, COL_MARKER))\n        plz = safe_int_str(cell(sh, i + 1, COL_MARKER))\n        if not marker or not plz:\n            continue\n        if re.match(r'^\\d+$', marker):\n            continue\n        if not PLZ_PATTERN.match(plz):\n            continue\n        blocks.append({\n            'marker': marker, 'plz': plz,\n            'kunde': safe_str(cell(sh, i + 1, COL_KUNDE)),\n            'ort': safe_str(cell(sh, i + 1, COL_ORT)),\n            'kuerzel': safe_str(cell(sh, i + 1, COL_DIFFERENZ)),\n            'start': i, 'end': -1\n        })\n    for i in range(len(blocks)):\n        blocks[i]['end'] = blocks[i + 1]['start'] - 1 if i < len(blocks) - 1 else sh.nrows - 1\n    log.info(f'  {len(blocks)} Bloecke gefunden')\n    return blocks\n\n\ndef find_ort_headers(sh, block):\n    headers = []\n    for i in range(block['start'] + 2, block['end'] + 1):\n        val = safe_str(cell(sh, i, COL_MARKER))\n        if not val:\n            continue\n        if (not re.match(r'^\\d+$', val) and\n            not PLZ_PATTERN.match(val) and\n            not val.startswith('OLE') and\n            not val.startswith('4913') and\n            '_' not in val and\n            '.' not in val):\n            headers.append((i, val))\n    if not headers:\n        headers.append((block['end'], 'Gesamt'))\n    return headers\n\n\ndef analyze_block_merged(sh, block):\n    \"\"\"\n    Analysiert einen Block mit ORT-ZUSAMMENLEGUNG.\n    Gleiche Ort-Namen innerhalb eines Blocks werden zusammengefasst.\n    \"\"\"\n    ort_headers = find_ort_headers(sh, block)\n\n    # Phase 1: Alle Ort-Abschnitte sammeln (mit ihren Daten)\n    ort_sections = []  # (ort_name, ort_row, sendungen)\n    ort_start = block['start'] + 2\n\n    for ort_idx, (ort_row, ort_name) in enumerate(ort_headers):\n        ort_end = ort_row - 1\n\n        ole_sendungen = []\n        pos_4913 = []\n\n        for i in range(ort_start, ort_end + 1):\n            # Skip stornierte und Nachlieferungen\n            if is_storno(sh, i) or is_nachlieferung(sh, i):\n                mc = safe_str(cell(sh, i, COL_MATCHCODE))\n                if mc:\n                    log.info(f'    SKIP {mc} (storno/nachlieferung)')\n                continue\n\n            matchcode = safe_str(cell(sh, i, COL_MATCHCODE))\n            if not matchcode:\n                continue\n\n            if matchcode.startswith('OLE'):\n                gewicht = safe_float(cell(sh, i, COL_OLE_GEWICHT))\n                an_val = safe_str(cell(sh, i, COL_DIREKTE))\n                direkte = is_direkte(an_val)\n                ole_sendungen.append({\n                    'row': i, 'gewicht': gewicht, 'direkte': direkte,\n                    'matchcode': matchcode, 'an_val': an_val\n                })\n            elif matchcode.startswith('4913'):\n                dfue_wert = safe_float(cell(sh, i, COL_DFUE_WERT))\n                pos_4913.append({\n                    'row': i, 'dfue_wert': dfue_wert, 'matchcode': matchcode\n                })\n\n        ort_hat_marker = '!' in safe_str(cell(sh, ort_row, COL_AUSRUFEZEICHEN))\n\n        ort_sections.append({\n            'name': ort_name,\n            'row': ort_row,\n            'ole_sendungen': ole_sendungen,\n            'pos_4913': pos_4913,\n            'hat_marker': ort_hat_marker\n        })\n\n        ort_start = ort_row + 1\n\n    # Phase 2: INTELLIGENTER Merge gleicher Ortsnamen\n    # Nur zusammenlegen wenn ein Abschnitt NUR OLE hat und ein anderer NUR DFUE\n    # (= gleiche Sendung, aufgeteilt in Avisierung und Verladung)\n    # Abschnitte die BEIDE (OLE + DFUE) haben, bleiben einzeln\n    # (= verschiedene Lieferanten/Sendungsgruppen)\n\n    from collections import defaultdict as _dd\n    ort_groups = _dd(list)\n    for idx, section in enumerate(ort_sections):\n        ort_groups[section['name']].append(idx)\n\n    merged_orte_list = []\n    merged_indices = set()\n\n    for ort_name, indices in ort_groups.items():\n        if len(indices) == 1:\n            # Nur ein Abschnitt — keine Merge-Logik noetig\n            s = ort_sections[indices[0]]\n            merged_orte_list.append({\n                'ole_sendungen': s['ole_sendungen'],\n                'pos_4913': s['pos_4913'],\n                'hat_marker': s['hat_marker'],\n                'rows': [s['row']],\n                'sections': 1,\n                'name': ort_name\n            })\n            merged_indices.add(indices[0])\n            continue\n\n        # Mehrere Abschnitte mit gleichem Namen\n        # Klassifiziere: nur-OLE, nur-DFUE, beides\n        only_ole = []\n        only_dfue = []\n        both = []\n        for idx in indices:\n            s = ort_sections[idx]\n            has_ole = len(s['ole_sendungen']) > 0\n            has_dfue = len(s['pos_4913']) > 0\n            if has_ole and not has_dfue:\n                only_ole.append(idx)\n            elif has_dfue and not has_ole:\n                only_dfue.append(idx)\n            else:\n                both.append(idx)\n\n        # Merge nur-OLE + nur-DFUE Abschnitte (die sich aufheben koennten)\n        if only_ole and only_dfue:\n            combined = {\n                'ole_sendungen': [],\n                'pos_4913': [],\n                'hat_marker': False,\n                'rows': [],\n                'sections': 0,\n                'name': ort_name\n            }\n            for idx in only_ole + only_dfue:\n                s = ort_sections[idx]\n                combined['ole_sendungen'].extend(s['ole_sendungen'])\n                combined['pos_4913'].extend(s['pos_4913'])\n                combined['hat_marker'] = combined['hat_marker'] or s['hat_marker']\n                combined['rows'].append(s['row'])\n                combined['sections'] += 1\n                merged_indices.add(idx)\n            merged_orte_list.append(combined)\n\n        # Abschnitte mit BEIDEN (OLE+DFUE) bleiben einzeln\n        for idx in both:\n            s = ort_sections[idx]\n            merged_orte_list.append({\n                'ole_sendungen': s['ole_sendungen'],\n                'pos_4913': s['pos_4913'],\n                'hat_marker': s['hat_marker'],\n                'rows': [s['row']],\n                'sections': 1,\n                'name': ort_name\n            })\n            merged_indices.add(idx)\n\n        # Nur-OLE oder Nur-DFUE ohne Gegenstueck bleiben auch einzeln\n        orphan_ole = only_ole if not only_dfue else []\n        orphan_dfue = only_dfue if not only_ole else []\n        for idx in orphan_ole + orphan_dfue:\n            if idx not in merged_indices:\n                s = ort_sections[idx]\n                merged_orte_list.append({\n                    'ole_sendungen': s['ole_sendungen'],\n                    'pos_4913': s['pos_4913'],\n                    'hat_marker': s['hat_marker'],\n                    'rows': [s['row']],\n                    'sections': 1,\n                    'name': ort_name\n                })\n                merged_indices.add(idx)\n\n    # Phase 3: Pro Ort-Abschnitt analysieren\n    ort_ergebnisse = []\n    alle_direkte_4913 = []\n    ole_ist_gesamt = 0.0\n    ole_ist_ohne_direkte = 0.0\n    anzahl_direkte_ole = 0\n    details = []\n\n    for ort_data in merged_orte_list:\n        ort_name = ort_data['name']\n        ole_sendungen = ort_data['ole_sendungen']\n        pos_4913 = ort_data['pos_4913']\n        ort_hat_marker = ort_data['hat_marker']\n        was_merged = ort_data['sections'] > 1\n\n        # Direkte-Matching pro Ort\n        direkte_4913_this_ort = []\n        matching_methode = ''\n\n        alle_ole_direkt = all(s['direkte'] for s in ole_sendungen) if ole_sendungen else False\n\n        if alle_ole_direkt and len(ole_sendungen) > 0 and len(ole_sendungen) == len(pos_4913):\n            for pos in pos_4913:\n                direkte_4913_this_ort.append(pos['row'])\n                alle_direkte_4913.append(pos['row'])\n            matching_methode = f'Fallback (alle {len(ole_sendungen)} OLE direkt)'\n        else:\n            for ole in ole_sendungen:\n                if not ole['direkte']:\n                    continue\n                best_match = None\n                best_diff = float('inf')\n                for pos in pos_4913:\n                    if pos['row'] in direkte_4913_this_ort:\n                        continue\n                    diff = abs(ole['gewicht'] - pos['dfue_wert'])\n                    diff_pct = (diff / ole['gewicht'] * 100) if ole['gewicht'] > 0 else 0\n                    if diff <= GEWICHT_TOLERANZ_KG or diff_pct <= GEWICHT_TOLERANZ_PCT:\n                        if diff < best_diff:\n                            best_diff = diff\n                            best_match = pos\n                if best_match is not None:\n                    direkte_4913_this_ort.append(best_match['row'])\n                    alle_direkte_4913.append(best_match['row'])\n            matching_methode = 'Gewichts-Matching'\n\n        if was_merged:\n            matching_methode += f' ({ort_data[\"sections\"]} Abschnitte zusammengelegt)'\n\n        # Ort-Level Differenz\n        ort_ole = sum(s['gewicht'] for s in ole_sendungen if not s['direkte'])\n        ort_dfue = sum(p['dfue_wert'] for p in pos_4913 if p['row'] not in direkte_4913_this_ort)\n        ort_diff = ort_ole - ort_dfue\n        ort_diff_pct = (abs(ort_diff) / ort_ole * 100) if ort_ole > 0 else 0\n        ort_hat_diff = ort_diff_pct >= DIFFERENZ_THRESHOLD\n\n        # Nachzuegler: Ort mit nur 4913, kein OLE, negativer AN-Wert\n        if not ort_hat_diff:\n            if len(pos_4913) > 0 and len(ole_sendungen) == 0:\n                for row in ort_data['rows']:\n                    an_summe = safe_float(cell(sh, row, COL_DIREKTE))\n                    if an_summe < 0:\n                        ort_hat_diff = True\n                        break\n\n        direkte_ole_count = sum(1 for s in ole_sendungen if s['direkte'])\n        # Entscheidung NUR auf >= 10% Differenz\n        # Der !!!!!!-Marker wird informativ mitgefuehrt aber NICHT als\n        # Entscheidungskriterium verwendet. Er dient der manuellen Kontrolle.\n        ort_entscheidung = 'BEHALTEN' if ort_hat_diff else 'LOESCHEN'\n\n        # Gewichte fuer Block-Summe\n        for ole in ole_sendungen:\n            ole_ist_gesamt += ole['gewicht']\n            if ole['direkte']:\n                anzahl_direkte_ole += 1\n            else:\n                ole_ist_ohne_direkte += ole['gewicht']\n\n        ort_matchcodes = [s['matchcode'] for s in ole_sendungen] + [p['matchcode'] for p in pos_4913]\n\n        ort_ergebnisse.append({\n            'name': ort_name,\n            'rows': ort_data['rows'],\n            'merged': was_merged,\n            'sections': ort_data['sections'],\n            'ole_ohne_direkte': round(ort_ole),\n            'dfue_ohne_direkte': round(ort_dfue),\n            'differenz': round(ort_diff),\n            'differenz_pct': round(ort_diff_pct, 1),\n            'hat_marker': ort_hat_marker,\n            'hat_differenzfracht': ort_hat_diff,\n            'entscheidung': ort_entscheidung,\n            'matchcodes': ort_matchcodes,\n            'anzahl_ole': len(ole_sendungen),\n            'anzahl_direkte_ole': direkte_ole_count,\n            'anzahl_4913': len(pos_4913),\n            'anzahl_direkte_4913': len(direkte_4913_this_ort),\n            'matching': matching_methode,\n        })\n\n        marker_str = \"!!!\" if ort_hat_marker else \"\"\n        merge_str = f\" [MERGED x{ort_data['sections']}]\" if was_merged else \"\"\n        details.append(\n            f'{ort_name}: OLE={round(ort_ole)} DFUE={round(ort_dfue)} '\n            f'Diff={ort_diff_pct:.1f}% {marker_str} -> {ort_entscheidung}{merge_str}'\n        )\n\n    # Block-Entscheidung: Hybrid aus Ort-Level und Block-Level\n    orte_mit_diff = [o for o in ort_ergebnisse if o['hat_differenzfracht']]\n\n    alle_4913 = {}\n    for section in ort_sections:\n        for pos in section['pos_4913']:\n            alle_4913[pos['row']] = pos['dfue_wert']\n\n    dfue_ist_gesamt = sum(alle_4913.values())\n    dfue_ist_ohne_direkte = sum(v for z, v in alle_4913.items() if z not in alle_direkte_4913)\n\n    # Block-Level Differenz berechnen\n    block_differenz = ole_ist_ohne_direkte - dfue_ist_ohne_direkte\n    block_diff_pct = (abs(block_differenz) / ole_ist_ohne_direkte * 100) if ole_ist_ohne_direkte > 0 else 0\n\n    # Ort-Level Entscheidung:\n    # Block BEHALTEN wenn mindestens 1 Ort >= 10% Differenz hat\n    # Der Smart-Merge hat bereits OLE-only + DFUE-only Paare zusammengelegt,\n    # so dass sich ausgleichende Orte korrekt 0% zeigen\n    block_hat_diff = len(orte_mit_diff) > 0\n\n    if block_hat_diff:\n        entscheidung = f'BEHALTEN - {len(orte_mit_diff)} Ort(e) mit Differenzfracht (Block-Diff {block_diff_pct:.1f}%)'\n    else:\n        entscheidung = f'LOESCHEN - Kein Ort mit Differenzfracht (Block-Diff {block_diff_pct:.1f}%)'\n\n    # Nur Matchcodes der Orte mit Differenzfracht behalten\n    behaltene_matchcodes = set()\n    for ort in ort_ergebnisse:\n        if ort['hat_differenzfracht']:\n            for mc in ort['matchcodes']:\n                behaltene_matchcodes.add(mc)\n\n    return {\n        'marker': block['marker'],\n        'plz': block['plz'],\n        'kunde': block['kunde'],\n        'ort': block['ort'],\n        'kuerzel': block['kuerzel'],\n        'ole_ist_gesamt': round(ole_ist_gesamt),\n        'ole_ist_ohne_direkte': round(ole_ist_ohne_direkte),\n        'dfue_ist_gesamt': round(dfue_ist_gesamt),\n        'dfue_ist_ohne_direkte': round(dfue_ist_ohne_direkte),\n        'anzahl_direkte_ole': anzahl_direkte_ole,\n        'anzahl_direkte_4913': len(alle_direkte_4913),\n        'entscheidung': entscheidung,\n        'orte': ort_ergebnisse,\n        'block_differenz': round(block_differenz),\n        'block_diff_pct': round(block_diff_pct, 1),\n        'orte_mit_diff': len(orte_mit_diff),\n        'orte_gesamt': len(ort_ergebnisse),\n        'orte_merged': sum(1 for o in ort_ergebnisse if o.get('merged')),\n        'details': details,\n        'behaltene_matchcodes': sorted(list(behaltene_matchcodes)),\n        'alle_matchcodes': sorted(list(\n            set(mc for section in ort_sections\n                for s in section['ole_sendungen'] for mc in [s['matchcode']])\n            | set(mc for section in ort_sections\n                  for p in section['pos_4913'] for mc in [p['matchcode']])\n        ))\n    }\n\n\ndef analyze(input_path, output_path=None):\n    \"\"\"Hauptfunktion\"\"\"\n    log.info('=== DIFFERENZFRACHT ANALYSE v2 (ORT-MERGE + STORNO-FILTER) START ===')\n    started = datetime.now()\n\n    wb = xlrd.open_workbook(input_path)\n    sh = wb.sheet_by_index(0)\n    log.info(f'  {sh.nrows} Zeilen, {sh.ncols} Spalten')\n\n    blocks = find_blocks(sh)\n    results = []\n    behalten = []\n    loeschen = []\n\n    for block in blocks:\n        result = analyze_block_merged(sh, block)\n        results.append(result)\n        if 'BEHALTEN' in result['entscheidung']:\n            behalten.append(result)\n        else:\n            loeschen.append(result)\n\n    log.info(f'  Gesamt: {len(results)} Bloecke')\n    log.info(f'  BEHALTEN: {len(behalten)} Bloecke')\n    log.info(f'  LOESCHEN: {len(loeschen)} Bloecke')\n\n    total_merged = sum(r.get('orte_merged', 0) for r in results)\n    log.info(f'  Zusammengelegte Orte: {total_merged}')\n\n    output = {\n        'blocks': results,\n        'behalten': [r['marker'] for r in behalten],\n        'loeschen': [r['marker'] for r in loeschen],\n        'stats': {\n            'total_blocks': len(results),\n            'behalten': len(behalten),\n            'loeschen': len(loeschen),\n            'orte_merged': total_merged,\n            'duration_s': (datetime.now() - started).total_seconds()\n        }\n    }\n\n    if output_path:\n        os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else '.', exist_ok=True)\n        with open(output_path, 'w', encoding='utf-8') as f:\n            json.dump(output, f, indent=2, ensure_ascii=False)\n        log.info(f'  Ergebnis gespeichert: {output_path}')\n\n    elapsed = (datetime.now() - started).total_seconds()\n    log.info(f'=== ANALYSE FERTIG ({elapsed:.1f}s) ===')\n    return output\n\n\nif __name__ == '__main__':\n    sys.stdout.reconfigure(encoding='utf-8', errors='replace')\n\n    if len(sys.argv) < 2:\n        print('Usage: python step3_merge_same_ort.py <input.xls> [output.json]')\n        sys.exit(1)\n\n    input_path = sys.argv[1]\n    output_path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(\n        os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'step3_merged_result.json'\n    )\n\n    result = analyze(input_path, output_path)\n\n    print(f'\\n{\"=\"*100}')\n    print(f'ERGEBNIS: {result[\"stats\"][\"behalten\"]} BEHALTEN / {result[\"stats\"][\"loeschen\"]} LOESCHEN')\n    print(f'Zusammengelegte Orte: {result[\"stats\"][\"orte_merged\"]}')\n    print(f'{\"=\"*100}')\n\n    print(f'\\nBEHALTEN ({len(result[\"behalten\"])}):')\n    for r in result['blocks']:\n        if 'BEHALTEN' in r['entscheidung']:\n            diff_orte = [o for o in r.get('orte', []) if o['hat_differenzfracht']]\n            print(f'  [+] {r[\"marker\"]:35s} | {r[\"orte_mit_diff\"]}/{r[\"orte_gesamt\"]} Orte mit Diff')\n            for o in diff_orte:\n                merge_str = f\" [MERGED x{o['sections']}]\" if o.get('merged') else \"\"\n                print(f'       {o[\"name\"]:20s} | OLE: {o[\"ole_ohne_direkte\"]:7.0f} | DFUE: {o[\"dfue_ohne_direkte\"]:7.0f} | Diff: {o[\"differenz_pct\"]:5.1f}% {\"!!!\" if o[\"hat_marker\"] else \"\"}{merge_str}')\n"
+    },
+    "gv-spedition/xlsx-report": {
+      "id": "gv-spedition/xlsx-report",
+      "name": "XLSX-Report erstellen",
+      "version": "2.0.0",
+      "status": "active",
+      "language": "python",
+      "description": "Kundenfertige Excel-Datei mit Zusammenfassung, Werk-Details, Erklaerungen",
+      "usedBy": [
+        "gv-spedition"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "local",
+        "lines": 199,
+        "size": 8019
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "lastCheck": "2026-03-24"
+      },
+      "code": "\"\"\"Erstellt XLSX-Report mit allen Differenzfracht-Positionen\"\"\"\nimport sys\nimport os\nimport xlrd\nfrom openpyxl import Workbook\nfrom openpyxl.styles import Font, PatternFill, Alignment, Border, Side\nfrom openpyxl.utils import get_column_letter\n\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\nsys.stdout.reconfigure(encoding='utf-8', errors='replace')\n\nfrom differenzfracht_analyzer import analyze\n\nORIGINAL = r\"C:\\Users\\bodob\\OneDrive\\Kunden\\GV Spedition\\Abruf 04.03.2026 für uxuix.xls\"\nOUTPUT = r\"C:\\Users\\bodob\\OneDrive\\Kunden\\GV Spedition\\Differenzfracht_Analyse_04032026.xlsx\"\n\n# Analyse\nresult = analyze(ORIGINAL)\n\n# Original laden fuer Rohdaten\nwb_src = xlrd.open_workbook(ORIGINAL)\nsh_src = wb_src.sheet_by_index(0)\n\n# Matchcode -> Zeile Index\nmc_index = {}\nfor r in range(sh_src.nrows):\n    v = str(sh_src.cell_value(r, 5)).strip()\n    if v and (v.startswith('OLE') or v.startswith('4913')):\n        mc_index[v] = r\n\n# === Styles ===\nhdr_font = Font(bold=True, size=11, color='FFFFFF')\nhdr_fill = PatternFill(start_color='2F5496', end_color='2F5496', fill_type='solid')\nok_fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')\nno_fill = PatternFill(start_color='FFC7CE', end_color='FFC7CE', fill_type='solid')\nwarn_fill = PatternFill(start_color='FFEB9C', end_color='FFEB9C', fill_type='solid')\nbold = Font(bold=True)\nthin = Border(left=Side('thin'), right=Side('thin'), top=Side('thin'), bottom=Side('thin'))\n\ndef set_header(ws, row, n):\n    for c in range(1, n + 1):\n        cl = ws.cell(row=row, column=c)\n        cl.font = hdr_font\n        cl.fill = hdr_fill\n        cl.alignment = Alignment(horizontal='center', wrap_text=True)\n        cl.border = thin\n\ndef set_row(ws, row, n, fill=None):\n    for c in range(1, n + 1):\n        cl = ws.cell(row=row, column=c)\n        cl.border = thin\n        if fill:\n            cl.fill = fill\n\nwb = Workbook()\n\n# =========== SHEET 1: Zusammenfassung ===========\nws1 = wb.active\nws1.title = 'Zusammenfassung'\n\nbehalten = [b for b in result['blocks'] if 'BEHALTEN' in b['entscheidung']]\nloeschen_list = [b for b in result['blocks'] if 'LOESCHEN' in b['entscheidung']]\n\nws1['A1'] = 'Differenzfracht-Analyse — Abruf 04.03.2026'\nws1['A1'].font = Font(bold=True, size=14)\nws1['A3'] = 'Gesamt Bloecke:'\nws1['B3'] = len(result['blocks'])\nws1['A4'] = 'BEHALTEN (Differenzfracht):'\nws1['B4'] = len(behalten)\nws1['B4'].fill = ok_fill\nws1['A5'] = 'LOESCHEN (keine Differenz):'\nws1['B5'] = len(loeschen_list)\nws1['B5'].fill = no_fill\n\nr = 7\ncols = ['Spediteur', 'PLZ', 'Kunde', 'Entscheidung', 'Orte ges.', 'Orte Diff',\n        'OLE o.Dir. (kg)', 'DFUE o.Dir. (kg)', 'Differenz (kg)']\nfor c, h in enumerate(cols, 1):\n    ws1.cell(row=r, column=c, value=h)\nset_header(ws1, r, len(cols))\n\nfor b in result['blocks']:\n    r += 1\n    ist_beh = 'BEHALTEN' in b['entscheidung']\n    ws1.cell(row=r, column=1, value=b['marker'])\n    ws1.cell(row=r, column=2, value=b['plz'])\n    ws1.cell(row=r, column=3, value=b['kunde'])\n    ws1.cell(row=r, column=4, value='BEHALTEN' if ist_beh else 'LOESCHEN')\n    ws1.cell(row=r, column=5, value=b.get('orte_gesamt', 0))\n    ws1.cell(row=r, column=6, value=b.get('orte_mit_diff', 0))\n    ws1.cell(row=r, column=7, value=b.get('ole_ist_ohne_direkte', 0))\n    ws1.cell(row=r, column=8, value=b.get('dfue_ist_ohne_direkte', 0))\n    ws1.cell(row=r, column=9, value=b.get('ole_ist_ohne_direkte', 0) - b.get('dfue_ist_ohne_direkte', 0))\n    set_row(ws1, r, len(cols), ok_fill if ist_beh else no_fill)\n\nfor c, w in enumerate([30, 8, 40, 14, 10, 10, 16, 16, 16], 1):\n    ws1.column_dimensions[get_column_letter(c)].width = w\n\n# =========== SHEET 2: Positionen (nur BEHALTEN) ===========\nws2 = wb.create_sheet('Differenzfracht-Positionen')\n\ncols2 = ['Spediteur', 'PLZ', 'Kunde', 'Ort', 'Sendungsnr', 'Matchcode',\n         'Typ', 'OLE Gewicht (kg)', 'DFUE Wert (kg)', 'AN-Wert',\n         'Ort OLE o.D. (kg)', 'Ort DFUE o.D. (kg)', 'Ort Diff %', '!!! Marker']\nfor c, h in enumerate(cols2, 1):\n    ws2.cell(row=1, column=c, value=h)\nset_header(ws2, 1, len(cols2))\n\nr2 = 1\nfor b in behalten:\n    for ort in b.get('orte', []):\n        if not ort['hat_differenzfracht']:\n            continue\n        for mc in ort.get('matchcodes', []):\n            r2 += 1\n            typ = 'OLE' if mc.startswith('OLE') else '4913'\n            sendungsnr = ''\n            ole_gew = ''\n            dfue_wert = ''\n            an_val = ''\n\n            src_r = mc_index.get(mc)\n            if src_r is not None:\n                sn = sh_src.cell_value(src_r, 0)\n                try:\n                    sendungsnr = str(int(float(sn)))\n                except:\n                    sendungsnr = str(sn)\n                og = sh_src.cell_value(src_r, 18)\n                if og:\n                    ole_gew = float(og)\n                dv = sh_src.cell_value(src_r, 30)\n                if dv:\n                    dfue_wert = float(dv)\n                av = str(sh_src.cell_value(src_r, 39)).strip() if sh_src.ncols > 39 else ''\n                if av and av != '0.0':\n                    an_val = av\n\n            ws2.cell(row=r2, column=1, value=b['marker'])\n            ws2.cell(row=r2, column=2, value=b['plz'])\n            ws2.cell(row=r2, column=3, value=b['kunde'])\n            ws2.cell(row=r2, column=4, value=ort['name'])\n            ws2.cell(row=r2, column=5, value=sendungsnr)\n            ws2.cell(row=r2, column=6, value=mc)\n            ws2.cell(row=r2, column=7, value=typ)\n            ws2.cell(row=r2, column=8, value=ole_gew)\n            ws2.cell(row=r2, column=9, value=dfue_wert)\n            ws2.cell(row=r2, column=10, value=an_val)\n            ws2.cell(row=r2, column=11, value=ort['ole_ohne_direkte'])\n            ws2.cell(row=r2, column=12, value=ort['dfue_ohne_direkte'])\n            ws2.cell(row=r2, column=13, value=ort['differenz_pct'])\n            ws2.cell(row=r2, column=14, value='!!!' if ort['hat_marker'] else '')\n            set_row(ws2, r2, len(cols2))\n            if ort['hat_marker']:\n                ws2.cell(row=r2, column=14).fill = warn_fill\n\nfor c, w in enumerate([25, 8, 35, 18, 14, 38, 6, 16, 16, 14, 16, 16, 10, 10], 1):\n    ws2.column_dimensions[get_column_letter(c)].width = w\n\n# =========== SHEET 3: Ort-Details ===========\nws3 = wb.create_sheet('Ort-Details')\n\ncols3 = ['Spediteur', 'Ort', 'Entscheidung', 'OLE o.Dir. (kg)', 'DFUE o.Dir. (kg)',\n         'Differenz (kg)', 'Differenz %', '!!! Marker', 'Anz OLE', 'Anz 4913',\n         'Dir OLE', 'Dir 4913', 'Matching']\nfor c, h in enumerate(cols3, 1):\n    ws3.cell(row=1, column=c, value=h)\nset_header(ws3, 1, len(cols3))\n\nr3 = 1\nfor b in behalten:\n    for ort in b.get('orte', []):\n        r3 += 1\n        ws3.cell(row=r3, column=1, value=b['marker'])\n        ws3.cell(row=r3, column=2, value=ort['name'])\n        ws3.cell(row=r3, column=3, value=ort['entscheidung'])\n        ws3.cell(row=r3, column=4, value=ort['ole_ohne_direkte'])\n        ws3.cell(row=r3, column=5, value=ort['dfue_ohne_direkte'])\n        ws3.cell(row=r3, column=6, value=ort['ole_ohne_direkte'] - ort['dfue_ohne_direkte'])\n        ws3.cell(row=r3, column=7, value=ort['differenz_pct'])\n        ws3.cell(row=r3, column=8, value='!!!' if ort['hat_marker'] else '')\n        ws3.cell(row=r3, column=9, value=ort['anzahl_ole'])\n        ws3.cell(row=r3, column=10, value=ort['anzahl_4913'])\n        ws3.cell(row=r3, column=11, value=ort['anzahl_direkte_ole'])\n        ws3.cell(row=r3, column=12, value=ort['anzahl_direkte_4913'])\n        ws3.cell(row=r3, column=13, value=ort['matching'])\n        fill = ok_fill if ort['hat_differenzfracht'] else None\n        set_row(ws3, r3, len(cols3), fill)\n\nfor c, w in enumerate([25, 18, 14, 16, 16, 14, 12, 10, 10, 10, 10, 10, 20], 1):\n    ws3.column_dimensions[get_column_letter(c)].width = w\n\n# Speichern\nwb.save(OUTPUT)\nprint(f'XLSX gespeichert: {OUTPUT}')\nprint(f'  Sheet 1 - Zusammenfassung: {len(result[\"blocks\"])} Bloecke')\nprint(f'  Sheet 2 - Positionen: {r2 - 1} Zeilen (nur Differenzfracht)')\nprint(f'  Sheet 3 - Ort-Details: {r3 - 1} Zeilen')\n"
+    },
+    "gv-spedition/gt-validation": {
+      "id": "gv-spedition/gt-validation",
+      "name": "Ground Truth Validierung",
+      "version": "2.0.0",
+      "status": "active",
+      "language": "unknown",
+      "description": "Vergleich gegen manuell bereinigte GT-Datei (Precision, Recall, F1)",
+      "usedBy": [
+        "gv-spedition"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "local",
+        "lines": 0,
+        "size": 0
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "lastCheck": "2026-03-24"
+      },
+      "code": "# Ground Truth Validierung\n# Status: active\n# Kein lokaler Code gefunden"
+    }
+  },
+  "summary": {
+    "totalModules": 28,
+    "byStatus": {
+      "frozen": 23,
+      "draft": 2
+    },
+    "byLanguage": {
+      "python": 15,
+      "javascript": 5,
+      "powershell": 4,
+      "json": 1
+    },
+    "byWorkflow": {
+      "core": 2,
+      "nacke": 8,
+      "maut": 6,
+      "linkedin": 6,
+      "fleetboard": 5,
+      "ntl": 3
+    },
+    "sharedModules": [
+      {
+        "id": "core/metrics-collector",
+        "usedBy": [
+          "nacke",
+          "maut",
+          "fleetboard",
+          "linkedin"
+        ]
+      },
+      {
+        "id": "core/error-handler",
+        "usedBy": [
+          "nacke",
+          "maut"
+        ]
+      }
+    ]
+  }
+}
