@@ -25,22 +25,10 @@
       }
     },
     "vmOnlyFiles": {
-      "config.json": {
-        "module": "gv-overconfirmation/config",
-        "vmPath": "C:\\GVOverconfirmation\\config.json"
-      },
-      ".env.idis155": {
-        "module": "gv-overconfirmation/env",
-        "vmPath": "C:\\GVOverconfirmation\\.env.idis155"
-      },
-      ".env.idis735": {
-        "module": "gv-overconfirmation/env",
-        "vmPath": "C:\\GVOverconfirmation\\.env.idis735"
-      },
-      ".env.idis736": {
-        "module": "gv-overconfirmation/env",
-        "vmPath": "C:\\GVOverconfirmation\\.env.idis736"
-      }
+      "config.json": { "module": "gv-overconfirmation/config", "vmPath": "C:\\GVOverconfirmation\\config.json" },
+      ".env.idis155": { "module": "gv-overconfirmation/env", "vmPath": "C:\\GVOverconfirmation\\.env.idis155" },
+      ".env.idis735": { "module": "gv-overconfirmation/env", "vmPath": "C:\\GVOverconfirmation\\.env.idis735" },
+      ".env.idis736": { "module": "gv-overconfirmation/env", "vmPath": "C:\\GVOverconfirmation\\.env.idis736" }
     },
     "currentSHA": "66bd2654b1d4be5e70ceaf147b672521fd012c4c"
   },
@@ -53,7 +41,7 @@
   "guardrails": {
     "constraints": {
       "allowedDays": ["Monday", "Tuesday", "Wednesday"],
-      "allowedHours": {"start": "04:00", "end": "06:00"},
+      "allowedHours": { "start": "04:00", "end": "06:00" },
       "maxConcurrentRuns": 1,
       "timeoutMinutes": 30,
       "hardRules": [
@@ -78,140 +66,44 @@
       "backSelector": "mainForm:_idJsp155"
     },
     "variables": [
-      {"name": "IDIS_USER", "type": "string", "values": ["IDIS155", "IDIS735", "IDIS736"], "locked": true, "description": "IDIS Login-User (3 Accounts)"},
-      {"name": "CDP_PORT", "type": "number", "values": [9222, 9223, 9224], "locked": true, "description": "Chrome DevTools Protocol Port pro User"},
-      {"name": "SUPABASE_URL", "type": "string", "default": "from_.env", "locked": true, "description": "Supabase Projekt-URL"},
-      {"name": "REPORT_URL", "type": "string", "default": "gvsped-report", "locked": true, "description": "Edge Function fuer Email-Report"}
+      { "name": "IDIS_USER", "type": "string", "values": ["IDIS155", "IDIS735", "IDIS736"], "locked": true, "description": "IDIS Login-User (3 Accounts)" },
+      { "name": "CDP_PORT", "type": "number", "values": [9222, 9223, 9224], "locked": true, "description": "Chrome DevTools Protocol Port pro User" },
+      { "name": "SUPABASE_URL", "type": "string", "default": "from_.env", "locked": true, "description": "Supabase Projekt-URL" },
+      { "name": "REPORT_URL", "type": "string", "default": "gvsped-report", "locked": true, "description": "Edge Function fuer Email-Report" }
     ]
   },
   "lanes": [
-    {"id": "scheduler", "label": "Kontrollzentrum", "icon": "clock", "color": "#4A90D9", "description": "uxuix_schedules Trigger, run_multi.ps1 Orchestrierung"},
-    {"id": "browser", "label": "IDIS Browser", "icon": "globe", "color": "#E67E22", "description": "Playwright CDP: Login, AROS Navigation, Filter"},
-    {"id": "processing", "label": "Order Processing", "icon": "zap", "color": "#2ECC71", "description": "Bidirektionale Overconfirmation (Top+Bottom Bot)"},
-    {"id": "data", "label": "Supabase", "icon": "database", "color": "#8E44AD", "description": "gvsped_reports, workflow_runs"},
-    {"id": "reporting", "label": "Reporting", "icon": "bar-chart", "color": "#E74C3C", "description": "HTML-Report, Email via Edge Function"}
+    { "id": "scheduler", "label": "Kontrollzentrum", "icon": "clock", "color": "#4A90D9", "description": "uxuix_schedules Trigger, run_multi.ps1 Orchestrierung" },
+    { "id": "browser", "label": "IDIS Browser", "icon": "globe", "color": "#E67E22", "description": "Playwright CDP: Login, AROS Navigation, Filter" },
+    { "id": "processing", "label": "Order Processing", "icon": "zap", "color": "#2ECC71", "description": "Bidirektionale Overconfirmation (Top+Bottom Bot)" },
+    { "id": "data", "label": "Supabase", "icon": "database", "color": "#8E44AD", "description": "gvsped_reports, workflow_runs" },
+    { "id": "reporting", "label": "Reporting", "icon": "bar-chart", "color": "#E74C3C", "description": "HTML-Report, Email via Edge Function" }
   ],
   "steps": [
-    {
-      "id": "kontrollzentrum-trigger",
-      "lane": "scheduler",
-      "module": "gv-overconfirmation/launcher",
-      "label": "Kontrollzentrum Trigger",
-      "description": "uxuix_schedules dispatcht run_multi.ps1 um 04:00 CET (Mo/Di/Mi). Setzt PYTHONIOENCODING=utf-8.",
-      "next": ["idis-login"],
-      "inputs": ["schedule_config"],
-      "outputs": ["user_queue"],
-      "script": "run_multi.ps1"
-    },
-    {
-      "id": "idis-login",
-      "lane": "browser",
-      "module": "gv-overconfirmation/main",
-      "label": "IDIS Login (Dual Context)",
-      "description": "2 Browser-Contexts via CDP starten. Login mit j_username/j_password. Bei Fehler 2. Context: Zigzag-Fallback.",
-      "next": ["aros-navigate"],
-      "inputs": ["IDIS_USER", "IDIS_PASSWORD", "CDP_PORT"],
-      "outputs": ["context_top", "context_bottom"],
-      "script": "gv_overconfirmation.py"
-    },
-    {
-      "id": "aros-navigate",
-      "lane": "browser",
-      "module": "gv-overconfirmation/main",
-      "label": "AROS Navigation + Filter",
-      "description": "Navigate to Process AROS Orders (mainForm:_idJsp53). Depot-Filter (destinationTypeFilter=D). Show Result (_idJsp49).",
-      "next": ["load-orders"],
-      "inputs": ["context_top", "context_bottom"],
-      "outputs": ["filtered_page"],
-      "script": "gv_overconfirmation.py"
-    },
-    {
-      "id": "load-orders",
-      "lane": "browser",
-      "module": "gv-overconfirmation/main",
-      "label": "Order-Tabelle laden",
-      "description": "Alle Orders aus tr.row_odd/tr.row_even parsen. Ordered Qty (cells[6]), Bundle-Size extrahieren.",
-      "next": ["bidirectional-process"],
-      "inputs": ["filtered_page"],
-      "outputs": ["order_list", "total_orders"],
-      "script": "gv_overconfirmation.py"
-    },
-    {
-      "id": "bidirectional-process",
-      "lane": "processing",
-      "module": "gv-overconfirmation/main",
-      "label": "Bidirektionale Verarbeitung",
-      "description": "Top-Bot (idx 0 aufwaerts) + Bottom-Bot (letzter idx abwaerts) via asyncio.gather. Early-Stop bei 3x consecutive delta=0.",
-      "next": ["amend-order"],
-      "inputs": ["order_list", "context_top", "context_bottom"],
-      "outputs": ["processed_orders"],
-      "script": "gv_overconfirmation.py"
-    },
-    {
-      "id": "amend-order",
-      "lane": "processing",
-      "module": "gv-overconfirmation/main",
-      "label": "Amend + Overconfirmation setzen",
-      "description": "Pro Order: Amend-Button klicken. ceil(ordered/bundle)*bundle berechnen. Committed Input setzen. Save. Back.",
-      "next": ["generate-report"],
-      "inputs": ["order_index", "overconfirmation_value"],
-      "outputs": ["amend_result"],
-      "script": "gv_overconfirmation.py"
-    },
-    {
-      "id": "generate-report",
-      "lane": "reporting",
-      "module": "gv-overconfirmation/main",
-      "label": "Report generieren",
-      "description": "HTML-Report mit allen verarbeiteten Orders, Delta-Werten, Fehlern. In gvsped_reports speichern.",
-      "next": ["send-email"],
-      "inputs": ["processed_orders", "run_stats"],
-      "outputs": ["report_html", "report_id"],
-      "script": "gv_overconfirmation.py"
-    },
-    {
-      "id": "send-email",
-      "lane": "reporting",
-      "module": "gv-overconfirmation/main",
-      "label": "Email-Report senden",
-      "description": "Report via gvsped-report Edge Function. TO: bodo.buschick@uxuix.de + Michael.Venten@gvlogistik.de. CC: service@gvlogistik.de.",
-      "next": ["log-metrics"],
-      "inputs": ["report_html", "report_id"],
-      "outputs": ["email_sent"],
-      "script": "gv_overconfirmation.py"
-    },
-    {
-      "id": "log-metrics",
-      "lane": "data",
-      "module": "core/metrics-collector",
-      "label": "workflow_runs schreiben",
-      "description": "Workflow-Lauf in workflow_runs loggen: status, orders_processed, delta_total, duration_ms, errors.",
-      "next": [],
-      "inputs": ["run_stats", "timing"],
-      "outputs": ["metrics_logged"],
-      "script": "gv_overconfirmation.py"
-    }
+    { "id": "kontrollzentrum-trigger", "lane": "scheduler", "module": "gv-overconfirmation/launcher", "label": "Kontrollzentrum Trigger", "description": "uxuix_schedules dispatcht run_multi.ps1 um 04:00 CET (Mo/Di/Mi).", "next": ["idis-login"], "inputs": ["schedule_config"], "outputs": ["user_queue"], "script": "run_multi.ps1" },
+    { "id": "idis-login", "lane": "browser", "module": "gv-overconfirmation/main", "label": "IDIS Login (Dual Context)", "description": "2 Browser-Contexts via CDP starten. Login mit j_username/j_password.", "next": ["aros-navigate"], "inputs": ["IDIS_USER", "IDIS_PASSWORD", "CDP_PORT"], "outputs": ["context_top", "context_bottom"], "script": "gv_overconfirmation.py" },
+    { "id": "aros-navigate", "lane": "browser", "module": "gv-overconfirmation/main", "label": "AROS Navigation + Filter", "description": "Navigate to Process AROS Orders. Depot-Filter. Show Result.", "next": ["load-orders"], "inputs": ["context_top", "context_bottom"], "outputs": ["filtered_page"], "script": "gv_overconfirmation.py" },
+    { "id": "load-orders", "lane": "browser", "module": "gv-overconfirmation/main", "label": "Order-Tabelle laden", "description": "Alle Orders aus tr.row_odd/tr.row_even parsen.", "next": ["bidirectional-process"], "inputs": ["filtered_page"], "outputs": ["order_list", "total_orders"], "script": "gv_overconfirmation.py" },
+    { "id": "bidirectional-process", "lane": "processing", "module": "gv-overconfirmation/main", "label": "Bidirektionale Verarbeitung", "description": "Top-Bot + Bottom-Bot via asyncio.gather. Early-Stop bei 3x delta=0.", "next": ["amend-order"], "inputs": ["order_list", "context_top", "context_bottom"], "outputs": ["processed_orders"], "script": "gv_overconfirmation.py" },
+    { "id": "amend-order", "lane": "processing", "module": "gv-overconfirmation/main", "label": "Amend + Overconfirmation setzen", "description": "Pro Order: Amend, ceil(ordered/bundle)*bundle, Save, Back.", "next": ["generate-report"], "inputs": ["order_index", "overconfirmation_value"], "outputs": ["amend_result"], "script": "gv_overconfirmation.py" },
+    { "id": "generate-report", "lane": "reporting", "module": "gv-overconfirmation/main", "label": "Report generieren", "description": "HTML-Report mit allen verarbeiteten Orders.", "next": ["send-email"], "inputs": ["processed_orders", "run_stats"], "outputs": ["report_html", "report_id"], "script": "gv_overconfirmation.py" },
+    { "id": "send-email", "lane": "reporting", "module": "gv-overconfirmation/main", "label": "Email-Report senden", "description": "Report via gvsped-report Edge Function.", "next": ["log-metrics"], "inputs": ["report_html", "report_id"], "outputs": ["email_sent"], "script": "gv_overconfirmation.py" },
+    { "id": "log-metrics", "lane": "data", "module": "core/metrics-collector", "label": "workflow_runs schreiben", "description": "Workflow-Lauf in workflow_runs loggen.", "next": [], "inputs": ["run_stats", "timing"], "outputs": ["metrics_logged"], "script": "gv_overconfirmation.py" }
   ],
   "supabaseTables": [
-    {"name": "gvsped_reports", "purpose": "Overconfirmation-Reports mit HTML und Metriken", "rw": "rw"},
-    {"name": "workflow_runs", "purpose": "Monitoring: Status + Metriken pro Lauf", "rw": "write"},
-    {"name": "uxuix_schedules", "purpose": "Schedule-Config (Mo/Di/Mi 04:00)", "rw": "read"},
-    {"name": "customer_machine_tokens", "purpose": "Auth-Token fuer gvsped-report Edge Function", "rw": "read"}
+    { "name": "gvsped_reports", "purpose": "Overconfirmation-Reports mit HTML und Metriken", "rw": "rw" },
+    { "name": "workflow_runs", "purpose": "Monitoring: Status + Metriken pro Lauf", "rw": "write" },
+    { "name": "uxuix_schedules", "purpose": "Schedule-Config (Mo/Di/Mi 04:00)", "rw": "read" },
+    { "name": "customer_machine_tokens", "purpose": "Auth-Token fuer gvsped-report Edge Function", "rw": "read" }
   ],
   "errorHandling": {
     "module": "core/error-handler",
     "strategy": "log-and-continue",
-    "escalation": "workflow_runs + email-to-bodo",
-    "alarmRules": [
-      {"condition": "Kein success-Run seit Mo 06:00", "severity": "WARNING"},
-      {"condition": "Login-Fehler bei allen 3 Users", "severity": "CRITICAL", "action": "IDIS Credentials pruefen"},
-      {"condition": "charmap/encoding Error", "severity": "CRITICAL", "action": "PYTHONIOENCODING=utf-8 fehlt"},
-      {"condition": "0 Orders bei allen 3 Users (Mo-Mi)", "severity": "WARNING", "action": "Depot-Filter pruefen"}
-    ]
+    "escalation": "workflow_runs + email-to-bodo"
   },
   "incidents": [
-    {"date": "2026-03-09", "description": "Depot-Filter bei v1.4 Rewrite vergessen", "fix": "v1.4.1 (destinationTypeFilter=D)"},
-    {"date": "2026-03-09", "description": "Unicode-Crash (charmap codec)", "fix": "PYTHONIOENCODING=utf-8 + reconfigure()"},
-    {"date": "2026-03-09", "description": "SMTP-Auth fuer gvsped-report kaputt", "fix": "Workaround: drone-audit-email Edge Function"}
+    { "date": "2026-03-09", "description": "Depot-Filter bei v1.4 Rewrite vergessen", "fix": "v1.4.1 (destinationTypeFilter=D)" },
+    { "date": "2026-03-09", "description": "Unicode-Crash (charmap codec)", "fix": "PYTHONIOENCODING=utf-8 + reconfigure()" },
+    { "date": "2026-03-09", "description": "SMTP-Auth fuer gvsped-report kaputt", "fix": "Workaround: drone-audit-email Edge Function" }
   ]
 }
