@@ -150,7 +150,7 @@
       "welzhofer/export": null,
       "welzhofer/metrics": null
     },
-    "currentSHA": "ab33bfc73030ccc1007f7f8607a2dc64f7e1d62a"
+    "currentSHA": "49debbb7cbfffd3b174593d82c377f3c58d757d5"
   },
   "schedule": {
     "cron": "0 7 * * 1-5",
