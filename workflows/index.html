@@ -822,7 +822,7 @@ function renderSwimlane(wf) {
         const isGist = src.type === 'github-gist' || src.gist_id || src.gistId;
         const srcLabel = isGist ? 'Gist' : src.type === 'github-repo' ? 'Repo' : src.type || '';
         const fileInfo = src.type === 'vm-only'
-          ? (src.vmPath || '').split('\').pop() + ' — nur VM'
+          ? (src.vmPath || '').split('\\').pop() + ' — nur VM'
           : (src.file || modFile) + (src.lines ? ' (' + src.lines + ' Zeilen)' : '') + (srcLabel ? ' — ' + srcLabel : '');
         html += '<div class="file-tag">' + fileInfo + '</div>';
         html += '</div></div>';
