@@ -10,8 +10,8 @@
     "type": "github-gist",
     "gistId": "d8fe35c43d948ed0e898e4eb76049934",
     "owner": "ExasyncOU",
-    "currentSHA": "5ed9e9666cd13dc8f9081168fde6497f2d1b95e1",
-    "lastSynced": "2026-04-08T15:10:36.270Z",
+    "currentSHA": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+    "lastSynced": "2026-04-14T12:31:44.215Z",
     "files": {
       "orchestrator.py": {
         "lines": 1172,
@@ -61,9 +61,10 @@
         "size": 43160
       },
       "picklist_pdf.py": {
-        "lines": 231,
+        "lines": 249,
         "module": "nacke/picklist-pdf",
-        "logging": true
+        "logging": true,
+        "size": 8277
       },
       "master_data.py": {
         "lines": 359,
@@ -81,10 +82,10 @@
         "logging": true
       },
       "printer.py": {
-        "lines": 255,
+        "lines": 256,
         "module": "nacke/printer",
         "logging": true,
-        "size": 9654
+        "size": 9764
       },
       "nacke_email.py": {
         "lines": 220,
@@ -92,8 +93,9 @@
         "logging": true
       },
       "config.json": {
-        "lines": 71,
-        "module": "nacke/config"
+        "lines": 73,
+        "module": "nacke/config",
+        "size": 2304
       },
       "fulltest.py": {
         "lines": 501,
@@ -111,10 +113,10 @@
         "logging": true
       },
       "generate_todo_list.py": {
-        "lines": 560,
+        "lines": 567,
         "module": "nacke/generate-todo-list",
         "logging": true,
-        "size": 20339
+        "size": 20658
       },
       "preflight_check.py": {
         "lines": 603,
@@ -167,7 +169,7 @@
       "frozenLogic": {
         "version": "7.6.0",
         "frozenAt": "2026-03-24",
-        "pipelineGistSHA": "5ed9e9666cd13dc8f9081168fde6497f2d1b95e1",
+        "pipelineGistSHA": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
         "deployGistSHA": "0b026c34902224d608b645ea463658d3715be167",
         "bundleSource": "Col K (Einstellung RPR Kartonage), OL: OL Kartonage Sheet",
         "overconfirmationFactor": {
@@ -286,7 +288,7 @@
     {
       "id": "send-start-email",
       "lane": "reporting",
-      "module": "nacke/email-notifications",
+      "module": "nacke/nacke-email",
       "label": "Start-Email senden",
       "description": "Benachrichtigung dass Pipeline gestartet wurde (Modus, Maschine, Zeitstempel)",
       "next": [
@@ -565,7 +567,7 @@
     {
       "id": "send-end-email",
       "lane": "reporting",
-      "module": "nacke/email-notifications",
+      "module": "nacke/nacke-email",
       "label": "End-Email senden",
       "description": "Report-Email mit Ergebnis (Amendments, Picklisten, Fehler) per SMTP senden",
       "next": [
@@ -599,5 +601,15 @@
     "module": "core/error-handler",
     "strategy": "log-and-report",
     "escalation": "email-to-bodo"
+  },
+  "monitoring": {
+    "healthCheck": "SELECT started_at, status, stats->'steps'->'todo_list' AS todo, stats->'steps'->'print' AS print FROM workflow_runs WHERE workflow = 'nacke' ORDER BY started_at DESC LIMIT 5",
+    "metrics": {
+      "avg_orders_per_run": 131,
+      "avg_picklists_generated": 131,
+      "pipeline_version": "v4.1",
+      "last_known_issue": "2026-04-09 printer buffer - fixed with 60s batch pause every 10 lists"
+    },
+    "lastRun": "2026-04-09T04:34:16Z"
   }
 }
