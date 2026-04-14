@@ -13,7 +13,6 @@
     "type": "github-gist",
     "gistId": "cc65fdbdb6e48b0c3739aca4826b8474",
     "owner": "ExasyncOU",
-    "lastSynced": "2026-03-20T06:12:03.000Z",
     "vmPath": "C:\\Welzhofer\\",
     "mainScript": "scheduler.py",
     "startScript": "start-welzhofer.bat",
@@ -121,8 +120,8 @@
       },
       "start-welzhofer.bat": {
         "module": "welzhofer/start",
-        "description": "Start-Script: scheduler.py starten",
-        "lines": 3
+        "description": "Start-Script mit Log-Redirect (R7) nach logs/scheduler_YYYY-MM-DD.log",
+        "lines": 11
       },
       "stop-welzhofer.bat": {
         "module": "welzhofer/stop",
@@ -150,7 +149,8 @@
       "welzhofer/export": null,
       "welzhofer/metrics": null
     },
-    "currentSHA": "49debbb7cbfffd3b174593d82c377f3c58d757d5"
+    "currentSHA": "ba14110bc5baced3fca6ac1f93b5d30d3a54af4f",
+    "lastSynced": "2026-04-14T08:56:56.000Z"
   },
   "schedule": {
     "cron": "0 7 * * 1-5",
