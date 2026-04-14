@@ -13,8 +13,13 @@
   },
   "guardrails": {
     "constraints": {
-      "allowedDays": ["Monday"],
-      "allowedHours": { "start": "07:00", "end": "12:00" },
+      "allowedDays": [
+        "Monday"
+      ],
+      "allowedHours": {
+        "start": "07:00",
+        "end": "12:00"
+      },
       "maxConcurrentRuns": 1,
       "timeoutMinutes": 30,
       "hardRules": [
@@ -23,31 +28,128 @@
       ]
     },
     "variables": [
-      { "name": "SHELL_EMAIL", "type": "string", "default": "from_vault", "locked": true, "description": "Shell Fleet Hub Login Email" },
-      { "name": "SHELL_PASSWORD", "type": "string", "default": "from_vault", "locked": true, "description": "Shell Fleet Hub Passwort" },
-      { "name": "TOTP_SECRET", "type": "string", "default": "from_vault", "locked": true, "description": "TOTP Secret fuer 2FA" },
-      { "name": "DATE_RANGE_START_OFFSET", "type": "number", "default": -9, "min": -30, "max": -1, "description": "Start-Offset in Tagen (heute -9)" },
-      { "name": "DATE_RANGE_END_OFFSET", "type": "number", "default": -3, "min": -30, "max": -1, "description": "End-Offset in Tagen (heute -3)" },
-      { "name": "REPORT_RECIPIENTS", "type": "string[]", "default": ["gvsped-report@exasync.ai"], "description": "Email-Empfaenger" },
-      { "name": "SKIP_EMAIL", "type": "boolean", "default": false, "description": "Email-Versand ueberspringen (Test)" }
+      {
+        "name": "SHELL_EMAIL",
+        "type": "string",
+        "default": "from_vault",
+        "locked": true,
+        "description": "Shell Fleet Hub Login Email"
+      },
+      {
+        "name": "SHELL_PASSWORD",
+        "type": "string",
+        "default": "from_vault",
+        "locked": true,
+        "description": "Shell Fleet Hub Passwort"
+      },
+      {
+        "name": "TOTP_SECRET",
+        "type": "string",
+        "default": "from_vault",
+        "locked": true,
+        "description": "TOTP Secret fuer 2FA"
+      },
+      {
+        "name": "DATE_RANGE_START_OFFSET",
+        "type": "number",
+        "default": -9,
+        "min": -30,
+        "max": -1,
+        "description": "Start-Offset in Tagen (heute -9)"
+      },
+      {
+        "name": "DATE_RANGE_END_OFFSET",
+        "type": "number",
+        "default": -3,
+        "min": -30,
+        "max": -1,
+        "description": "End-Offset in Tagen (heute -3)"
+      },
+      {
+        "name": "REPORT_RECIPIENTS",
+        "type": "string[]",
+        "default": [
+          "gvsped-report@exasync.ai"
+        ],
+        "description": "Email-Empfaenger"
+      },
+      {
+        "name": "SKIP_EMAIL",
+        "type": "boolean",
+        "default": false,
+        "description": "Email-Versand ueberspringen (Test)"
+      }
     ]
   },
   "lanes": [
-    { "id": "orchestrator", "label": "Orchestrator", "icon": "🎯", "color": "#4A90D9" },
-    { "id": "browser", "label": "Shell Fleet Hub", "icon": "🌐", "color": "#E67E22" },
-    { "id": "calc", "label": "Berechnung", "icon": "🔢", "color": "#27AE60" },
-    { "id": "reporting", "label": "Reporting", "icon": "📧", "color": "#8E44AD" }
+    {
+      "id": "orchestrator",
+      "label": "Orchestrator",
+      "icon": "🎯",
+      "color": "#4A90D9"
+    },
+    {
+      "id": "browser",
+      "label": "Shell Fleet Hub",
+      "icon": "🌐",
+      "color": "#E67E22"
+    },
+    {
+      "id": "calc",
+      "label": "Berechnung",
+      "icon": "🔢",
+      "color": "#27AE60"
+    },
+    {
+      "id": "reporting",
+      "label": "Reporting",
+      "icon": "📧",
+      "color": "#8E44AD"
+    },
+    {
+      "id": "data",
+      "label": "Daten",
+      "icon": "database",
+      "color": "#27AE60",
+      "description": "Shared Library"
+    }
   ],
   "steps": [
+    {
+      "id": "orchestrator",
+      "lane": "orchestrator",
+      "module": "maut/orchestrator",
+      "label": "Pipeline Orchestrator",
+      "description": "Faehrt 7 Module sequenziell mit state.json + workflow_runs",
+      "next": [
+        "date-calc"
+      ],
+      "inputs": [
+        "state.json"
+      ],
+      "outputs": [
+        "workflow_runs"
+      ],
+      "script": "run_maut.py"
+    },
     {
       "id": "date-calc",
       "lane": "orchestrator",
       "module": "maut/date-calculator",
       "label": "Zeitraum berechnen",
       "description": "Start = heute -9 Tage, Ende = heute -3 Tage",
-      "next": ["shell-login"],
-      "inputs": ["DATE_RANGE_START_OFFSET", "DATE_RANGE_END_OFFSET"],
-      "outputs": ["date_start", "date_end"]
+      "next": [
+        "shell-login"
+      ],
+      "inputs": [
+        "DATE_RANGE_START_OFFSET",
+        "DATE_RANGE_END_OFFSET"
+      ],
+      "outputs": [
+        "date_start",
+        "date_end"
+      ],
+      "script": "modules_01_date_calculator.py"
     },
     {
       "id": "shell-login",
@@ -55,9 +157,18 @@
       "module": "maut/shell-login",
       "label": "Shell Fleet Hub Login",
       "description": "Playwright: Email + Passwort + TOTP eingeben",
-      "next": ["select-account"],
-      "inputs": ["SHELL_EMAIL", "SHELL_PASSWORD", "TOTP_SECRET"],
-      "outputs": ["browser_session"]
+      "next": [
+        "select-account"
+      ],
+      "inputs": [
+        "SHELL_EMAIL",
+        "SHELL_PASSWORD",
+        "TOTP_SECRET"
+      ],
+      "outputs": [
+        "browser_session"
+      ],
+      "script": "modules_02_shell_login.py"
     },
     {
       "id": "select-account",
@@ -65,9 +176,16 @@
       "module": "maut/select-account",
       "label": "Account waehlen",
       "description": "Account (M) DE26731323 auswaehlen",
-      "next": ["download-maut"],
-      "inputs": ["browser_session"],
-      "outputs": ["account_selected"]
+      "next": [
+        "download-maut"
+      ],
+      "inputs": [
+        "browser_session"
+      ],
+      "outputs": [
+        "account_selected"
+      ],
+      "script": "modules_03_select_account.py"
     },
     {
       "id": "download-maut",
@@ -75,9 +193,18 @@
       "module": "maut/download-data",
       "label": "Mautdaten laden",
       "description": "Toll4Europe Mautliste als Excel herunterladen",
-      "next": ["calculate"],
-      "inputs": ["account_selected", "date_start", "date_end"],
-      "outputs": ["excel_file"]
+      "next": [
+        "calculate"
+      ],
+      "inputs": [
+        "account_selected",
+        "date_start",
+        "date_end"
+      ],
+      "outputs": [
+        "excel_file"
+      ],
+      "script": "modules_04_download_data.py"
     },
     {
       "id": "calculate",
@@ -85,9 +212,17 @@
       "module": "maut/calculate-tolls",
       "label": "Maut berechnen",
       "description": "Maut/km berechnen, Anomalien erkennen",
-      "next": ["upload-results"],
-      "inputs": ["excel_file"],
-      "outputs": ["calculations", "anomalies"]
+      "next": [
+        "upload-results"
+      ],
+      "inputs": [
+        "excel_file"
+      ],
+      "outputs": [
+        "calculations",
+        "anomalies"
+      ],
+      "script": "modules_05_calculate_tolls.py"
     },
     {
       "id": "upload-results",
@@ -95,9 +230,16 @@
       "module": "maut/upload-results",
       "label": "Ergebnis hochladen",
       "description": "Berechnungen nach Supabase schreiben",
-      "next": ["send-report"],
-      "inputs": ["calculations"],
-      "outputs": ["uploaded"]
+      "next": [
+        "send-report"
+      ],
+      "inputs": [
+        "calculations"
+      ],
+      "outputs": [
+        "uploaded"
+      ],
+      "script": "modules_06_upload_results.py"
     },
     {
       "id": "send-report",
@@ -106,8 +248,94 @@
       "label": "Report senden",
       "description": "Maut-Report per Email an Empfaenger senden",
       "next": [],
-      "inputs": ["calculations", "anomalies", "REPORT_RECIPIENTS"],
-      "outputs": ["email_sent"]
+      "inputs": [
+        "calculations",
+        "anomalies",
+        "REPORT_RECIPIENTS"
+      ],
+      "outputs": [
+        "email_sent"
+      ],
+      "script": "modules_07_send_report.py"
+    },
+    {
+      "id": "shared-lib",
+      "lane": "data",
+      "module": "maut/lib",
+      "label": "Shared Library",
+      "description": "env loader, state IO, logging, supabase helper",
+      "next": [],
+      "inputs": [
+        ".env"
+      ],
+      "outputs": [
+        "read_state",
+        "write_state",
+        "supabase_post"
+      ],
+      "script": "lib_common.py"
     }
-  ]
+  ],
+  "frozenAt": "2026-04-14T12:25:04.177Z",
+  "vmPath": "C:\\Mautberechnung\\",
+  "source": {
+    "type": "gist",
+    "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+    "gistUrl": "https://gist.github.com/ExasyncOU/93b95884e6c8231794b4bba98f0a07f8",
+    "lastSynced": "2026-04-14T12:27:28.249Z",
+    "gistUpdatedAt": "2026-04-14T12:24:01Z",
+    "files": {
+      "run_maut.py": {
+        "lines": 172,
+        "module": "maut/orchestrator",
+        "logging": true
+      },
+      "lib_common.py": {
+        "lines": 114,
+        "module": "maut/lib",
+        "logging": true
+      },
+      "modules_01_date_calculator.py": {
+        "lines": 55,
+        "module": "maut/date-calculator",
+        "logging": true
+      },
+      "modules_02_shell_login.py": {
+        "lines": 100,
+        "module": "maut/shell-login",
+        "logging": true
+      },
+      "modules_03_select_account.py": {
+        "lines": 54,
+        "module": "maut/select-account",
+        "logging": true
+      },
+      "modules_04_download_data.py": {
+        "lines": 97,
+        "module": "maut/download-data",
+        "logging": true
+      },
+      "modules_05_calculate_tolls.py": {
+        "lines": 171,
+        "module": "maut/calculate-tolls",
+        "logging": true
+      },
+      "modules_06_upload_results.py": {
+        "lines": 70,
+        "module": "maut/upload-results",
+        "logging": true
+      },
+      "modules_07_send_report.py": {
+        "lines": 98,
+        "module": "maut/send-report",
+        "logging": true
+      },
+      "requirements.txt": {
+        "lines": 6,
+        "module": "maut/requirements",
+        "logging": true
+      }
+    },
+    "currentSHA": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7"
+  }
 }

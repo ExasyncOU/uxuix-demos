@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-04-13T08:29:45.155Z",
+  "generatedAt": "2026-04-14T12:27:37.107Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
     "core/metrics-collector": {
@@ -79,8 +79,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "orchestrator.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 1171,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 1172,
         "size": 48982
       },
       "gate": {
@@ -110,8 +110,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_browser.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 245,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 246,
         "size": 9664
       },
       "gate": {
@@ -143,8 +143,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "picklist_generator.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 1025,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 1026,
         "size": 43160
       },
       "gate": {
@@ -176,7 +176,7 @@
     "nacke/picklist-pdf": {
       "id": "nacke/picklist-pdf",
       "name": "Picklist PDF Renderer",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "status": "frozen",
       "language": "python",
       "description": "Rendert fertige xlsx-Picklisten als A4-Landscape-PDF. Ausgelagert aus picklist_generator.py v7.",
@@ -192,9 +192,9 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "picklist_pdf.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 230,
-        "size": 7436
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 249,
+        "size": 8277
       },
       "gate": {
         "passed": true,
@@ -207,13 +207,18 @@
       "frozenBy": "workflow-engine",
       "changelog": [
         {
+          "version": "1.1.0",
+          "date": "2026-04-14",
+          "changes": "Header-Repeat-Fix: Groessen-Header (Zeile 7) wird auf JEDER PDF-Seite wiederholt (Kundenwunsch Oliver). fpdf2 ignoriert ws.print_title_rows, Header wird jetzt manuell nach jedem pdf.add_page() neu gerendert. Keine anderen Aenderungen."
+        },
+        {
           "version": "1.0.0",
           "date": "2026-03-24",
           "changes": "Initiale Version: PDF-Rendering aus picklist_generator.py ausgelagert. export_pdf() als Top-Level-Funktion."
         }
       ],
       "fileHash": null,
-      "code": "\"\"\"\npicklist_pdf.py - PDF-Rendering fuer AB-Picklisten.\n\nLiest ein fertiges xlsx (generiert von picklist_generator.py) und\nrendert es als A4-Landscape-PDF. Breite = 1 Seite, Hoehe = beliebig.\n\nAusgelagert aus picklist_generator.py v5 (24.03.2026).\n\"\"\"\n\nimport logging\nfrom pathlib import Path\n\nfrom fpdf import FPDF\nfrom openpyxl import load_workbook\nfrom openpyxl.utils import get_column_letter\n\nlogger = logging.getLogger(__name__)\n\n\ndef _draw_footer(pdf, filename, page_num, margin_x, page_h, footer_h, total_pages=None):\n    \"\"\"Zeichnet Footer mit Dateiname (links) und Seitenzahl (rechts).\"\"\"\n    footer_y = page_h - footer_h\n    pdf.set_draw_color(180, 180, 180)\n    pdf.line(margin_x, footer_y, 297 - margin_x, footer_y)\n    pdf.set_font(\"Helvetica\", size=9)\n    pdf.set_text_color(60, 60, 60)\n    pdf.set_xy(margin_x, footer_y + 1)\n    pdf.cell(140, 4, filename, align=\"L\")\n    if total_pages:\n        page_text = f\"Seite {page_num} von {total_pages}\"\n    else:\n        page_text = f\"Seite {page_num}\"\n    pdf.set_xy(297 - margin_x - 60, footer_y + 1)\n    pdf.cell(60, 4, page_text, align=\"R\")\n    pdf.set_text_color(0, 0, 0)\n\n\ndef _fill_rgb(cell):\n    \"\"\"Extrahiert RGB-Farbe aus openpyxl Cell Fill.\"\"\"\n    try:\n        fill = cell.fill\n        if fill and fill.fgColor and fill.fgColor.rgb and fill.fgColor.rgb != \"00000000\":\n            rgb = str(fill.fgColor.rgb)\n            if len(rgb) == 8:\n                rgb = rgb[2:]  # ARGB -> RGB\n            if len(rgb) == 6:\n                return tuple(int(rgb[i:i+2], 16) for i in (0, 2, 4))\n    except Exception:\n        pass\n    return None\n\n\ndef export_pdf(xlsx_path: Path, pdf_path: Path) -> None:\n    \"\"\"Liest das erste Sheet der xlsx und rendert als A4-Landscape-PDF.\n\n    Breite = 1 Seite, Hoehe = beliebig viele Seiten (Oliver 10.03.2026).\n    \"\"\"\n    try:\n        wb = load_workbook(xlsx_path, data_only=True)\n        ws = wb.active\n    except Exception as e:\n        logger.warning(\"PDF-Export fehlgeschlagen (xlsx lesen): %s\", e)\n        return\n\n    # A4 Landscape: 297 x 210 mm\n    pdf = FPDF(orientation=\"L\", unit=\"mm\", format=\"A4\")\n    pdf.set_auto_page_break(auto=False)\n\n    margin_x = 5\n    margin_y = 5\n    page_w = 297\n    page_h = 210\n    usable_w = page_w - 2 * margin_x   # ~287 mm\n\n    col_count = ws.max_column or 1\n\n    # Finde letzte Zeile mit Daten\n    max_row = 0\n    for row in ws.iter_rows(min_row=1, max_row=ws.max_row, max_col=col_count):\n        for cell in row:\n            if cell.value is not None:\n                max_row = max(max_row, cell.row)\n    if max_row == 0:\n        logger.warning(\"PDF-Export: Leeres Sheet, ueberspringe\")\n        return\n\n    # Spaltenbreiten proportional auf Seitenbreite\n    raw_widths = []\n    for ci in range(1, col_count + 1):\n        col_letter = get_column_letter(ci)\n        dim = ws.column_dimensions.get(col_letter)\n        w = dim.width if dim and dim.width else 8\n        raw_widths.append(w)\n\n    total_raw = sum(raw_widths) or 1\n    col_widths_mm = [w / total_raw * usable_w for w in raw_widths]\n\n    # Feste Zeilenhoehe: gross genug zum Lesen im Lager\n    row_h = 6.0\n    base_font_size = 9.0\n\n    # Footer-Hoehe reservieren (Dateiname + Seitenzahl)\n    footer_h = 8  # mm fuer Footer-Bereich\n    usable_body_h = page_h - margin_y - footer_h  # Druckbereich ohne Footer\n\n    # Seitenzaehler\n    page_num = 1\n    pdf_filename = pdf_path.name\n\n    # Erste Seite\n    pdf.add_page()\n    y = margin_y\n\n    # Summenblock-Erkennung: Finde erste \"Summe\"-Zeile in Spalte B (dort stehen die Labels)\n    # NUR \"Summe\" als Trigger — \"Kartonanzahl\" und \"Paletten\" kommen auch in den Laender-Datenzeilen vor!\n    # Nach der ersten Summenzeile kommen NUR noch Summen bis max_row — ein zusammenhaengender Block.\n    summen_start_row = 0\n    for sri in range(1, max_row + 1):\n        cell_val = str(ws.cell(row=sri, column=2).value or \"\").strip()\n        if cell_val.startswith(\"Summe\"):\n            summen_start_row = sri\n            break\n\n    def _render_row(ri):\n        \"\"\"Rendert eine einzelne Excel-Zeile als PDF-Zeile.\"\"\"\n        x = margin_x\n        for ci in range(1, col_count + 1):\n            cell = ws.cell(row=ri, column=ci)\n            cw = col_widths_mm[ci - 1]\n            val = cell.value\n            text = str(val) if val is not None else \"\"\n\n            # Hintergrundfarbe\n            bg = _fill_rgb(cell)\n            if bg:\n                pdf.set_fill_color(*bg)\n                do_fill = True\n            else:\n                do_fill = False\n\n            # Font-Stil\n            style = \"\"\n            try:\n                if cell.font:\n                    if cell.font.bold:\n                        style += \"B\"\n                    if cell.font.italic:\n                        style += \"I\"\n            except Exception:\n                pass\n\n            # Font-Groesse proportional\n            fs = base_font_size\n            try:\n                if cell.font and cell.font.size:\n                    ratio = cell.font.size / 12.0\n                    fs = base_font_size * max(0.7, min(ratio, 1.5))\n            except Exception:\n                pass\n\n            pdf.set_font(\"Helvetica\", style=style, size=fs)\n\n            # Border\n            has_border = False\n            try:\n                if cell.border and cell.border.left and cell.border.left.style:\n                    has_border = True\n            except Exception:\n                pass\n\n            if has_border:\n                pdf.set_draw_color(180, 180, 180)\n                pdf.rect(x, y, cw, row_h)\n\n            # Text zentriert\n            pdf.set_xy(x, y)\n            pdf.cell(cw, row_h, text, border=0, align=\"C\", fill=do_fill)\n\n            x += cw\n\n    last_page_start_row = 1\n\n    for ri in range(1, max_row + 1):\n        # Summenblock-Schutz: Wenn Summenblock beginnt und nicht genug Platz,\n        # gesamten Block (bis max_row) auf neue Seite schieben\n        if summen_start_row > 0 and ri == summen_start_row:\n            remaining_rows = max_row - ri + 1\n            needed_h = remaining_rows * row_h\n            available_h = usable_body_h - y\n            if needed_h > available_h:\n                logger.info(\"Summenblock-Umbruch: %s — %d Zeilen brauchen %.1fmm, nur %.1fmm frei → neue Seite\",\n                            pdf_path.name, remaining_rows, needed_h, available_h)\n                pdf.add_page()\n                page_num += 1\n                y = margin_y\n                last_page_start_row = ri\n\n        # Seitenumbruch wenn noetig\n        if y + row_h > usable_body_h:\n            pdf.add_page()\n            page_num += 1\n            y = margin_y\n            last_page_start_row = ri\n\n        _render_row(ri)\n        y += row_h\n\n    # Letzte Seite duplizieren (Kundenwunsch: Duplikat fuer Lagersortierung)\n    pdf.add_page()\n    page_num += 1\n    y = margin_y\n    for ri in range(last_page_start_row, max_row + 1):\n        _render_row(ri)\n        y += row_h\n\n    total_pages = page_num\n\n    # Footer auf ALLEN Seiten mit total_pages zeichnen\n    for p_idx in range(total_pages):\n        pdf.page = p_idx + 1\n        _draw_footer(pdf, pdf_filename, p_idx + 1, margin_x, page_h, footer_h, total_pages)\n\n    # Zurueck zur letzten Seite\n    pdf.page = total_pages\n\n    try:\n        pdf.output(str(pdf_path))\n        logger.info(\"PDF exportiert: %s (%d Seiten)\", pdf_path.name, total_pages)\n    except Exception as e:\n        logger.warning(\"PDF-Export fehlgeschlagen (schreiben): %s\", e)\n"
+      "code": "\"\"\"\npicklist_pdf.py - PDF-Rendering fuer AB-Picklisten.\n\nLiest ein fertiges xlsx (generiert von picklist_generator.py) und\nrendert es als A4-Landscape-PDF. Breite = 1 Seite, Hoehe = beliebig.\n\nAusgelagert aus picklist_generator.py v5 (24.03.2026).\n\nPATCH 14.04.2026: Groessen-Header (Zeile 7) wird auf JEDER Seite wiederholt.\nfpdf2 ignoriert ws.print_title_rows, daher muss der Header manuell nach\njedem pdf.add_page() neu gerendert werden.\n\"\"\"\n\nimport logging\nfrom pathlib import Path\n\nfrom fpdf import FPDF\nfrom openpyxl import load_workbook\nfrom openpyxl.utils import get_column_letter\n\nlogger = logging.getLogger(__name__)\n\nHEADER_ROW = 7  # Groessen-Header-Zeile in der xlsx (blau, D9E2F3)\n\n\ndef _draw_footer(pdf, filename, page_num, margin_x, page_h, footer_h, total_pages=None):\n    \"\"\"Zeichnet Footer mit Dateiname (links) und Seitenzahl (rechts).\"\"\"\n    footer_y = page_h - footer_h\n    pdf.set_draw_color(180, 180, 180)\n    pdf.line(margin_x, footer_y, 297 - margin_x, footer_y)\n    pdf.set_font(\"Helvetica\", size=9)\n    pdf.set_text_color(60, 60, 60)\n    pdf.set_xy(margin_x, footer_y + 1)\n    pdf.cell(140, 4, filename, align=\"L\")\n    if total_pages:\n        page_text = f\"Seite {page_num} von {total_pages}\"\n    else:\n        page_text = f\"Seite {page_num}\"\n    pdf.set_xy(297 - margin_x - 60, footer_y + 1)\n    pdf.cell(60, 4, page_text, align=\"R\")\n    pdf.set_text_color(0, 0, 0)\n\n\ndef _fill_rgb(cell):\n    \"\"\"Extrahiert RGB-Farbe aus openpyxl Cell Fill.\"\"\"\n    try:\n        fill = cell.fill\n        if fill and fill.fgColor and fill.fgColor.rgb and fill.fgColor.rgb != \"00000000\":\n            rgb = str(fill.fgColor.rgb)\n            if len(rgb) == 8:\n                rgb = rgb[2:]  # ARGB -> RGB\n            if len(rgb) == 6:\n                return tuple(int(rgb[i:i+2], 16) for i in (0, 2, 4))\n    except Exception:\n        pass\n    return None\n\n\ndef export_pdf(xlsx_path: Path, pdf_path: Path) -> None:\n    \"\"\"Liest das erste Sheet der xlsx und rendert als A4-Landscape-PDF.\n\n    Breite = 1 Seite, Hoehe = beliebig viele Seiten (Oliver 10.03.2026).\n    \"\"\"\n    try:\n        wb = load_workbook(xlsx_path, data_only=True)\n        ws = wb.active\n    except Exception as e:\n        logger.warning(\"PDF-Export fehlgeschlagen (xlsx lesen): %s\", e)\n        return\n\n    # A4 Landscape: 297 x 210 mm\n    pdf = FPDF(orientation=\"L\", unit=\"mm\", format=\"A4\")\n    pdf.set_auto_page_break(auto=False)\n\n    margin_x = 5\n    margin_y = 5\n    page_w = 297\n    page_h = 210\n    usable_w = page_w - 2 * margin_x   # ~287 mm\n\n    col_count = ws.max_column or 1\n\n    # Finde letzte Zeile mit Daten\n    max_row = 0\n    for row in ws.iter_rows(min_row=1, max_row=ws.max_row, max_col=col_count):\n        for cell in row:\n            if cell.value is not None:\n                max_row = max(max_row, cell.row)\n    if max_row == 0:\n        logger.warning(\"PDF-Export: Leeres Sheet, ueberspringe\")\n        return\n\n    # Spaltenbreiten proportional auf Seitenbreite\n    raw_widths = []\n    for ci in range(1, col_count + 1):\n        col_letter = get_column_letter(ci)\n        dim = ws.column_dimensions.get(col_letter)\n        w = dim.width if dim and dim.width else 8\n        raw_widths.append(w)\n\n    total_raw = sum(raw_widths) or 1\n    col_widths_mm = [w / total_raw * usable_w for w in raw_widths]\n\n    # Feste Zeilenhoehe: gross genug zum Lesen im Lager\n    row_h = 6.0\n    base_font_size = 9.0\n\n    # Footer-Hoehe reservieren (Dateiname + Seitenzahl)\n    footer_h = 8  # mm fuer Footer-Bereich\n    usable_body_h = page_h - margin_y - footer_h  # Druckbereich ohne Footer\n\n    # Seitenzaehler\n    page_num = 1\n    pdf_filename = pdf_path.name\n\n    # Erste Seite\n    pdf.add_page()\n    y = margin_y\n\n    # Summenblock-Erkennung: Finde erste \"Summe\"-Zeile in Spalte B (dort stehen die Labels)\n    # NUR \"Summe\" als Trigger — \"Kartonanzahl\" und \"Paletten\" kommen auch in den Laender-Datenzeilen vor!\n    # Nach der ersten Summenzeile kommen NUR noch Summen bis max_row — ein zusammenhaengender Block.\n    summen_start_row = 0\n    for sri in range(1, max_row + 1):\n        cell_val = str(ws.cell(row=sri, column=2).value or \"\").strip()\n        if cell_val.startswith(\"Summe\"):\n            summen_start_row = sri\n            break\n\n    def _render_row(ri, y_pos):\n        \"\"\"Rendert eine einzelne Excel-Zeile als PDF-Zeile bei y_pos.\"\"\"\n        x = margin_x\n        for ci in range(1, col_count + 1):\n            cell = ws.cell(row=ri, column=ci)\n            cw = col_widths_mm[ci - 1]\n            val = cell.value\n            text = str(val) if val is not None else \"\"\n\n            # Hintergrundfarbe\n            bg = _fill_rgb(cell)\n            if bg:\n                pdf.set_fill_color(*bg)\n                do_fill = True\n            else:\n                do_fill = False\n\n            # Font-Stil\n            style = \"\"\n            try:\n                if cell.font:\n                    if cell.font.bold:\n                        style += \"B\"\n                    if cell.font.italic:\n                        style += \"I\"\n            except Exception:\n                pass\n\n            # Font-Groesse proportional\n            fs = base_font_size\n            try:\n                if cell.font and cell.font.size:\n                    ratio = cell.font.size / 12.0\n                    fs = base_font_size * max(0.7, min(ratio, 1.5))\n            except Exception:\n                pass\n\n            pdf.set_font(\"Helvetica\", style=style, size=fs)\n\n            # Border\n            has_border = False\n            try:\n                if cell.border and cell.border.left and cell.border.left.style:\n                    has_border = True\n            except Exception:\n                pass\n\n            if has_border:\n                pdf.set_draw_color(180, 180, 180)\n                pdf.rect(x, y_pos, cw, row_h)\n\n            # Text zentriert\n            pdf.set_xy(x, y_pos)\n            pdf.cell(cw, row_h, text, border=0, align=\"C\", fill=do_fill)\n\n            x += cw\n\n    last_page_start_row = 1\n\n    for ri in range(1, max_row + 1):\n        # Summenblock-Schutz: Wenn Summenblock beginnt und nicht genug Platz,\n        # gesamten Block (bis max_row) auf neue Seite schieben\n        if summen_start_row > 0 and ri == summen_start_row:\n            remaining_rows = max_row - ri + 1\n            needed_h = remaining_rows * row_h\n            available_h = usable_body_h - y\n            if needed_h > available_h:\n                logger.info(\"Summenblock-Umbruch: %s — %d Zeilen brauchen %.1fmm, nur %.1fmm frei → neue Seite\",\n                            pdf_path.name, remaining_rows, needed_h, available_h)\n                pdf.add_page()\n                page_num += 1\n                y = margin_y\n                # Groessen-Header auf neuer Seite wiederholen (blaue Zeile)\n                if ri > HEADER_ROW:\n                    _render_row(HEADER_ROW, y)\n                    y += row_h\n                last_page_start_row = ri\n\n        # Seitenumbruch wenn noetig\n        if y + row_h > usable_body_h:\n            pdf.add_page()\n            page_num += 1\n            y = margin_y\n            # Groessen-Header auf neuer Seite wiederholen (blaue Zeile)\n            if ri > HEADER_ROW:\n                _render_row(HEADER_ROW, y)\n                y += row_h\n            last_page_start_row = ri\n\n        _render_row(ri, y)\n        y += row_h\n\n    # Letzte Seite duplizieren (Kundenwunsch: Duplikat fuer Lagersortierung)\n    pdf.add_page()\n    page_num += 1\n    y = margin_y\n    # Auch auf Duplikat-Seite Header wiederholen (falls last_page_start_row > HEADER_ROW)\n    if last_page_start_row > HEADER_ROW:\n        _render_row(HEADER_ROW, y)\n        y += row_h\n    for ri in range(last_page_start_row, max_row + 1):\n        _render_row(ri, y)\n        y += row_h\n\n    total_pages = page_num\n\n    # Footer auf ALLEN Seiten mit total_pages zeichnen\n    for p_idx in range(total_pages):\n        pdf.page = p_idx + 1\n        _draw_footer(pdf, pdf_filename, p_idx + 1, margin_x, page_h, footer_h, total_pages)\n\n    # Zurueck zur letzten Seite\n    pdf.page = total_pages\n\n    try:\n        pdf.output(str(pdf_path))\n        logger.info(\"PDF exportiert: %s (%d Seiten)\", pdf_path.name, total_pages)\n    except Exception as e:\n        logger.warning(\"PDF-Export fehlgeschlagen (schreiben): %s\", e)\n"
     },
     "nacke/master-data": {
       "id": "nacke/master-data",
@@ -234,8 +239,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "master_data.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 358,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 359,
         "size": 12571
       },
       "gate": {
@@ -264,8 +269,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "overconfirmation.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 213,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 214,
         "size": 7854
       },
       "gate": {
@@ -294,8 +299,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "daily_report.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 545,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 546,
         "size": 11051
       },
       "gate": {
@@ -324,8 +329,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "printer.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 255,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 256,
         "size": 9764
       },
       "gate": {
@@ -352,8 +357,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "config.json",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 72,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 73,
         "size": 2304
       },
       "gate": {
@@ -367,10 +372,10 @@
     "maut/date-calculator": {
       "id": "maut/date-calculator",
       "name": "Maut Zeitraum-Rechner",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Berechnet den Abfrage-Zeitraum fuer die Mautdaten. Standard: heute -9 bis heute -3 Tage. So werden nur vollstaendig abgerechnete Tage abgefragt.",
+      "description": "date_start (heute -9d), date_end (heute -3d) -> state.data",
       "usedBy": [
         "maut"
       ],
@@ -378,17 +383,24 @@
       "gate": {
         "passed": true,
         "score": "11/11",
-        "lastCheck": "2026-03-05"
+        "lastCheck": "2026-04-14"
       },
-      "code": "from datetime import datetime, timedelta\n\ndef calculate_date_range(start_offset: int = -9, end_offset: int = -3) -> dict:\n    \"\"\"Zeitraum fuer Mautabfrage berechnen.\n    \n    Offsets sind negative Tage ab heute:\n    - start_offset = -9 -> vor 9 Tagen\n    - end_offset = -3   -> vor 3 Tagen\n    \n    Wir nehmen NICHT die letzten 2 Tage, weil Shell Fleet Hub\n    die Daten erst mit 2-3 Tagen Verzoegerung bereitstellt.\n    \n    Returns:\n        Dict mit 'start' und 'end' als formatierte Strings (DD.MM.YYYY)\n    \"\"\"\n    today = datetime.now()\n    \n    date_start = today + timedelta(days=start_offset)\n    date_end = today + timedelta(days=end_offset)\n    \n    # Shell Fleet Hub erwartet deutsches Datumsformat\n    return {\n        'start': date_start.strftime('%d.%m.%Y'),\n        'end': date_end.strftime('%d.%m.%Y'),\n        'start_iso': date_start.strftime('%Y-%m-%d'),\n        'end_iso': date_end.strftime('%Y-%m-%d')\n    }"
+      "code": "\"\"\"Step 01: Datumsberechnung.\n\nLiest state.json, schreibt date_start (heute -9d), date_end (heute -3d),\ndatum_excel (heute im Format dd_mm_yyyy).\n\"\"\"\nimport argparse\nimport sys\nfrom datetime import datetime, timedelta\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging  # noqa: E402\n\nSTART_OFFSET = -9\nEND_OFFSET = -3\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True, help=\"Pfad zu state.json\")\n    args = parser.parse_args()\n\n    log = init_logging(\"01_date_calculator\")\n    state_path = Path(args.state)\n\n    try:\n        state = read_state(state_path)\n        now = datetime.now()\n        start = now + timedelta(days=START_OFFSET)\n        end = now + timedelta(days=END_OFFSET)\n\n        state[\"data\"][\"date_start\"] = start.strftime(\"%d.%m.%Y\")\n        state[\"data\"][\"date_end\"] = end.strftime(\"%d.%m.%Y\")\n        state[\"data\"][\"datum_excel\"] = now.strftime(\"%d_%m_%Y\")\n        state[\"step_status\"][\"01_date_calculator\"] = \"ok\"\n\n        write_state(state_path, state)\n        log.info(f\"Zeitraum: {state['data']['date_start']} - {state['data']['date_end']}\")\n        log.info(f\"Datei-Pattern: *{state['data']['datum_excel']}*\")\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"date_calculator failed: {e}\")\n        try:\n            state = read_state(state_path)\n            state[\"step_status\"][\"01_date_calculator\"] = \"error\"\n            state[\"errors\"][\"01_date_calculator\"] = str(e)\n            write_state(state_path, state)\n        except Exception:\n            pass\n        sys.exit(1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "source": {
+        "type": "github-gist",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "filename": "modules_01_date_calculator.py",
+        "lines": 55,
+        "size": 1697
+      }
     },
     "maut/shell-login": {
       "id": "maut/shell-login",
       "name": "Shell Fleet Hub Login",
-      "version": "1.2.0",
+      "version": "2.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Login bei Shell Fleet Hub mit Email, Passwort und TOTP (2-Faktor). TOTP wird dynamisch aus dem Secret generiert, NIEMALS gecacht.",
+      "description": "Edge CDP Port 9224, Email + Passwort + TOTP",
       "usedBy": [
         "maut"
       ],
@@ -399,17 +411,24 @@
       "gate": {
         "passed": true,
         "score": "11/11",
-        "lastCheck": "2026-03-05"
+        "lastCheck": "2026-04-14"
       },
-      "code": "import pyotp\nfrom playwright.sync_api import sync_playwright\nimport logging\n\nlogger = logging.getLogger('maut')\n\ndef shell_login(email: str, password: str, totp_secret: str) -> dict:\n    \"\"\"Login bei Shell Fleet Hub mit 2-Faktor-Authentifizierung.\n    \n    Schritte:\n    1. Email eingeben + Next\n    2. Passwort eingeben + Submit\n    3. TOTP-Code dynamisch generieren + eingeben\n    \n    WICHTIG: TOTP wird JEDES MAL frisch generiert!\n    Niemals den Code cachen - er ist nur 30 Sekunden gueltig.\n    \"\"\"\n    pw = sync_playwright().start()\n    browser = pw.chromium.launch(headless=True)\n    page = browser.new_page()\n    \n    page.goto('https://shell-fleet-hub.shell.com/login')\n    logger.info('Shell Fleet Hub Login-Seite geladen')\n    \n    # Schritt 1: Email\n    page.fill('input[type=\"email\"]', email)\n    page.click('button:has-text(\"Next\")')\n    page.wait_for_timeout(2000)\n    \n    # Schritt 2: Passwort\n    page.fill('input[type=\"password\"]', password)\n    page.click('button:has-text(\"Sign in\")')\n    page.wait_for_timeout(3000)\n    \n    # Schritt 3: TOTP - frisch generieren!\n    totp = pyotp.TOTP(totp_secret)\n    code = totp.now()  # 6-stelliger Code, 30 Sek gueltig\n    page.fill('input[name=\"otp\"]', code)\n    page.click('button:has-text(\"Verify\")')\n    \n    # Warten auf Dashboard\n    page.wait_for_selector('.dashboard', timeout=15000)\n    logger.info('Shell Fleet Hub Login erfolgreich')\n    \n    return {'browser': browser, 'page': page, 'playwright': pw}"
+      "code": "\"\"\"Step 02: Shell Fleet Hub Login.\n\nStartet Edge mit CDP auf Port 9224 (oder dockt an existierende Instanz an),\nloggt sich mit Email + Passwort ein, wartet auf TOTP via Authenticator Extension.\n\"\"\"\nimport argparse\nimport asyncio\nimport os\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging, load_env  # noqa: E402\n\nCDP_PORT = 9224\nCHROME_DATA_DIR = Path(__file__).parent.parent / \"chrome_data_maut\"\nLOGIN_URL = \"https://fleethub.shell.com/mfe/reports/transactions\"\nEMAIL = \"Berechnung@BB1893.de\"\nEDGE_EXE_DEFAULT = r\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\"\n\n\nasync def login(log, password, no_browser=False):\n    if no_browser:\n        return\n    from playwright.async_api import async_playwright\n\n    async with async_playwright() as pw:\n        try:\n            browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n            log.info(f\"Edge laeuft bereits auf Port {CDP_PORT}\")\n        except Exception:\n            log.info(f\"Edge nicht erreichbar auf {CDP_PORT}, starte neu...\")\n            edge_exe = os.environ.get(\"EDGE_EXE\", EDGE_EXE_DEFAULT)\n            CHROME_DATA_DIR.mkdir(exist_ok=True)\n            import subprocess\n            subprocess.Popen([\n                edge_exe,\n                f\"--remote-debugging-port={CDP_PORT}\",\n                f\"--user-data-dir={CHROME_DATA_DIR}\",\n                LOGIN_URL\n            ])\n            await asyncio.sleep(5)\n            browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n\n        ctx = browser.contexts[0] if browser.contexts else await browser.new_context()\n        page = ctx.pages[0] if ctx.pages else await ctx.new_page()\n        await page.goto(LOGIN_URL, wait_until=\"domcontentloaded\")\n\n        await page.wait_for_selector('input[type=\"email\"], input[name=\"email\"]', timeout=20000)\n        await page.fill('input[type=\"email\"], input[name=\"email\"]', EMAIL)\n        log.info(f\"E-Mail eingegeben: {EMAIL}\")\n        await page.click('button[type=\"submit\"], button:has-text(\"Weiter\"), button:has-text(\"Next\")')\n\n        await page.wait_for_selector('input[type=\"password\"]', timeout=20000)\n        await page.fill('input[type=\"password\"]', password)\n        log.info(\"Passwort eingegeben\")\n        await page.click('button[type=\"submit\"]')\n\n        log.info(\"Warte auf TOTP/2FA (Authenticator Extension oder manuell, max 120s)...\")\n        await page.wait_for_url(lambda url: \"fleethub.shell.com\" in url, timeout=120000)\n        log.info(\"Login erfolgreich\")\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    parser.add_argument(\"--no-browser\", action=\"store_true\",\n                        help=\"Nur Validierung, kein echter Browser (Tests)\")\n    args = parser.parse_args()\n\n    log = init_logging(\"02_shell_login\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    env_path = Path(__file__).parent.parent / \".env\"\n    if env_path.exists():\n        for k, v in load_env(env_path).items():\n            os.environ.setdefault(k, v)\n\n    try:\n        password = os.environ.get(\"SHELL_PASSWORD\")\n        if not password:\n            raise ValueError(\"SHELL_PASSWORD nicht in Environment oder .env\")\n\n        asyncio.run(login(log, password, no_browser=args.no_browser))\n\n        state[\"step_status\"][\"02_shell_login\"] = \"ok\"\n        write_state(state_path, state)\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"shell_login failed: {e}\")\n        state[\"step_status\"][\"02_shell_login\"] = \"error\"\n        state[\"errors\"][\"02_shell_login\"] = str(e)\n        write_state(state_path, state)\n        sys.exit(1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "source": {
+        "type": "github-gist",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "filename": "modules_02_shell_login.py",
+        "lines": 100,
+        "size": 3782
+      }
     },
     "maut/select-account": {
       "id": "maut/select-account",
       "name": "Maut Account-Auswahl",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Waehlt den richtigen Account im Shell Fleet Hub aus. Aktuell ist nur Account (M) DE26731323 aktiv. Der Selektor klickt auf den Account-Dropdown und waehlt den richtigen.",
+      "description": "(M) DE26731323 auf Interstitial-Seite",
       "usedBy": [
         "maut"
       ],
@@ -419,17 +438,24 @@
       "gate": {
         "passed": true,
         "score": "11/11",
-        "lastCheck": "2026-03-05"
+        "lastCheck": "2026-04-14"
       },
-      "code": "import logging\n\nlogger = logging.getLogger('maut')\n\n# Der einzige aktive Account\nACTIVE_ACCOUNT = 'DE26731323'\nACCOUNT_LABEL = 'Account (M)'\n\ndef select_account(session: dict) -> dict:\n    \"\"\"Den richtigen Account im Shell Fleet Hub auswaehlen.\n    \n    Shell Fleet Hub zeigt oben rechts einen Account-Dropdown.\n    Wir muessen Account (M) DE26731323 auswaehlen.\n    \n    ACHTUNG: Es gibt mehrere Accounts. NUR DE26731323 ist aktiv!\n    \"\"\"\n    page = session['page']\n    \n    # Account-Dropdown oeffnen\n    page.click('.account-selector')\n    page.wait_for_timeout(1000)\n    \n    # Den richtigen Account per Text finden und klicken\n    account_option = page.query_selector(f'text={ACTIVE_ACCOUNT}')\n    \n    if not account_option:\n        raise RuntimeError(f'Account {ACTIVE_ACCOUNT} nicht im Dropdown gefunden!')\n    \n    account_option.click()\n    page.wait_for_timeout(2000)\n    \n    # Verifizieren dass der richtige Account aktiv ist\n    selected = page.text_content('.account-selector .selected')\n    if ACTIVE_ACCOUNT not in selected:\n        raise RuntimeError(f'Falscher Account ausgewaehlt: {selected}')\n    \n    logger.info(f'Account {ACCOUNT_LABEL} ({ACTIVE_ACCOUNT}) ausgewaehlt')\n    session['account'] = ACTIVE_ACCOUNT\n    return session"
+      "code": "\"\"\"Step 03: Account-Auswahl auf Interstitial-Seite.\nWaehlt Account (M) DE26731323 (NICHT (K) DE26732410).\"\"\"\nimport argparse\nimport asyncio\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging  # noqa: E402\n\nCDP_PORT = 9224\nACCOUNT_SELECTOR = \"tr.c-interstitial-results-panel__table--body-row:nth-of-type(2) button.c-button--square\"\n\n\nasync def select_account(log):\n    from playwright.async_api import async_playwright\n    async with async_playwright() as pw:\n        browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n        ctx = browser.contexts[0]\n        page = ctx.pages[0]\n\n        try:\n            await page.wait_for_selector(ACCOUNT_SELECTOR, timeout=5000)\n            await page.click(ACCOUNT_SELECTOR)\n            log.info(\"(M) Account ausgewaehlt\")\n        except Exception:\n            log.info(\"Keine Interstitial gefunden - Account vermutlich schon aktiv\")\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    args = parser.parse_args()\n\n    log = init_logging(\"03_select_account\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    try:\n        asyncio.run(select_account(log))\n        state[\"step_status\"][\"03_select_account\"] = \"ok\"\n        write_state(state_path, state)\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"select_account failed: {e}\")\n        state[\"step_status\"][\"03_select_account\"] = \"error\"\n        state[\"errors\"][\"03_select_account\"] = str(e)\n        write_state(state_path, state)\n        sys.exit(1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "source": {
+        "type": "github-gist",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "filename": "modules_03_select_account.py",
+        "lines": 54,
+        "size": 1704
+      }
     },
     "maut/download-data": {
       "id": "maut/download-data",
       "name": "Mautdaten Download",
-      "version": "1.1.0",
-      "status": "draft",
+      "version": "2.0.0",
+      "status": "frozen",
       "language": "python",
-      "description": "Laedt die Toll4Europe Mautliste als Excel-Datei herunter. Setzt den Datumsfilter, wartet auf den Export, und speichert die Datei lokal. DRAFT: Download-Selektor muss nach Shell-Update angepasst werden.",
+      "description": "Toll4Europe + customDownload + XLSX",
       "usedBy": [
         "maut"
       ],
@@ -437,23 +463,26 @@
         "playwright"
       ],
       "gate": {
-        "passed": false,
-        "score": "9/11",
-        "lastCheck": "2026-03-09",
-        "failures": [
-          "G3: Testdaten-Snapshot fehlt noch",
-          "G5: config_version nicht genutzt"
-        ]
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-04-14"
       },
-      "code": "import os\nimport logging\n\nlogger = logging.getLogger('maut')\n\ndef download_maut_data(session: dict, date_start: str, date_end: str) -> str:\n    \"\"\"Mautdaten-Excel aus Shell Fleet Hub herunterladen.\n    \n    Schritte:\n    1. Zum Toll4Europe-Bereich navigieren\n    2. Datumsfilter setzen (DD.MM.YYYY Format)\n    3. Export als Excel anstossen\n    4. Download abwarten und Pfad zurueckgeben\n    \n    TODO: Download-Selektor nach Shell-Update pruefen!\n    \"\"\"\n    page = session['page']\n    download_dir = os.path.join(os.environ.get('TEMP', '/tmp'), 'maut_downloads')\n    os.makedirs(download_dir, exist_ok=True)\n    \n    # Zum Maut-Bereich navigieren\n    page.click('a[href*=\"toll\"]')\n    page.wait_for_selector('.toll-data-table', timeout=15000)\n    \n    # Datumsfilter setzen\n    page.fill('#date-from', date_start)\n    page.fill('#date-to', date_end)\n    page.click('button:has-text(\"Apply\")')\n    page.wait_for_timeout(3000)\n    \n    # Excel-Export starten und Download abfangen\n    with page.expect_download() as download_info:\n        page.click('button:has-text(\"Export\")')  # TODO: Selektor pruefen!\n    \n    download = download_info.value\n    filepath = os.path.join(download_dir, download.suggested_filename)\n    download.save_as(filepath)\n    \n    logger.info(f'Mautdaten heruntergeladen: {filepath}')\n    return filepath"
+      "code": "\"\"\"Step 04: Mautdaten herunterladen.\nToll Reports -> Bericht herunterladen -> Anpassen -> customDownload\nFilter: MAUTBETREIBER=Toll4Europe, Domain=Toll4Europe Germany\nDatum: aus state.data.date_start / date_end\n\"\"\"\nimport argparse\nimport asyncio\nimport os\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging  # noqa: E402\n\nCDP_PORT = 9224\nTOLL_REPORTS_URL = \"https://fleethub.shell.com/mfe/reports/tollReports\"\nDOWNLOAD_DIR = Path(os.environ.get(\"USERPROFILE\", \"C:/Users/Administrator\")) / \"Downloads\"\n\n\nasync def download_xlsx(log, date_start, date_end):\n    from playwright.async_api import async_playwright\n\n    async with async_playwright() as pw:\n        browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n        ctx = browser.contexts[0]\n        page = ctx.pages[0]\n\n        await page.goto(TOLL_REPORTS_URL, wait_until=\"networkidle\")\n\n        await page.click('button:has-text(\"Bericht herunterladen\")')\n        log.info(\"'Bericht herunterladen' geklickt\")\n        await asyncio.sleep(2)\n\n        await page.click('button:has-text(\"Anpassen\")')\n        log.info(\"'Anpassen' geklickt -> customDownload\")\n        await asyncio.sleep(3)\n\n        log.info(\"MAUTBETREIBER-FILTER pruefen...\")\n        selects = page.locator(\"select\")\n        count = await selects.count()\n        log.info(f\"{count} Select-Elemente auf der Seite\")\n\n        await page.select_option(\"#tollsOperator\", label=\"Toll4Europe\")\n        log.info(\"Toll4Europe gesetzt\")\n        await asyncio.sleep(2)\n\n        await page.select_option(\"#tollsDomain\", label=\"Toll4Europe Germany\")\n        log.info(\"Toll4Europe Germany gesetzt\")\n        await asyncio.sleep(2)\n\n        date_inputs = page.locator('input[placeholder=\"DD.MM.YYYY\"]')\n        await date_inputs.nth(0).fill(date_start)\n        log.info(f\"Startdatum: {date_start}\")\n        await asyncio.sleep(2)\n        await date_inputs.nth(1).fill(date_end)\n        log.info(f\"Endtermin: {date_end}\")\n        await asyncio.sleep(1)\n\n        async with page.expect_download(timeout=120000) as download_info:\n            await page.click('button:has-text(\"Transaktionen herunterladen\")')\n            log.info(\"Download starten...\")\n        download = await download_info.value\n        target = DOWNLOAD_DIR / download.suggested_filename\n        await download.save_as(target)\n        log.info(f\"Heruntergeladen: {target}\")\n        return str(target)\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    args = parser.parse_args()\n\n    log = init_logging(\"04_download_data\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    try:\n        date_start = state[\"data\"][\"date_start\"]\n        date_end = state[\"data\"][\"date_end\"]\n        xlsx_path = asyncio.run(download_xlsx(log, date_start, date_end))\n\n        state[\"step_status\"][\"04_download_data\"] = \"ok\"\n        state[\"data\"][\"xlsx_path\"] = xlsx_path\n        write_state(state_path, state)\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"download_data failed: {e}\")\n        state[\"step_status\"][\"04_download_data\"] = \"error\"\n        state[\"errors\"][\"04_download_data\"] = str(e)\n        write_state(state_path, state)\n        sys.exit(1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "source": {
+        "type": "github-gist",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "filename": "modules_04_download_data.py",
+        "lines": 97,
+        "size": 3371
+      }
     },
     "maut/calculate-tolls": {
       "id": "maut/calculate-tolls",
       "name": "Maut-Berechnung",
-      "version": "1.2.0",
+      "version": "2.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Liest die heruntergeladene Excel-Datei, berechnet Maut pro Kilometer fuer jedes Fahrzeug, und erkennt Anomalien (z.B. ungewoehnlich hohe Maut/km). Nutzt openpyxl fuer Excel-Parsing.",
+      "description": "Maut/km, Anomalien, Kennzeichen-Aggregat (DE/EN parse)",
       "usedBy": [
         "maut"
       ],
@@ -463,17 +492,24 @@
       "gate": {
         "passed": true,
         "score": "11/11",
-        "lastCheck": "2026-03-05"
+        "lastCheck": "2026-04-14"
       },
-      "code": "import openpyxl\nimport logging\n\nlogger = logging.getLogger('maut')\n\n# Schwellwert fuer Anomalie-Erkennung: ueber 0.25 EUR/km ist verdaechtig\nANOMALY_THRESHOLD_EUR_PER_KM = 0.25\n\ndef calculate_tolls(excel_path: str) -> tuple:\n    \"\"\"Maut/km fuer jedes Fahrzeug berechnen.\n    \n    Die Excel-Datei hat Spalten:\n    A=Kennzeichen, B=Strecke, C=km, D=Maut(EUR), E=Datum\n    \n    Returns:\n        Tuple (calculations, anomalies)\n        - calculations: Liste aller Berechnungen\n        - anomalies: Liste verdaechtiger Eintraege\n    \"\"\"\n    wb = openpyxl.load_workbook(excel_path, read_only=True)\n    ws = wb.active\n    \n    calculations = []\n    anomalies = []\n    \n    # Erste Zeile ist Header, ab Zeile 2 kommen die Daten\n    for row in ws.iter_rows(min_row=2, values_only=True):\n        plate, route, km, toll_eur, date = row[0], row[1], row[2], row[3], row[4]\n        \n        if not km or km == 0:\n            continue  # Division durch 0 vermeiden\n        \n        toll_per_km = round(toll_eur / km, 4)\n        \n        entry = {\n            'plate': plate, 'route': route,\n            'km': km, 'toll_eur': toll_eur,\n            'toll_per_km': toll_per_km, 'date': str(date)\n        }\n        calculations.append(entry)\n        \n        # Anomalie erkennen\n        if toll_per_km > ANOMALY_THRESHOLD_EUR_PER_KM:\n            entry['anomaly_reason'] = f'Maut/km {toll_per_km} > {ANOMALY_THRESHOLD_EUR_PER_KM}'\n            anomalies.append(entry)\n    \n    logger.info(f'{len(calculations)} Eintraege berechnet, {len(anomalies)} Anomalien')\n    return calculations, anomalies"
+      "code": "\"\"\"Step 05: Maut-Berechnung.\n\nLiest XLSX (Pfad aus state.json), berechnet Maut/km pro Zeile, flaggt Anomalien,\naggregiert pro Kennzeichen, schreibt Ergebnisse zurueck in state.json + speichert\ngeaenderte XLSX (mit MautBerechnet-Spalte).\n\nSchwellen: 0.335 - 0.4 EUR/km. Filter: nur Lieferland=Germany.\n\"\"\"\nimport argparse\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging  # noqa: E402\n\nimport openpyxl\n\nMIN_EUR_PER_KM = 0.335\nMAX_EUR_PER_KM = 0.4\nFILTER_COUNTRY = \"Germany\"\n\nCOL_PATTERNS = {\n    \"country\": \"Lieferland\",\n    \"net_amount\": \"Nettobetrag in Transaktionsw\",\n    \"distance\": \"Gefahrene Strecke\",\n    \"plate\": \"KFZ-Kennzeichen\"\n}\n\n\ndef find_columns(header_row):\n    \"\"\"Mapped Spaltennamen-Patterns auf Spalten-Indizes (1-basiert).\"\"\"\n    cols = {}\n    for idx, cell in enumerate(header_row, start=1):\n        if cell.value is None:\n            continue\n        header = str(cell.value).strip()\n        for key, pattern in COL_PATTERNS.items():\n            if pattern in header:\n                cols[key] = idx\n    missing = [k for k in COL_PATTERNS if k not in cols]\n    if missing:\n        raise ValueError(f\"Spalten nicht gefunden: {missing}\")\n    return cols\n\n\ndef parse_number(val):\n    \"\"\"Zahl parsen mit DE/EN Auto-Detection:\n    - Punkt + Komma:  DE 1.234,56  -> Tausender-Punkt entfernen, Komma->Punkt\n    - Nur Punkt:      EN 104.300   -> Punkt = Dezimal (NICHT entfernen!)\n    - Nur Komma:      DE 57,700    -> Komma->Punkt\n    \"\"\"\n    if val is None or val == \"\":\n        return None\n    if isinstance(val, (int, float)):\n        return float(val)\n    s = str(val).strip()\n    if not s:\n        return None\n    has_dot = \".\" in s\n    has_comma = \",\" in s\n    if has_dot and has_comma:\n        cleaned = s.replace(\".\", \"\").replace(\",\", \".\")\n    elif has_comma:\n        cleaned = s.replace(\",\", \".\")\n    else:\n        cleaned = s  # nur Punkt oder gar nichts\n    try:\n        return float(cleaned)\n    except ValueError:\n        return None\n\n\ndef calculate(xlsx_path):\n    \"\"\"Hauptberechnung. Gibt (fehler_liste, anomaly_count) zurueck.\n    Modifiziert die XLSX-Datei in-place (fuegt MautBerechnet-Spalte ein).\"\"\"\n    wb = openpyxl.load_workbook(xlsx_path)\n    ws = wb.active\n\n    header_row = next(ws.iter_rows(min_row=1, max_row=1))\n    cols = find_columns(header_row)\n\n    maut_col = ws.max_column + 1\n    ws.cell(row=1, column=maut_col, value=\"MautBerechnet\")\n\n    plate_data = {}\n    anomaly_count = 0\n\n    for row_idx in range(2, ws.max_row + 1):\n        country = ws.cell(row=row_idx, column=cols[\"country\"]).value\n        if not country or FILTER_COUNTRY not in str(country):\n            continue\n\n        net = parse_number(ws.cell(row=row_idx, column=cols[\"net_amount\"]).value)\n        dist = parse_number(ws.cell(row=row_idx, column=cols[\"distance\"]).value)\n        plate = ws.cell(row=row_idx, column=cols[\"plate\"]).value\n        plate = str(plate).strip() if plate is not None else \"\"\n\n        if not dist or dist == 0 or not net:\n            ws.cell(row=row_idx, column=maut_col, value=0.000001)\n            anomaly_count += 1\n            continue\n\n        maut_per_km = net / dist\n        if maut_per_km < MIN_EUR_PER_KM or maut_per_km > MAX_EUR_PER_KM:\n            ws.cell(row=row_idx, column=maut_col, value=round(maut_per_km, 6))\n            anomaly_count += 1\n\n        if plate:\n            d = plate_data.setdefault(plate, {\"total_maut\": 0.0, \"total_km\": 0.0})\n            d[\"total_maut\"] += net\n            d[\"total_km\"] += dist\n\n    fehler_liste = []\n    for plate, d in plate_data.items():\n        if d[\"total_km\"] == 0:\n            continue\n        gesamt_per_km = d[\"total_maut\"] / d[\"total_km\"]\n        if gesamt_per_km < MIN_EUR_PER_KM or gesamt_per_km > MAX_EUR_PER_KM:\n            fehler_liste.append({\n                \"kennzeichen\": plate,\n                \"maut_gesamt\": round(d[\"total_maut\"], 2),\n                \"km_gesamt\": round(d[\"total_km\"], 2),\n                \"maut_pro_km\": round(gesamt_per_km, 6)\n            })\n\n    wb.save(xlsx_path)\n    return fehler_liste, anomaly_count\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    args = parser.parse_args()\n\n    log = init_logging(\"05_calculate_tolls\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    try:\n        xlsx_path = state[\"data\"].get(\"xlsx_path\")\n        if not xlsx_path:\n            raise ValueError(\"xlsx_path fehlt in state.data\")\n        if not Path(xlsx_path).exists():\n            raise FileNotFoundError(f\"XLSX nicht gefunden: {xlsx_path}\")\n\n        log.info(f\"Excel oeffnen: {xlsx_path}\")\n        fehler_liste, anomaly_count = calculate(xlsx_path)\n\n        state[\"data\"][\"fehler_liste\"] = fehler_liste\n        state[\"data\"][\"anomaly_count\"] = anomaly_count\n        state[\"step_status\"][\"05_calculate_tolls\"] = \"ok\"\n        write_state(state_path, state)\n\n        log.info(f\"{anomaly_count} Anomalien in Einzeltransaktionen\")\n        log.info(f\"{len(fehler_liste)} Kennzeichen mit Abweichungen\")\n        for f in fehler_liste:\n            status = \"ZU NIEDRIG\" if f[\"maut_pro_km\"] < MIN_EUR_PER_KM else \"ZU HOCH\"\n            log.info(f\"  {f['kennzeichen']}  {f['maut_gesamt']} EUR / {f['km_gesamt']} km = {f['maut_pro_km']} EUR/km [{status}]\")\n\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"calculate_tolls failed: {e}\")\n        state[\"step_status\"][\"05_calculate_tolls\"] = \"error\"\n        state[\"errors\"][\"05_calculate_tolls\"] = str(e)\n        write_state(state_path, state)\n        sys.exit(1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "source": {
+        "type": "github-gist",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "filename": "modules_05_calculate_tolls.py",
+        "lines": 171,
+        "size": 5665
+      }
     },
     "maut/upload-results": {
       "id": "maut/upload-results",
       "name": "Maut Ergebnis Upload",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Schreibt die berechneten Mautdaten nach Supabase in die maut_calculations Tabelle. Nutzt Upsert um bei erneutem Lauf keine Duplikate zu erzeugen.",
+      "description": "gvsped-report Edge Function",
       "usedBy": [
         "maut"
       ],
@@ -483,17 +519,24 @@
       "gate": {
         "passed": true,
         "score": "11/11",
-        "lastCheck": "2026-03-05"
+        "lastCheck": "2026-04-14"
       },
-      "code": "from supabase import Client\nimport logging\n\nlogger = logging.getLogger('maut')\n\ndef upload_results(sb: Client, calculations: list) -> int:\n    \"\"\"Berechnungsergebnisse in Supabase speichern.\n    \n    Nutzt UPSERT statt INSERT:\n    - Wenn ein Eintrag (plate + date) schon existiert, wird er aktualisiert\n    - Wenn nicht, wird er neu eingefuegt\n    - So koennen wir den Job gefahrlos mehrmals laufen lassen\n    \"\"\"\n    if not calculations:\n        logger.warning('Keine Berechnungen zum Hochladen')\n        return 0\n    \n    # Supabase Upsert mit Conflict-Spalten\n    # on_conflict='plate,date' -> wenn plate+date schon existiert, updaten\n    result = sb.table('maut_calculations') \\\n        .upsert(calculations, on_conflict='plate,date') \\\n        .execute()\n    \n    count = len(result.data)\n    logger.info(f'{count} Maut-Berechnungen in Supabase gespeichert')\n    return count"
+      "code": "\"\"\"Step 06: Ergebnisse an Supabase hochladen via gvsped-report Edge Function.\"\"\"\nimport argparse\nimport os\nimport sys\nfrom datetime import datetime\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging, supabase_post, load_env  # noqa: E402\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    args = parser.parse_args()\n\n    log = init_logging(\"06_upload_results\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    env_path = Path(__file__).parent.parent / \".env\"\n    if env_path.exists():\n        for k, v in load_env(env_path).items():\n            os.environ.setdefault(k, v)\n\n    try:\n        token = os.environ.get(\"MACHINE_TOKEN\", \"\")\n        if not token:\n            log.warning(\"Kein MACHINE_TOKEN - Supabase Upload uebersprungen\")\n            state[\"step_status\"][\"06_upload_results\"] = \"ok\"\n            state[\"data\"][\"supabase_uploaded\"] = False\n            write_state(state_path, state)\n            sys.exit(0)\n\n        data = state[\"data\"]\n        payload = {\n            \"machine_token\": token,\n            \"report_type\": \"mautberechnung\",\n            \"machine_name\": \"gvsped-vm\",\n            \"run_date\": datetime.now().strftime(\"%Y-%m-%d\"),\n            \"mode\": \"test\" if state.get(\"test_mode\") else \"production\",\n            \"status\": \"success\",\n            \"result\": {\n                \"date_start\": data.get(\"date_start\"),\n                \"date_end\": data.get(\"date_end\"),\n                \"total_anomalies\": data.get(\"anomaly_count\", 0),\n                \"abweichende_kennzeichen\": len(data.get(\"fehler_liste\", [])),\n                \"fehler_details\": data.get(\"fehler_liste\", [])[:20],\n                \"xlsx_file\": Path(data.get(\"xlsx_path\", \"\")).name\n            }\n        }\n\n        resp = supabase_post(\"gvsped-report\", payload)\n        log.info(f\"Supabase Report: HTTP {resp['status']}\")\n\n        state[\"step_status\"][\"06_upload_results\"] = \"ok\"\n        state[\"data\"][\"supabase_uploaded\"] = (200 <= resp[\"status\"] < 300)\n        write_state(state_path, state)\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"upload_results failed: {e}\")\n        state[\"step_status\"][\"06_upload_results\"] = \"error\"\n        state[\"errors\"][\"06_upload_results\"] = str(e)\n        write_state(state_path, state)\n        sys.exit(1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "source": {
+        "type": "github-gist",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "filename": "modules_06_upload_results.py",
+        "lines": 70,
+        "size": 2454
+      }
     },
     "maut/send-report": {
       "id": "maut/send-report",
       "name": "Maut Report Versand",
-      "version": "1.1.0",
+      "version": "2.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Generiert einen Maut-Report und sendet ihn per Email. Zeigt Zusammenfassung, Anomalien und eine Tabelle aller Berechnungen. Nutzt das shared nacke/send-email Modul fuer den SMTP-Versand.",
+      "description": "Email via fleetboard-email Edge Function (HTTP 500 OPEN)",
       "usedBy": [
         "maut"
       ],
@@ -503,9 +546,16 @@
       "gate": {
         "passed": true,
         "score": "11/11",
-        "lastCheck": "2026-03-05"
+        "lastCheck": "2026-04-14"
       },
-      "code": "import logging\n\nlogger = logging.getLogger('maut')\n\ndef build_maut_report(calculations: list, anomalies: list) -> str:\n    \"\"\"Maut-Report als HTML generieren.\n    \n    Zeigt:\n    - Zusammenfassung (Gesamt-km, Gesamt-Maut, Durchschnitt EUR/km)\n    - Anomalien-Warnung (falls vorhanden)\n    - Tabelle aller Eintraege\n    \"\"\"\n    total_km = sum(c['km'] for c in calculations)\n    total_eur = sum(c['toll_eur'] for c in calculations)\n    avg_per_km = round(total_eur / max(total_km, 1), 4)\n    \n    # Tabellen-Zeilen generieren\n    rows = ''\n    for c in calculations:\n        color = '#e74c3c' if c in anomalies else '#333'\n        rows += f\"\"\"<tr style=\"color:{color}\">\n          <td>{c['plate']}</td><td>{c['route']}</td>\n          <td>{c['km']}</td><td>{c['toll_eur']:.2f}</td>\n          <td>{c['toll_per_km']:.4f}</td><td>{c['date']}</td>\n        </tr>\"\"\"\n    \n    anomaly_warning = ''\n    if anomalies:\n        anomaly_warning = f'<p style=\"color:#e74c3c;\"><strong>{len(anomalies)} Anomalien erkannt!</strong></p>'\n    \n    return f\"\"\"\n    <html><body style=\"font-family:Arial;\">\n      <h2>Mautberechnung Wochenreport</h2>\n      <p>Gesamt: {total_km:.0f} km | {total_eur:.2f} EUR | {avg_per_km:.4f} EUR/km</p>\n      {anomaly_warning}\n      <table border=\"1\" cellpadding=\"4\">\n        <tr><th>KZ</th><th>Strecke</th><th>km</th><th>Maut</th><th>EUR/km</th><th>Datum</th></tr>\n        {rows}\n      </table>\n    </body></html>\"\"\""
+      "code": "\"\"\"Step 07: Email-Report via Supabase Edge Function (fleetboard-email).\"\"\"\nimport argparse\nimport base64\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging, supabase_post  # noqa: E402\n\nPROD_TO = \"dispo@gvgladbach.de\"\nPROD_CC = \"Markus.Neumann@gvsped.de\"\nPROD_BCC = \"bodo.buschick@uxuix.de;mk@uxuix.de\"\nTEST_TO = \"bodo.buschick@uxuix.de\"\n\n\ndef build_html(date_start, date_end, fehler_liste):\n    if not fehler_liste:\n        body_intro = \"anbei der Report, es gab keine Abweichungen.\"\n        fehler_html = \"\"\n    else:\n        body_intro = \"anbei der Report und hier die Liste mit den abweichenden Mautberechnungen:\"\n        rows = [\n            f'{f[\"kennzeichen\"]} &nbsp; {f[\"maut_gesamt\"]} EUR / {f[\"km_gesamt\"]} km = {f[\"maut_pro_km\"]} EUR/km'\n            for f in fehler_liste\n        ]\n        fehler_html = \"<br>\".join(rows)\n\n    return f\"\"\"<html><body>\n<p style=\"font-family:Calibri,sans-serif;font-size:11pt\">\nSehr geehrte Damen und Herren,<br><br>\n{body_intro}<br><br>\n{fehler_html}\n</p></body></html>\"\"\"\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    args = parser.parse_args()\n\n    log = init_logging(\"07_send_report\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    try:\n        data = state[\"data\"]\n        xlsx_path = Path(data[\"xlsx_path\"])\n        if not xlsx_path.exists():\n            raise FileNotFoundError(f\"XLSX nicht gefunden: {xlsx_path}\")\n\n        is_test = bool(state.get(\"test_mode\"))\n        to = TEST_TO if is_test else PROD_TO\n        cc = \"\" if is_test else PROD_CC\n        bcc = \"\" if is_test else PROD_BCC\n        prefix = \"TEST \" if is_test else \"\"\n        subject = f\"{prefix}Mautzusammenstellung Zeitraum {data['date_start']} - {data['date_end']}\"\n\n        html = build_html(data[\"date_start\"], data[\"date_end\"], data.get(\"fehler_liste\", []))\n        attachment_b64 = base64.b64encode(xlsx_path.read_bytes()).decode(\"ascii\")\n\n        payload = {\n            \"to\": to, \"cc\": cc, \"bcc\": bcc,\n            \"subject\": subject,\n            \"html\": html,\n            \"from_name\": \"Bot Mautzusammenstellung\",\n            \"attachments\": [{\n                \"filename\": xlsx_path.name,\n                \"content_b64\": attachment_b64\n            }]\n        }\n\n        log.info(f\"Sende Email an {to} (test={is_test})\")\n        resp = supabase_post(\"fleetboard-email\", payload, timeout=60)\n\n        if 200 <= resp[\"status\"] < 300:\n            log.info(f\"Email gesendet (HTTP {resp['status']})\")\n            state[\"step_status\"][\"07_send_report\"] = \"ok\"\n            state[\"data\"][\"email_sent\"] = True\n        else:\n            log.error(f\"Email-Versand HTTP {resp['status']}: {resp['body'][:200]}\")\n            state[\"step_status\"][\"07_send_report\"] = \"error\"\n            state[\"errors\"][\"07_send_report\"] = f\"HTTP {resp['status']}: {resp['body'][:500]}\"\n            state[\"data\"][\"email_sent\"] = False\n\n        write_state(state_path, state)\n        sys.exit(0)  # nicht-fatal\n    except Exception as e:\n        log.error(f\"send_report failed: {e}\")\n        state[\"step_status\"][\"07_send_report\"] = \"error\"\n        state[\"errors\"][\"07_send_report\"] = str(e)\n        state[\"data\"][\"email_sent\"] = False\n        write_state(state_path, state)\n        sys.exit(0)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "source": {
+        "type": "github-gist",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "filename": "modules_07_send_report.py",
+        "lines": 98,
+        "size": 3411
+      }
     },
     "linkedin/load-accounts": {
       "id": "linkedin/load-accounts",
@@ -886,8 +936,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "fulltest.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 500,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 501,
         "size": 21399
       },
       "gate": {
@@ -915,8 +965,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_amend.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 295,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 296,
         "size": 10807
       },
       "gate": {
@@ -944,8 +994,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_connect.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 175,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 176,
         "size": 6169
       },
       "gate": {
@@ -973,8 +1023,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_export.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 412,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 413,
         "size": 13992
       },
       "gate": {
@@ -1002,8 +1052,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_login.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 170,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 171,
         "size": 5021
       },
       "gate": {
@@ -1031,8 +1081,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_packaging.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 238,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 239,
         "size": 7744
       },
       "gate": {
@@ -1060,8 +1110,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_save_back.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 115,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 116,
         "size": 3688
       },
       "gate": {
@@ -1089,8 +1139,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_selectors.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 146,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 147,
         "size": 5773
       },
       "gate": {
@@ -1118,8 +1168,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "nacke_email.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 219,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 220,
         "size": 8942
       },
       "gate": {
@@ -1147,8 +1197,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "requirements.txt",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 6,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 7,
         "size": 86
       },
       "gate": {
@@ -1654,8 +1704,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "generate_todo_list.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 566,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 567,
         "size": 20658
       },
       "gate": {
@@ -1700,8 +1750,8 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "preflight_check.py",
-        "sha": "b578673647d693e1daa34d40b1413e3964746054",
-        "lines": 602,
+        "sha": "926f0003c0059feb6b7cbff6b882c9879af00fa2",
+        "lines": 603,
         "size": 22418
       },
       "gate": {
@@ -1978,6 +2028,328 @@
         "checkedAt": "2026-04-13T08:15:00Z"
       },
       "code": "\"\"\"\nmain.py - GV Overconfirmation v2.0 - Pipeline Orchestrator\n\nOrchestriert alle Module: Browser → Login → AROS → Orders → Processing → Report.\nBidirektionaler Modus mit Zigzag-Fallback.\n\nUsage:\n  python main.py                                        # Production\n  python main.py --dry-run                              # Kein Save\n  python main.py --env-file .env.idis735 --cdp-port 9223\n\"\"\"\n\nimport asyncio\nimport json\nimport sys\nimport time\nfrom datetime import date\nfrom pathlib import Path\n\n# Encoding Fix fuer Windows (charmap-Crash verhindern)\nsys.stdout.reconfigure(encoding='utf-8', errors='replace')\n\nfrom config import (\n    REPORT, DRY_RUN, IDIS_USER, CDP_PORT, ENV_FILE,\n    P, report_warning,\n)\nfrom browser import start_browser_detached, create_context\nfrom idis import login_idis, navigate_to_aros\nfrom orders import read_table_full, classify_orders\nfrom processor import process_direction, process_zigzag\nfrom report import push_start_notification, generate_report_html, push_report\n\n\nasync def main():\n    t_start = time.time()\n    Path(\"reports\").mkdir(exist_ok=True)\n\n    mode_str = \"DRY RUN\" if DRY_RUN else \"PRODUCTION\"\n    P(\"\")\n    P(\"=\" * 65)\n    P(f\"  GV OVERCONFIRMATION v2.0 - {mode_str}\")\n    P(f\"  User: {IDIS_USER} | Port: {CDP_PORT} | Modular\")\n    P(\"=\" * 65)\n\n    if not IDIS_USER:\n        P(f\"  WARNUNG: Credentials leer! Pruefe {ENV_FILE}\")\n        report_warning(f\"IDIS Credentials nicht gesetzt ({ENV_FILE})\")\n\n    # --- Browser starten ---\n    browser, pw = await start_browser_detached()\n\n    try:\n        await _run_pipeline(browser, pw, t_start)\n    finally:\n        try:\n            await pw.stop()\n            P(\"  [Cleanup] Playwright disconnected\")\n        except Exception:\n            pass\n\n\nasync def _run_pipeline(browser, pw, t_start):\n    \"\"\"Hauptpipeline: Login, Bidirektional/Zigzag, Report.\"\"\"\n\n    # --- Context 1 (TOP bot) ---\n    ctx_top, page_top = await create_context(browser)\n    login_ok = await login_idis(page_top, \"TOP\")\n    if not login_ok:\n        P(\"  Login fehlgeschlagen - Abbruch\")\n        await ctx_top.close()\n        return\n\n    # --- Start-Benachrichtigung ---\n    push_start_notification()\n\n    # --- Navigate TOP to AROS orders ---\n    await navigate_to_aros(page_top, \"TOP\")\n\n    # --- Order-Liste lesen ---\n    orders = await read_table_full(page_top)\n    P(f\"  {len(orders)} Orders geladen\")\n    REPORT[\"total_orders\"] = len(orders)\n\n    if not orders:\n        P(\"  Keine Orders - fertig\")\n        REPORT[\"duration_seconds\"] = round(time.time() - t_start, 1)\n        html = generate_report_html()\n        push_report(html)\n        await ctx_top.close()\n        return\n\n    # --- Orders klassifizieren ---\n    valid_orders = classify_orders(orders)\n\n    P(f\"  Zu verarbeiten: {len(valid_orders)} | Skipped: {REPORT['total_skipped']}\")\n\n    if not valid_orders:\n        P(\"  Keine Orders mit Bundle > 0 - fertig\")\n        REPORT[\"duration_seconds\"] = round(time.time() - t_start, 1)\n        html = generate_report_html()\n        push_report(html)\n        await ctx_top.close()\n        return\n\n    do_save = not DRY_RUN\n    N = len(valid_orders)\n\n    # --- Bidirektional versuchen (2 Contexts) ---\n    bidirectional = False\n    ctx_bot = None\n    page_bot = None\n\n    try:\n        ctx_bot, page_bot = await create_context(browser)\n        login_ok_bot = await login_idis(page_bot, \"BOT\")\n        if login_ok_bot:\n            await navigate_to_aros(page_bot, \"BOT\")\n            bidirectional = True\n            P(f\"  Bidirektional aktiv: TOP (0->{N-1}) + BOT ({N-1}->0)\")\n        else:\n            P(f\"  BOT Login fehlgeschlagen - Fallback auf Zigzag\")\n            await ctx_bot.close()\n            ctx_bot = None\n    except Exception as e:\n        P(f\"  Zweiter Context fehlgeschlagen: {str(e)[:60]}\")\n        P(f\"  Fallback auf Zigzag-Modus\")\n        if ctx_bot:\n            try:\n                await ctx_bot.close()\n            except Exception:\n                pass\n            ctx_bot = None\n\n    REPORT[\"bidirectional\"] = bidirectional\n\n    # --- Verarbeitung ---\n    if bidirectional:\n        processed = set()\n\n        top_indices = list(range(N))\n        bot_indices = list(range(N - 1, -1, -1))\n\n        P(f\"\\n  === BIDIREKTIONAL START ===\")\n\n        top_stats, bot_stats = await asyncio.gather(\n            process_direction(page_top, valid_orders, top_indices, processed, do_save, \"TOP\"),\n            process_direction(page_bot, valid_orders, bot_indices, processed, do_save, \"BOT\"),\n        )\n\n        # Merge stats\n        for stats in [top_stats, bot_stats]:\n            REPORT[\"total_amended\"] += stats[\"amended\"]\n            REPORT[\"total_already_processed\"] += stats[\"already_processed\"]\n            REPORT[\"total_errors\"] += stats[\"errors\"]\n            REPORT[\"amended_details\"].extend(stats[\"amended_details\"])\n            REPORT[\"already_processed_details\"].extend(stats[\"already_processed_details\"])\n\n        P(f\"\\n  === BIDIREKTIONAL FERTIG ===\")\n        P(f\"  TOP: {top_stats['amended']} amended, {top_stats['already_processed']} already\")\n        P(f\"  BOT: {bot_stats['amended']} amended, {bot_stats['already_processed']} already\")\n\n    else:\n        # Zigzag Fallback\n        await process_zigzag(page_top, valid_orders, do_save)\n\n    # --- Report ---\n    REPORT[\"duration_seconds\"] = round(time.time() - t_start, 1)\n\n    P(\"\")\n    P(\"=\" * 65)\n    P(\"  REPORT\")\n    P(\"=\" * 65)\n    P(f\"  Datum:        {date.today()}\")\n    P(f\"  User:         {IDIS_USER}\")\n    P(f\"  Modus:        {'DRY RUN' if DRY_RUN else 'PRODUCTION'} | {'Bidirektional' if bidirectional else 'Zigzag'}\")\n    P(f\"  Dauer:        {REPORT['duration_seconds']:.1f}s\")\n    P(f\"  Orders total: {REPORT['total_orders']}\")\n    P(f\"  Verarbeitet:  {REPORT['total_amended']}\")\n    P(f\"  Already OK:   {REPORT['total_already_processed']}\")\n    P(f\"  Skipped:      {REPORT['total_skipped']}\")\n    P(f\"  Fehler:       {REPORT['total_errors']}\")\n\n    if REPORT[\"amended_details\"]:\n        P(\"\\n  HOCHGESETZTE ORDERS:\")\n        for a in REPORT[\"amended_details\"]:\n            P(f\"    {a['order']:30s} [{a.get('direction','')}] \"\n              f\"Bestellt={a['ordered']:>5}  Alt={a['old_committed']:>5}  \"\n              f\"Neu={a['new_committed']:>5}  Delta=+{a['delta']:<4}  Bundle={a['bundle']}\")\n\n    if REPORT[\"errors\"]:\n        P(\"\\n  FEHLER:\")\n        for e in REPORT[\"errors\"]:\n            P(f\"    {e['order']}: {e['reason']} - {e.get('details', '')}\")\n\n    if REPORT[\"warnings\"]:\n        P(f\"\\n  WARNUNGEN ({len(REPORT['warnings'])}):\")\n        for w in REPORT[\"warnings\"]:\n            P(f\"    - {w}\")\n\n    # Report-Dateien\n    report_date = date.today().strftime(\"%Y-%m-%d\")\n    with open(f\"reports/report_{report_date}_{IDIS_USER}.json\", \"w\", encoding=\"utf-8\") as f:\n        json.dump(REPORT, f, indent=2, ensure_ascii=False)\n    P(f\"\\n  JSON: reports/report_{report_date}_{IDIS_USER}.json\")\n\n    html = generate_report_html()\n    with open(f\"reports/report_{report_date}_{IDIS_USER}.html\", \"w\", encoding=\"utf-8\") as f:\n        f.write(html)\n    P(f\"  HTML: reports/report_{report_date}_{IDIS_USER}.html\")\n\n    push_report(html)\n\n    # --- Cleanup ---\n    P(\"\\n\" + \"=\" * 65)\n    P(\"  Pipeline abgeschlossen.\")\n    P(\"=\" * 65)\n\n    try:\n        await ctx_top.close()\n    except Exception:\n        pass\n    if ctx_bot:\n        try:\n            await ctx_bot.close()\n        except Exception:\n            pass\n\n\nif __name__ == \"__main__\":\n    asyncio.run(main())\n"
+    },
+    "maut/orchestrator": {
+      "id": "maut/orchestrator",
+      "name": "Maut Orchestrator",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Faehrt 7 Module sequenziell mit state.json + workflow_runs",
+      "source": {
+        "type": "github-gist",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "filename": "run_maut.py",
+        "lines": 172,
+        "size": 5987
+      },
+      "code": "\"\"\"Orchestrator fuer Maut-Pipeline.\n\nFaehrt die 7 Module sequenziell, haelt state.json, persistiert Workflow-Run.\n\"\"\"\nimport argparse\nimport json\nimport shutil\nimport subprocess\nimport sys\nimport time\nfrom datetime import datetime\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent))\nfrom lib.common import init_logging, report_workflow_run, load_env  # noqa: E402\n\nROOT = Path(__file__).parent\nMODULES_DIR = ROOT / \"modules\"\nSTATE_PATH = ROOT / \"state.json\"\nARCHIVE_STATES = ROOT / \"archive\" / \"states\"\n\nALL_STEPS = [\n    \"01_date_calculator\",\n    \"02_shell_login\",\n    \"03_select_account\",\n    \"04_download_data\",\n    \"05_calculate_tolls\",\n    \"06_upload_results\",\n    \"07_send_report\"\n]\nBROWSER_STEPS = {\"02_shell_login\", \"03_select_account\", \"04_download_data\"}\nEMAIL_STEPS = {\"07_send_report\"}\nCRITICAL_STEPS = {\n    \"01_date_calculator\", \"02_shell_login\", \"03_select_account\",\n    \"04_download_data\", \"05_calculate_tolls\"\n}\n\n\ndef archive_old_state():\n    if not STATE_PATH.exists():\n        return\n    ARCHIVE_STATES.mkdir(parents=True, exist_ok=True)\n    ts = datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n    target = ARCHIVE_STATES / f\"state_{ts}.json\"\n    shutil.move(str(STATE_PATH), str(target))\n    files = sorted(ARCHIVE_STATES.glob(\"state_*.json\"), key=lambda p: p.stat().st_mtime)\n    for old in files[:-30]:\n        old.unlink()\n\n\ndef init_state(test_mode):\n    state = {\n        \"run_id\": datetime.now().strftime(\"%Y-%m-%dT%H:%M:%S\"),\n        \"test_mode\": test_mode,\n        \"step_status\": {},\n        \"data\": {},\n        \"errors\": {}\n    }\n    STATE_PATH.write_text(json.dumps(state, indent=2), encoding=\"utf-8\")\n    return state\n\n\ndef run_step(step, state_path):\n    \"\"\"Ruft modules/<step>.py als Subprozess auf. Gibt returncode zurueck.\"\"\"\n    module_file = MODULES_DIR / f\"{step}.py\"\n    proc = subprocess.run(\n        [sys.executable, str(module_file), \"--state\", str(state_path)]\n    )\n    return proc.returncode\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Maut-Pipeline Orchestrator\")\n    parser.add_argument(\"--test\", action=\"store_true\", help=\"Email nur an Bodo\")\n    parser.add_argument(\"--skip-email\", action=\"store_true\", help=\"07_send_report ueberspringen\")\n    parser.add_argument(\"--calc-only\", action=\"store_true\",\n                        help=\"Browser-Steps (02-04) ueberspringen, nutzt vorhandene XLSX\")\n    parser.add_argument(\"--resume-from\", type=str, default=None,\n                        help=\"Ab gegebenem Step neu starten (state.json muss existieren)\")\n    args = parser.parse_args()\n\n    log = init_logging(\"orchestrator\")\n    log.info(\"=\" * 60)\n    log.info(\"  MAUTBERECHNUNG - Pipeline Start\")\n    log.info(\"=\" * 60)\n\n    env_path = ROOT / \".env\"\n    if env_path.exists():\n        import os\n        for k, v in load_env(env_path).items():\n            os.environ.setdefault(k, v)\n\n    start_time = time.time()\n\n    if args.resume_from:\n        if not STATE_PATH.exists():\n            log.error(\"--resume-from gesetzt aber state.json fehlt\")\n            sys.exit(1)\n        state = json.loads(STATE_PATH.read_text(encoding=\"utf-8\"))\n        log.info(f\"Resume from {args.resume_from}, run_id={state['run_id']}\")\n    else:\n        archive_old_state()\n        state = init_state(test_mode=args.test)\n        log.info(f\"Neuer Run: {state['run_id']}, test_mode={args.test}\")\n\n    started_at = datetime.utcnow().isoformat() + \"Z\"\n\n    failed_step = None\n    resume_active = bool(args.resume_from)\n    for step in ALL_STEPS:\n        if args.calc_only and step in BROWSER_STEPS:\n            log.info(f\"-> Skip {step} (--calc-only)\")\n            continue\n        if args.skip_email and step in EMAIL_STEPS:\n            log.info(f\"-> Skip {step} (--skip-email)\")\n            continue\n        if resume_active:\n            if step != args.resume_from and state[\"step_status\"].get(step) == \"ok\":\n                log.info(f\"-> Skip {step} (bereits ok in vorigem Lauf)\")\n                continue\n            if step == args.resume_from:\n                resume_active = False  # ab hier normal weiter\n\n        log.info(f\">> Step: {step}\")\n        rc = run_step(step, STATE_PATH)\n        state = json.loads(STATE_PATH.read_text(encoding=\"utf-8\"))\n        status = state[\"step_status\"].get(step)\n        if rc != 0 or status == \"error\":\n            log.error(f\"Step {step} failed (rc={rc}, status={status})\")\n            log.error(f\"  errors: {state.get('errors', {}).get(step)}\")\n            if step in CRITICAL_STEPS:\n                failed_step = step\n                break\n            else:\n                log.warning(f\"Step {step} nicht-fatal — weiter mit naechstem Schritt\")\n\n    duration = time.time() - start_time\n    finished_at = datetime.utcnow().isoformat() + \"Z\"\n\n    stats = {\n        \"steps_completed\": sum(1 for s in state[\"step_status\"].values() if s == \"ok\"),\n        \"steps_failed\": sum(1 for s in state[\"step_status\"].values() if s == \"error\"),\n        \"failed_step\": failed_step,\n        \"anomaly_count\": state[\"data\"].get(\"anomaly_count\"),\n        \"kennzeichen_mit_abweichung\": len(state[\"data\"].get(\"fehler_liste\", [])),\n        \"xlsx_file\": Path(state[\"data\"].get(\"xlsx_path\", \"\")).name if state[\"data\"].get(\"xlsx_path\") else None,\n        \"email_sent\": state[\"data\"].get(\"email_sent\"),\n        \"duration_seconds\": round(duration, 1)\n    }\n\n    overall_status = \"error\" if failed_step else \"success\"\n    error_details = state[\"errors\"].get(failed_step) if failed_step else None\n    try:\n        report_workflow_run(\n            workflow=\"maut\",\n            status=overall_status,\n            stats=stats,\n            error_details=error_details,\n            started_at=started_at,\n            finished_at=finished_at\n        )\n    except Exception as e:\n        log.warning(f\"workflow_runs report failed: {e}\")\n\n    log.info(\"\")\n    log.info(f\"=== FERTIG ({duration:.1f}s, status={overall_status}) ===\")\n    sys.exit(0 if overall_status == \"success\" else 1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-04-14"
+      }
+    },
+    "maut/lib": {
+      "id": "maut/lib",
+      "name": "Maut Shared Library",
+      "version": "2.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "env loader, state IO, logging, supabase_post",
+      "source": {
+        "type": "github-gist",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "filename": "lib_common.py",
+        "lines": 114,
+        "size": 3948
+      },
+      "code": "\"\"\"Shared library for Maut pipeline modules.\n\nFunctions:\n    load_env(path)              -> dict\n    read_state(path)            -> dict\n    write_state(path, state)    -> None  (atomic)\n    init_logging(module, log_dir=None) -> Logger\n    supabase_post(endpoint, payload, token=None) -> {status, body}\n    report_workflow_run(workflow, status, ...)   -> {status, body}\n\"\"\"\nimport json\nimport logging\nimport socket\nimport urllib.error\nimport urllib.request\nfrom datetime import datetime\nfrom pathlib import Path\n\nSUPABASE_URL = \"https://crslpxgwxjmovrhyxiim.supabase.co\"\n\n\ndef load_env(path):\n    \"\"\"Liest .env-Datei und gibt dict zurueck. Tolerant gegen BOM, Kommentare,\n    leere Zeilen und Anfuehrungszeichen.\"\"\"\n    path = Path(path)\n    if not path.exists():\n        return {}\n    env = {}\n    text = path.read_text(encoding=\"utf-8-sig\")\n    for line in text.splitlines():\n        line = line.strip()\n        if not line or line.startswith(\"#\"):\n            continue\n        if \"=\" not in line:\n            continue\n        key, val = line.split(\"=\", 1)\n        key = key.strip()\n        val = val.strip()\n        if (val.startswith('\"') and val.endswith('\"')) or (val.startswith(\"'\") and val.endswith(\"'\")):\n            val = val[1:-1]\n        env[key] = val\n    return env\n\n\ndef read_state(path):\n    \"\"\"Liest state.json und gibt dict zurueck.\"\"\"\n    path = Path(path)\n    return json.loads(path.read_text(encoding=\"utf-8\"))\n\n\ndef write_state(path, state):\n    \"\"\"Schreibt state.json atomar (write-then-rename).\"\"\"\n    path = Path(path)\n    tmp = path.with_suffix(path.suffix + \".tmp\")\n    tmp.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding=\"utf-8\")\n    tmp.replace(path)\n\n\ndef init_logging(module_name, log_dir=None):\n    \"\"\"Initialisiert Logger fuer ein Modul. Schreibt nach logs/maut_{date}.log\n    UND nach stdout. Format: [ts] [LEVEL] [module] message.\"\"\"\n    if log_dir is None:\n        log_dir = Path(__file__).parent.parent / \"logs\"\n    log_dir = Path(log_dir)\n    log_dir.mkdir(exist_ok=True)\n    log_file = log_dir / f\"maut_{datetime.now().strftime('%Y-%m-%d')}.log\"\n\n    logger = logging.getLogger(f\"maut.{module_name}\")\n    if logger.handlers:\n        return logger\n    logger.setLevel(logging.INFO)\n\n    fmt = logging.Formatter(\n        f\"%(asctime)s [%(levelname)s] [{module_name}] %(message)s\"\n    )\n    fh = logging.FileHandler(log_file, encoding=\"utf-8\")\n    fh.setFormatter(fmt)\n    sh = logging.StreamHandler()\n    sh.setFormatter(fmt)\n    logger.addHandler(fh)\n    logger.addHandler(sh)\n    return logger\n\n\ndef supabase_post(endpoint, payload, token=None, timeout=15):\n    \"\"\"POST an Supabase Edge Function. Gibt {status, body} zurueck.\"\"\"\n    url = f\"{SUPABASE_URL}/functions/v1/{endpoint}\"\n    body = json.dumps(payload).encode(\"utf-8\")\n    req = urllib.request.Request(url, data=body, method=\"POST\")\n    req.add_header(\"Content-Type\", \"application/json\")\n    if token:\n        req.add_header(\"Authorization\", f\"Bearer {token}\")\n    try:\n        with urllib.request.urlopen(req, timeout=timeout) as resp:\n            return {\"status\": resp.status, \"body\": resp.read().decode(\"utf-8\")}\n    except urllib.error.HTTPError as e:\n        return {\"status\": e.code, \"body\": e.read().decode(\"utf-8\", errors=\"replace\")}\n\n\ndef report_workflow_run(workflow, status, machine=None, stats=None,\n                         error_details=None, started_at=None, finished_at=None,\n                         token=None):\n    \"\"\"Schreibt 1 Eintrag in workflow_runs (per Edge Function ggf. anpassen).\"\"\"\n    payload = {\n        \"workflow\": workflow,\n        \"status\": status,\n        \"machine\": machine or socket.gethostname(),\n        \"started_at\": started_at or datetime.utcnow().isoformat() + \"Z\",\n        \"finished_at\": finished_at or datetime.utcnow().isoformat() + \"Z\",\n        \"stats\": stats or {},\n        \"error_details\": error_details\n    }\n    return supabase_post(\"workflow-run-insert\", payload, token=token)\n",
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-04-14"
+      }
+    },
+    "maut/lib-common": {
+      "id": "maut/lib-common",
+      "name": "Lib common",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist 93b95884e6c8231794b4bba98f0a07f8",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "file": "lib_common.py",
+        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "lines": 114,
+        "size": 3948
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-04-14T12:27:28.248Z"
+    },
+    "maut/modules-01-date-calculator": {
+      "id": "maut/modules-01-date-calculator",
+      "name": "Modules 01 date calculator",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist 93b95884e6c8231794b4bba98f0a07f8",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "file": "modules_01_date_calculator.py",
+        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "lines": 55,
+        "size": 1697
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-04-14T12:27:28.249Z"
+    },
+    "maut/modules-02-shell-login": {
+      "id": "maut/modules-02-shell-login",
+      "name": "Modules 02 shell login",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist 93b95884e6c8231794b4bba98f0a07f8",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "file": "modules_02_shell_login.py",
+        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "lines": 100,
+        "size": 3782
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-04-14T12:27:28.249Z"
+    },
+    "maut/modules-03-select-account": {
+      "id": "maut/modules-03-select-account",
+      "name": "Modules 03 select account",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist 93b95884e6c8231794b4bba98f0a07f8",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "file": "modules_03_select_account.py",
+        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "lines": 54,
+        "size": 1704
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-04-14T12:27:28.249Z"
+    },
+    "maut/modules-04-download-data": {
+      "id": "maut/modules-04-download-data",
+      "name": "Modules 04 download data",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist 93b95884e6c8231794b4bba98f0a07f8",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "file": "modules_04_download_data.py",
+        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "lines": 97,
+        "size": 3371
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-04-14T12:27:28.249Z"
+    },
+    "maut/modules-05-calculate-tolls": {
+      "id": "maut/modules-05-calculate-tolls",
+      "name": "Modules 05 calculate tolls",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist 93b95884e6c8231794b4bba98f0a07f8",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "file": "modules_05_calculate_tolls.py",
+        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "lines": 171,
+        "size": 5665
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-04-14T12:27:28.249Z"
+    },
+    "maut/modules-06-upload-results": {
+      "id": "maut/modules-06-upload-results",
+      "name": "Modules 06 upload results",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist 93b95884e6c8231794b4bba98f0a07f8",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "file": "modules_06_upload_results.py",
+        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "lines": 70,
+        "size": 2454
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-04-14T12:27:28.249Z"
+    },
+    "maut/modules-07-send-report": {
+      "id": "maut/modules-07-send-report",
+      "name": "Modules 07 send report",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist 93b95884e6c8231794b4bba98f0a07f8",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "file": "modules_07_send_report.py",
+        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "lines": 98,
+        "size": 3411
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-04-14T12:27:28.249Z"
+    },
+    "maut/requirements": {
+      "id": "maut/requirements",
+      "name": "Requirements",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "unknown",
+      "description": "Auto-registriert aus Gist 93b95884e6c8231794b4bba98f0a07f8",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "file": "requirements.txt",
+        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "lines": 6,
+        "size": 92
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-04-14T12:27:28.249Z"
+    },
+    "maut/run-maut": {
+      "id": "maut/run-maut",
+      "name": "Run maut",
+      "version": "1.0.0",
+      "status": "frozen",
+      "language": "python",
+      "description": "Auto-registriert aus Gist 93b95884e6c8231794b4bba98f0a07f8",
+      "usedBy": [
+        "maut"
+      ],
+      "dependencies": [],
+      "source": {
+        "type": "github-gist",
+        "owner": "ExasyncOU",
+        "gistId": "93b95884e6c8231794b4bba98f0a07f8",
+        "file": "run_maut.py",
+        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "lines": 172,
+        "size": 5987
+      },
+      "gate": {
+        "passed": false,
+        "score": "0/11",
+        "checkedAt": null,
+        "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
+      },
+      "frozenAt": "2026-04-14T12:27:28.249Z"
     }
   },
   "summary": {
