@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-04-15T12:07:55.198Z",
+  "generatedAt": "2026-04-15T12:28:15.074Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
     "core/metrics-collector": {
@@ -400,7 +400,7 @@
       "version": "2.1.0",
       "status": "frozen",
       "language": "python",
-      "description": "Edge CDP Port 9225 (isoliert von GV 9222-9224), Single-Page-Login + 2-Step-Fallback, Screenshot bei Fehler",
+      "description": "Edge CDP Port 9240 (isoliert von GV 9222-9224), Single-Page-Login + 2-Step-Fallback, Screenshot bei Fehler",
       "usedBy": [
         "maut"
       ],
@@ -413,13 +413,13 @@
         "score": "11/11",
         "lastCheck": "2026-04-15"
       },
-      "code": "\"\"\"Step 02: Shell Fleet Hub Login.\n\nStartet Edge mit CDP auf Port 9224 (oder dockt an existierende Instanz an),\nloggt sich mit Email + Passwort ein, wartet auf TOTP via Authenticator Extension.\n\nDefensiv: Versucht zuerst Single-Page-Login (Email+Passwort auf 1 Seite, Shell-Standard),\nfaellt auf 2-Step (Microsoft-Style) zurueck. Screenshot + Input-Dump bei Fehler.\n\"\"\"\nimport argparse\nimport asyncio\nimport os\nimport sys\nfrom datetime import datetime\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging, load_env  # noqa: E402\n\nCDP_PORT = 9225\nCHROME_DATA_DIR = Path(__file__).parent.parent / \"chrome_data_maut\"\nLOGIN_URL = \"https://fleethub.shell.com/mfe/reports/transactions\"\nEMAIL = \"Berechnung@BB1893.de\"\nEDGE_EXE_DEFAULT = r\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\"\nLOG_DIR = Path(__file__).parent.parent / \"logs\"\n\nEMAIL_SELECTORS = 'input[type=\"email\"], input[name=\"email\"], input[name=\"loginfmt\"], input[id=\"i0116\"]'\nPASSWORD_SELECTORS = 'input[type=\"password\"], input[name=\"passwd\"], input[id=\"i0118\"]'\nNEXT_BUTTON = 'button[type=\"submit\"], input[type=\"submit\"], button:has-text(\"Weiter\"), button:has-text(\"Next\"), button:has-text(\"Continue\")'\n\n\ndef _ts():\n    return datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n\n\nasync def _screenshot(page, log, tag):\n    try:\n        LOG_DIR.mkdir(exist_ok=True)\n        path = LOG_DIR / f\"login_{tag}_{_ts()}.png\"\n        await page.screenshot(path=str(path), full_page=True)\n        log.info(f\"Screenshot: {path}\")\n    except Exception as e:\n        log.warning(f\"Screenshot fehlgeschlagen: {e}\")\n\n\nasync def _dump_inputs(page, log):\n    try:\n        inputs = await page.evaluate(\n            \"\"\"() => Array.from(document.querySelectorAll('input')).map(i => ({\n                type: i.type, name: i.name, id: i.id,\n                placeholder: i.placeholder, visible: i.offsetParent !== null\n            }))\"\"\"\n        )\n        log.info(f\"Sichtbare Inputs auf Seite: {inputs}\")\n    except Exception as e:\n        log.warning(f\"Input-Dump fehlgeschlagen: {e}\")\n\n\nasync def _is_logged_in(page, log):\n    \"\"\"Prueft, ob bereits eingeloggt (Dashboard sichtbar, kein Login-Form).\"\"\"\n    try:\n        await asyncio.sleep(1)\n        url = page.url\n        if \"login\" in url.lower() or \"auth\" in url.lower():\n            return False\n        email_visible = await page.locator(EMAIL_SELECTORS).first.is_visible(timeout=2000)\n        if email_visible:\n            return False\n        log.info(f\"Bereits eingeloggt (URL: {url})\")\n        return True\n    except Exception:\n        return False\n\n\nasync def login(log, password, no_browser=False):\n    if no_browser:\n        return\n    from playwright.async_api import async_playwright\n\n    async with async_playwright() as pw:\n        try:\n            browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n            log.info(f\"Edge laeuft bereits auf Port {CDP_PORT}\")\n        except Exception:\n            log.info(f\"Edge nicht erreichbar auf {CDP_PORT}, starte neu...\")\n            edge_exe = os.environ.get(\"EDGE_EXE\", EDGE_EXE_DEFAULT)\n            CHROME_DATA_DIR.mkdir(exist_ok=True)\n            import subprocess\n            subprocess.Popen([\n                edge_exe,\n                f\"--remote-debugging-port={CDP_PORT}\",\n                f\"--user-data-dir={CHROME_DATA_DIR}\",\n                LOGIN_URL\n            ])\n            await asyncio.sleep(5)\n            browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n\n        ctx = browser.contexts[0] if browser.contexts else await browser.new_context()\n        page = ctx.pages[0] if ctx.pages else await ctx.new_page()\n        await page.goto(LOGIN_URL, wait_until=\"domcontentloaded\")\n        await asyncio.sleep(2)\n\n        if await _is_logged_in(page, log):\n            return\n\n        try:\n            await page.wait_for_selector(EMAIL_SELECTORS, timeout=15000)\n            await page.fill(EMAIL_SELECTORS, EMAIL)\n            log.info(f\"E-Mail eingegeben: {EMAIL}\")\n        except Exception as e:\n            await _screenshot(page, log, \"email_fail\")\n            await _dump_inputs(page, log)\n            raise RuntimeError(f\"Email-Feld nicht gefunden: {e}\")\n\n        pw_field = page.locator(PASSWORD_SELECTORS).first\n        single_page = False\n        try:\n            await pw_field.wait_for(state=\"visible\", timeout=3000)\n            single_page = True\n            log.info(\"Single-Page Login erkannt (Email + Passwort auf derselben Seite)\")\n        except Exception:\n            log.info(\"Kein Passwort-Feld direkt sichtbar -> 2-Step Flow versuchen\")\n            try:\n                await page.click(NEXT_BUTTON)\n                await pw_field.wait_for(state=\"visible\", timeout=15000)\n                log.info(\"2-Step Login: Passwort-Seite geladen\")\n            except Exception as e:\n                await _screenshot(page, log, \"pw_fail\")\n                await _dump_inputs(page, log)\n                raise RuntimeError(\n                    f\"Passwort-Feld weder Single-Page noch 2-Step gefunden: {e}\"\n                )\n\n        try:\n            await pw_field.fill(password)\n            log.info(\"Passwort eingegeben\")\n            await page.click('button[type=\"submit\"], input[type=\"submit\"]')\n        except Exception as e:\n            await _screenshot(page, log, \"pw_submit_fail\")\n            raise RuntimeError(f\"Passwort-Submit fehlgeschlagen: {e}\")\n\n        log.info(\"Warte auf TOTP/2FA (Authenticator Extension oder manuell, max 120s)...\")\n        try:\n            await page.wait_for_url(\n                lambda url: \"fleethub.shell.com\" in url and \"login\" not in url.lower(),\n                timeout=120000,\n            )\n            log.info(\"Login erfolgreich\")\n        except Exception as e:\n            await _screenshot(page, log, \"totp_fail\")\n            raise RuntimeError(f\"TOTP/Final-Redirect fehlgeschlagen: {e}\")\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    parser.add_argument(\"--no-browser\", action=\"store_true\",\n                        help=\"Nur Validierung, kein echter Browser (Tests)\")\n    args = parser.parse_args()\n\n    log = init_logging(\"02_shell_login\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    env_path = Path(__file__).parent.parent / \".env\"\n    if env_path.exists():\n        for k, v in load_env(env_path).items():\n            os.environ.setdefault(k, v)\n\n    try:\n        password = os.environ.get(\"SHELL_PASSWORD\")\n        if not password:\n            raise ValueError(\"SHELL_PASSWORD nicht in Environment oder .env\")\n\n        asyncio.run(login(log, password, no_browser=args.no_browser))\n\n        state[\"step_status\"][\"02_shell_login\"] = \"ok\"\n        write_state(state_path, state)\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"shell_login failed: {e}\")\n        state[\"step_status\"][\"02_shell_login\"] = \"error\"\n        state[\"errors\"][\"02_shell_login\"] = str(e)\n        write_state(state_path, state)\n        sys.exit(1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "code": "\"\"\"Step 02: Shell Fleet Hub Login.\n\nStartet Edge mit CDP auf Port 9224 (oder dockt an existierende Instanz an),\nloggt sich mit Email + Passwort ein, wartet auf TOTP via Authenticator Extension.\n\nDefensiv: Versucht zuerst Single-Page-Login (Email+Passwort auf 1 Seite, Shell-Standard),\nfaellt auf 2-Step (Microsoft-Style) zurueck. Screenshot + Input-Dump bei Fehler.\n\"\"\"\nimport argparse\nimport asyncio\nimport os\nimport sys\nfrom datetime import datetime\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging, load_env  # noqa: E402\n\nCDP_PORT = 9240\nCHROME_DATA_DIR = Path(__file__).parent.parent / \"chrome_data_maut\"\nLOGIN_URL = \"https://fleethub.shell.com/mfe/reports/transactions\"\nEMAIL = \"Berechnung@BB1893.de\"\nEDGE_EXE_DEFAULT = r\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\"\nLOG_DIR = Path(__file__).parent.parent / \"logs\"\n\nEMAIL_SELECTORS = 'input[type=\"email\"], input[name=\"email\"], input[name=\"loginfmt\"], input[id=\"i0116\"]'\nPASSWORD_SELECTORS = 'input[type=\"password\"], input[name=\"passwd\"], input[id=\"i0118\"]'\nNEXT_BUTTON = 'button[type=\"submit\"], input[type=\"submit\"], button:has-text(\"Weiter\"), button:has-text(\"Next\"), button:has-text(\"Continue\")'\n\n\ndef _ts():\n    return datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n\n\nasync def _screenshot(page, log, tag):\n    try:\n        LOG_DIR.mkdir(exist_ok=True)\n        path = LOG_DIR / f\"login_{tag}_{_ts()}.png\"\n        await page.screenshot(path=str(path), full_page=True)\n        log.info(f\"Screenshot: {path}\")\n    except Exception as e:\n        log.warning(f\"Screenshot fehlgeschlagen: {e}\")\n\n\nasync def _dump_inputs(page, log):\n    try:\n        inputs = await page.evaluate(\n            \"\"\"() => Array.from(document.querySelectorAll('input')).map(i => ({\n                type: i.type, name: i.name, id: i.id,\n                placeholder: i.placeholder, visible: i.offsetParent !== null\n            }))\"\"\"\n        )\n        log.info(f\"Sichtbare Inputs auf Seite: {inputs}\")\n    except Exception as e:\n        log.warning(f\"Input-Dump fehlgeschlagen: {e}\")\n\n\nasync def _is_logged_in(page, log):\n    \"\"\"Prueft, ob bereits eingeloggt (Dashboard sichtbar, kein Login-Form).\"\"\"\n    try:\n        await asyncio.sleep(1)\n        url = page.url\n        if \"login\" in url.lower() or \"auth\" in url.lower():\n            return False\n        email_visible = await page.locator(EMAIL_SELECTORS).first.is_visible(timeout=2000)\n        if email_visible:\n            return False\n        log.info(f\"Bereits eingeloggt (URL: {url})\")\n        return True\n    except Exception:\n        return False\n\n\nasync def login(log, password, no_browser=False):\n    if no_browser:\n        return\n    from playwright.async_api import async_playwright\n\n    async with async_playwright() as pw:\n        try:\n            browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n            log.info(f\"Edge laeuft bereits auf Port {CDP_PORT}\")\n        except Exception:\n            log.info(f\"Edge nicht erreichbar auf {CDP_PORT}, starte neu...\")\n            edge_exe = os.environ.get(\"EDGE_EXE\", EDGE_EXE_DEFAULT)\n            CHROME_DATA_DIR.mkdir(exist_ok=True)\n            import subprocess\n            subprocess.Popen([\n                edge_exe,\n                f\"--remote-debugging-port={CDP_PORT}\",\n                f\"--user-data-dir={CHROME_DATA_DIR}\",\n                LOGIN_URL\n            ])\n            await asyncio.sleep(5)\n            browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n\n        ctx = browser.contexts[0] if browser.contexts else await browser.new_context()\n        page = ctx.pages[0] if ctx.pages else await ctx.new_page()\n        await page.goto(LOGIN_URL, wait_until=\"domcontentloaded\")\n        await asyncio.sleep(2)\n\n        if await _is_logged_in(page, log):\n            return\n\n        try:\n            await page.wait_for_selector(EMAIL_SELECTORS, timeout=15000)\n            await page.fill(EMAIL_SELECTORS, EMAIL)\n            log.info(f\"E-Mail eingegeben: {EMAIL}\")\n        except Exception as e:\n            await _screenshot(page, log, \"email_fail\")\n            await _dump_inputs(page, log)\n            raise RuntimeError(f\"Email-Feld nicht gefunden: {e}\")\n\n        pw_field = page.locator(PASSWORD_SELECTORS).first\n        single_page = False\n        try:\n            await pw_field.wait_for(state=\"visible\", timeout=3000)\n            single_page = True\n            log.info(\"Single-Page Login erkannt (Email + Passwort auf derselben Seite)\")\n        except Exception:\n            log.info(\"Kein Passwort-Feld direkt sichtbar -> 2-Step Flow versuchen\")\n            try:\n                await page.click(NEXT_BUTTON)\n                await pw_field.wait_for(state=\"visible\", timeout=15000)\n                log.info(\"2-Step Login: Passwort-Seite geladen\")\n            except Exception as e:\n                await _screenshot(page, log, \"pw_fail\")\n                await _dump_inputs(page, log)\n                raise RuntimeError(\n                    f\"Passwort-Feld weder Single-Page noch 2-Step gefunden: {e}\"\n                )\n\n        try:\n            await pw_field.fill(password)\n            log.info(\"Passwort eingegeben\")\n            await page.click('button[type=\"submit\"], input[type=\"submit\"]')\n        except Exception as e:\n            await _screenshot(page, log, \"pw_submit_fail\")\n            raise RuntimeError(f\"Passwort-Submit fehlgeschlagen: {e}\")\n\n        log.info(\"Warte auf TOTP/2FA (Authenticator Extension oder manuell, max 120s)...\")\n        try:\n            await page.wait_for_url(\n                lambda url: \"fleethub.shell.com\" in url and \"login\" not in url.lower(),\n                timeout=120000,\n            )\n            log.info(\"Login erfolgreich\")\n        except Exception as e:\n            await _screenshot(page, log, \"totp_fail\")\n            raise RuntimeError(f\"TOTP/Final-Redirect fehlgeschlagen: {e}\")\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    parser.add_argument(\"--no-browser\", action=\"store_true\",\n                        help=\"Nur Validierung, kein echter Browser (Tests)\")\n    args = parser.parse_args()\n\n    log = init_logging(\"02_shell_login\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    env_path = Path(__file__).parent.parent / \".env\"\n    if env_path.exists():\n        for k, v in load_env(env_path).items():\n            os.environ.setdefault(k, v)\n\n    try:\n        password = os.environ.get(\"SHELL_PASSWORD\")\n        if not password:\n            raise ValueError(\"SHELL_PASSWORD nicht in Environment oder .env\")\n\n        asyncio.run(login(log, password, no_browser=args.no_browser))\n\n        state[\"step_status\"][\"02_shell_login\"] = \"ok\"\n        write_state(state_path, state)\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"shell_login failed: {e}\")\n        state[\"step_status\"][\"02_shell_login\"] = \"error\"\n        state[\"errors\"][\"02_shell_login\"] = str(e)\n        write_state(state_path, state)\n        sys.exit(1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
       "source": {
         "type": "github-gist",
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_02_shell_login.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 188,
         "size": 7133
       }
@@ -557,7 +557,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_07_send_report.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 137,
         "size": 4727
       }
@@ -2092,7 +2092,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "lib_common.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 114,
         "size": 3948
       },
@@ -2120,7 +2120,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_01_date_calculator.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 55,
         "size": 1697
       },
@@ -2148,7 +2148,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_02_shell_login.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 189,
         "size": 7133
       },
@@ -2176,7 +2176,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_03_select_account.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 54,
         "size": 1704
       },
@@ -2204,7 +2204,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_04_download_data.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 97,
         "size": 3371
       },
@@ -2232,7 +2232,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_05_calculate_tolls.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 171,
         "size": 5665
       },
@@ -2260,7 +2260,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_06_upload_results.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 70,
         "size": 2454
       },
@@ -2288,7 +2288,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_07_send_report.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 138,
         "size": 4727
       },
@@ -2316,7 +2316,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "requirements.txt",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 6,
         "size": 92
       },
@@ -2344,7 +2344,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "run_maut.py",
-        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "sha": "92b58dd2485d3f08942817970dccd1aa12ffa62b",
         "lines": 172,
         "size": 5987
       },
