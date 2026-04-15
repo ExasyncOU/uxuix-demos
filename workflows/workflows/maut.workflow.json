@@ -2,7 +2,7 @@
   "$schema": "workflow-v1",
   "id": "maut",
   "name": "Mautberechnung Shell Fleet Hub",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Toll4Europe Mautdaten aus Shell Fleet Hub herunterladen, berechnen, Report senden",
   "owner": "maut-agent",
   "vm": "B-Drone",
@@ -276,14 +276,14 @@
       "script": "lib_common.py"
     }
   ],
-  "frozenAt": "2026-04-14T12:25:04.177Z",
+  "frozenAt": "2026-04-15T12:10:00.000Z",
   "vmPath": "C:\\Mautberechnung\\",
   "source": {
     "type": "gist",
     "gistId": "93b95884e6c8231794b4bba98f0a07f8",
     "gistUrl": "https://gist.github.com/ExasyncOU/93b95884e6c8231794b4bba98f0a07f8",
-    "lastSynced": "2026-04-14T12:27:28.249Z",
-    "gistUpdatedAt": "2026-04-14T12:24:01Z",
+    "lastSynced": "2026-04-15T12:07:55.196Z",
+    "gistUpdatedAt": "2026-04-15T12:04:57Z",
     "files": {
       "run_maut.py": {
         "lines": 172,
@@ -301,7 +301,7 @@
         "logging": true
       },
       "modules_02_shell_login.py": {
-        "lines": 100,
+        "lines": 189,
         "module": "maut/shell-login",
         "logging": true
       },
@@ -326,7 +326,7 @@
         "logging": true
       },
       "modules_07_send_report.py": {
-        "lines": 98,
+        "lines": 138,
         "module": "maut/send-report",
         "logging": true
       },
@@ -336,6 +336,6 @@
         "logging": true
       }
     },
-    "currentSHA": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7"
+    "currentSHA": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f"
   }
 }
