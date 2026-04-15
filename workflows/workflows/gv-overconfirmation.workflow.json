@@ -11,12 +11,12 @@
     "type": "github-gist",
     "gistId": "ac9c582883a14fab7caa73c3d2759371",
     "owner": "ExasyncOU",
-    "lastSynced": "2026-04-13T08:29:45.141Z",
+    "lastSynced": "2026-04-14T12:18:52Z",
     "files": {
       "gv_overconfirmation.py": {
         "module": "gv-overconfirmation/main",
         "gistId": "ac9c582883a14fab7caa73c3d2759371",
-        "lines": 928
+        "lines": 949
       },
       "run_multi.ps1": {
         "module": "gv-overconfirmation/launcher",
@@ -42,7 +42,7 @@
         "vmPath": "C:\\GVOverconfirmation\\.env.idis736"
       }
     },
-    "currentSHA": "db90665d84edcb15c3e2aafc556d1a51c85d9209"
+    "currentSHA": "99d91ae1418a3365e66ffcf93c8b47cef9e5727e"
   },
   "schedule": {
     "cron": "0 4 * * 1,2,3",
