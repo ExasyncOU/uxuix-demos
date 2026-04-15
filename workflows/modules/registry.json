@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-04-14T15:18:34.652Z",
+  "generatedAt": "2026-04-15T12:07:55.198Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
     "core/metrics-collector": {
@@ -397,10 +397,10 @@
     "maut/shell-login": {
       "id": "maut/shell-login",
       "name": "Shell Fleet Hub Login",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "status": "frozen",
       "language": "python",
-      "description": "Edge CDP Port 9224, Email + Passwort + TOTP",
+      "description": "Edge CDP Port 9225 (isoliert von GV 9222-9224), Single-Page-Login + 2-Step-Fallback, Screenshot bei Fehler",
       "usedBy": [
         "maut"
       ],
@@ -411,15 +411,17 @@
       "gate": {
         "passed": true,
         "score": "11/11",
-        "lastCheck": "2026-04-14"
+        "lastCheck": "2026-04-15"
       },
-      "code": "\"\"\"Step 02: Shell Fleet Hub Login.\n\nStartet Edge mit CDP auf Port 9224 (oder dockt an existierende Instanz an),\nloggt sich mit Email + Passwort ein, wartet auf TOTP via Authenticator Extension.\n\"\"\"\nimport argparse\nimport asyncio\nimport os\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging, load_env  # noqa: E402\n\nCDP_PORT = 9224\nCHROME_DATA_DIR = Path(__file__).parent.parent / \"chrome_data_maut\"\nLOGIN_URL = \"https://fleethub.shell.com/mfe/reports/transactions\"\nEMAIL = \"Berechnung@BB1893.de\"\nEDGE_EXE_DEFAULT = r\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\"\n\n\nasync def login(log, password, no_browser=False):\n    if no_browser:\n        return\n    from playwright.async_api import async_playwright\n\n    async with async_playwright() as pw:\n        try:\n            browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n            log.info(f\"Edge laeuft bereits auf Port {CDP_PORT}\")\n        except Exception:\n            log.info(f\"Edge nicht erreichbar auf {CDP_PORT}, starte neu...\")\n            edge_exe = os.environ.get(\"EDGE_EXE\", EDGE_EXE_DEFAULT)\n            CHROME_DATA_DIR.mkdir(exist_ok=True)\n            import subprocess\n            subprocess.Popen([\n                edge_exe,\n                f\"--remote-debugging-port={CDP_PORT}\",\n                f\"--user-data-dir={CHROME_DATA_DIR}\",\n                LOGIN_URL\n            ])\n            await asyncio.sleep(5)\n            browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n\n        ctx = browser.contexts[0] if browser.contexts else await browser.new_context()\n        page = ctx.pages[0] if ctx.pages else await ctx.new_page()\n        await page.goto(LOGIN_URL, wait_until=\"domcontentloaded\")\n\n        await page.wait_for_selector('input[type=\"email\"], input[name=\"email\"]', timeout=20000)\n        await page.fill('input[type=\"email\"], input[name=\"email\"]', EMAIL)\n        log.info(f\"E-Mail eingegeben: {EMAIL}\")\n        await page.click('button[type=\"submit\"], button:has-text(\"Weiter\"), button:has-text(\"Next\")')\n\n        await page.wait_for_selector('input[type=\"password\"]', timeout=20000)\n        await page.fill('input[type=\"password\"]', password)\n        log.info(\"Passwort eingegeben\")\n        await page.click('button[type=\"submit\"]')\n\n        log.info(\"Warte auf TOTP/2FA (Authenticator Extension oder manuell, max 120s)...\")\n        await page.wait_for_url(lambda url: \"fleethub.shell.com\" in url, timeout=120000)\n        log.info(\"Login erfolgreich\")\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    parser.add_argument(\"--no-browser\", action=\"store_true\",\n                        help=\"Nur Validierung, kein echter Browser (Tests)\")\n    args = parser.parse_args()\n\n    log = init_logging(\"02_shell_login\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    env_path = Path(__file__).parent.parent / \".env\"\n    if env_path.exists():\n        for k, v in load_env(env_path).items():\n            os.environ.setdefault(k, v)\n\n    try:\n        password = os.environ.get(\"SHELL_PASSWORD\")\n        if not password:\n            raise ValueError(\"SHELL_PASSWORD nicht in Environment oder .env\")\n\n        asyncio.run(login(log, password, no_browser=args.no_browser))\n\n        state[\"step_status\"][\"02_shell_login\"] = \"ok\"\n        write_state(state_path, state)\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"shell_login failed: {e}\")\n        state[\"step_status\"][\"02_shell_login\"] = \"error\"\n        state[\"errors\"][\"02_shell_login\"] = str(e)\n        write_state(state_path, state)\n        sys.exit(1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "code": "\"\"\"Step 02: Shell Fleet Hub Login.\n\nStartet Edge mit CDP auf Port 9224 (oder dockt an existierende Instanz an),\nloggt sich mit Email + Passwort ein, wartet auf TOTP via Authenticator Extension.\n\nDefensiv: Versucht zuerst Single-Page-Login (Email+Passwort auf 1 Seite, Shell-Standard),\nfaellt auf 2-Step (Microsoft-Style) zurueck. Screenshot + Input-Dump bei Fehler.\n\"\"\"\nimport argparse\nimport asyncio\nimport os\nimport sys\nfrom datetime import datetime\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging, load_env  # noqa: E402\n\nCDP_PORT = 9225\nCHROME_DATA_DIR = Path(__file__).parent.parent / \"chrome_data_maut\"\nLOGIN_URL = \"https://fleethub.shell.com/mfe/reports/transactions\"\nEMAIL = \"Berechnung@BB1893.de\"\nEDGE_EXE_DEFAULT = r\"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\"\nLOG_DIR = Path(__file__).parent.parent / \"logs\"\n\nEMAIL_SELECTORS = 'input[type=\"email\"], input[name=\"email\"], input[name=\"loginfmt\"], input[id=\"i0116\"]'\nPASSWORD_SELECTORS = 'input[type=\"password\"], input[name=\"passwd\"], input[id=\"i0118\"]'\nNEXT_BUTTON = 'button[type=\"submit\"], input[type=\"submit\"], button:has-text(\"Weiter\"), button:has-text(\"Next\"), button:has-text(\"Continue\")'\n\n\ndef _ts():\n    return datetime.now().strftime(\"%Y%m%d_%H%M%S\")\n\n\nasync def _screenshot(page, log, tag):\n    try:\n        LOG_DIR.mkdir(exist_ok=True)\n        path = LOG_DIR / f\"login_{tag}_{_ts()}.png\"\n        await page.screenshot(path=str(path), full_page=True)\n        log.info(f\"Screenshot: {path}\")\n    except Exception as e:\n        log.warning(f\"Screenshot fehlgeschlagen: {e}\")\n\n\nasync def _dump_inputs(page, log):\n    try:\n        inputs = await page.evaluate(\n            \"\"\"() => Array.from(document.querySelectorAll('input')).map(i => ({\n                type: i.type, name: i.name, id: i.id,\n                placeholder: i.placeholder, visible: i.offsetParent !== null\n            }))\"\"\"\n        )\n        log.info(f\"Sichtbare Inputs auf Seite: {inputs}\")\n    except Exception as e:\n        log.warning(f\"Input-Dump fehlgeschlagen: {e}\")\n\n\nasync def _is_logged_in(page, log):\n    \"\"\"Prueft, ob bereits eingeloggt (Dashboard sichtbar, kein Login-Form).\"\"\"\n    try:\n        await asyncio.sleep(1)\n        url = page.url\n        if \"login\" in url.lower() or \"auth\" in url.lower():\n            return False\n        email_visible = await page.locator(EMAIL_SELECTORS).first.is_visible(timeout=2000)\n        if email_visible:\n            return False\n        log.info(f\"Bereits eingeloggt (URL: {url})\")\n        return True\n    except Exception:\n        return False\n\n\nasync def login(log, password, no_browser=False):\n    if no_browser:\n        return\n    from playwright.async_api import async_playwright\n\n    async with async_playwright() as pw:\n        try:\n            browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n            log.info(f\"Edge laeuft bereits auf Port {CDP_PORT}\")\n        except Exception:\n            log.info(f\"Edge nicht erreichbar auf {CDP_PORT}, starte neu...\")\n            edge_exe = os.environ.get(\"EDGE_EXE\", EDGE_EXE_DEFAULT)\n            CHROME_DATA_DIR.mkdir(exist_ok=True)\n            import subprocess\n            subprocess.Popen([\n                edge_exe,\n                f\"--remote-debugging-port={CDP_PORT}\",\n                f\"--user-data-dir={CHROME_DATA_DIR}\",\n                LOGIN_URL\n            ])\n            await asyncio.sleep(5)\n            browser = await pw.chromium.connect_over_cdp(f\"http://localhost:{CDP_PORT}\")\n\n        ctx = browser.contexts[0] if browser.contexts else await browser.new_context()\n        page = ctx.pages[0] if ctx.pages else await ctx.new_page()\n        await page.goto(LOGIN_URL, wait_until=\"domcontentloaded\")\n        await asyncio.sleep(2)\n\n        if await _is_logged_in(page, log):\n            return\n\n        try:\n            await page.wait_for_selector(EMAIL_SELECTORS, timeout=15000)\n            await page.fill(EMAIL_SELECTORS, EMAIL)\n            log.info(f\"E-Mail eingegeben: {EMAIL}\")\n        except Exception as e:\n            await _screenshot(page, log, \"email_fail\")\n            await _dump_inputs(page, log)\n            raise RuntimeError(f\"Email-Feld nicht gefunden: {e}\")\n\n        pw_field = page.locator(PASSWORD_SELECTORS).first\n        single_page = False\n        try:\n            await pw_field.wait_for(state=\"visible\", timeout=3000)\n            single_page = True\n            log.info(\"Single-Page Login erkannt (Email + Passwort auf derselben Seite)\")\n        except Exception:\n            log.info(\"Kein Passwort-Feld direkt sichtbar -> 2-Step Flow versuchen\")\n            try:\n                await page.click(NEXT_BUTTON)\n                await pw_field.wait_for(state=\"visible\", timeout=15000)\n                log.info(\"2-Step Login: Passwort-Seite geladen\")\n            except Exception as e:\n                await _screenshot(page, log, \"pw_fail\")\n                await _dump_inputs(page, log)\n                raise RuntimeError(\n                    f\"Passwort-Feld weder Single-Page noch 2-Step gefunden: {e}\"\n                )\n\n        try:\n            await pw_field.fill(password)\n            log.info(\"Passwort eingegeben\")\n            await page.click('button[type=\"submit\"], input[type=\"submit\"]')\n        except Exception as e:\n            await _screenshot(page, log, \"pw_submit_fail\")\n            raise RuntimeError(f\"Passwort-Submit fehlgeschlagen: {e}\")\n\n        log.info(\"Warte auf TOTP/2FA (Authenticator Extension oder manuell, max 120s)...\")\n        try:\n            await page.wait_for_url(\n                lambda url: \"fleethub.shell.com\" in url and \"login\" not in url.lower(),\n                timeout=120000,\n            )\n            log.info(\"Login erfolgreich\")\n        except Exception as e:\n            await _screenshot(page, log, \"totp_fail\")\n            raise RuntimeError(f\"TOTP/Final-Redirect fehlgeschlagen: {e}\")\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    parser.add_argument(\"--no-browser\", action=\"store_true\",\n                        help=\"Nur Validierung, kein echter Browser (Tests)\")\n    args = parser.parse_args()\n\n    log = init_logging(\"02_shell_login\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    env_path = Path(__file__).parent.parent / \".env\"\n    if env_path.exists():\n        for k, v in load_env(env_path).items():\n            os.environ.setdefault(k, v)\n\n    try:\n        password = os.environ.get(\"SHELL_PASSWORD\")\n        if not password:\n            raise ValueError(\"SHELL_PASSWORD nicht in Environment oder .env\")\n\n        asyncio.run(login(log, password, no_browser=args.no_browser))\n\n        state[\"step_status\"][\"02_shell_login\"] = \"ok\"\n        write_state(state_path, state)\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"shell_login failed: {e}\")\n        state[\"step_status\"][\"02_shell_login\"] = \"error\"\n        state[\"errors\"][\"02_shell_login\"] = str(e)\n        write_state(state_path, state)\n        sys.exit(1)\n\n\nif __name__ == \"__main__\":\n    main()\n",
       "source": {
         "type": "github-gist",
+        "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
-        "filename": "modules_02_shell_login.py",
-        "lines": 100,
-        "size": 3782
+        "file": "modules_02_shell_login.py",
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "lines": 188,
+        "size": 7133
       }
     },
     "maut/select-account": {
@@ -533,28 +535,31 @@
     "maut/send-report": {
       "id": "maut/send-report",
       "name": "Maut Report Versand",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "status": "frozen",
       "language": "python",
-      "description": "Email via fleetboard-email Edge Function (HTTP 500 OPEN)",
+      "description": "Email via direktem SMTP (gvlog@uxuix.de, Port 587 STARTTLS + 465 SSL Fallback); keine Edge Function mehr",
       "usedBy": [
         "maut"
       ],
       "dependencies": [
-        "smtplib"
+        "smtplib",
+        "ssl"
       ],
       "gate": {
         "passed": true,
         "score": "11/11",
-        "lastCheck": "2026-04-14"
+        "lastCheck": "2026-04-15"
       },
-      "code": "\"\"\"Step 07: Email-Report via Supabase Edge Function (fleetboard-email).\"\"\"\nimport argparse\nimport base64\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging, supabase_post  # noqa: E402\n\nPROD_TO = \"dispo@gvgladbach.de\"\nPROD_CC = \"Markus.Neumann@gvsped.de\"\nPROD_BCC = \"bodo.buschick@uxuix.de;mk@uxuix.de\"\nTEST_TO = \"bodo.buschick@uxuix.de\"\n\n\ndef build_html(date_start, date_end, fehler_liste):\n    if not fehler_liste:\n        body_intro = \"anbei der Report, es gab keine Abweichungen.\"\n        fehler_html = \"\"\n    else:\n        body_intro = \"anbei der Report und hier die Liste mit den abweichenden Mautberechnungen:\"\n        rows = [\n            f'{f[\"kennzeichen\"]} &nbsp; {f[\"maut_gesamt\"]} EUR / {f[\"km_gesamt\"]} km = {f[\"maut_pro_km\"]} EUR/km'\n            for f in fehler_liste\n        ]\n        fehler_html = \"<br>\".join(rows)\n\n    return f\"\"\"<html><body>\n<p style=\"font-family:Calibri,sans-serif;font-size:11pt\">\nSehr geehrte Damen und Herren,<br><br>\n{body_intro}<br><br>\n{fehler_html}\n</p></body></html>\"\"\"\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    args = parser.parse_args()\n\n    log = init_logging(\"07_send_report\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    try:\n        data = state[\"data\"]\n        xlsx_path = Path(data[\"xlsx_path\"])\n        if not xlsx_path.exists():\n            raise FileNotFoundError(f\"XLSX nicht gefunden: {xlsx_path}\")\n\n        is_test = bool(state.get(\"test_mode\"))\n        to = TEST_TO if is_test else PROD_TO\n        cc = \"\" if is_test else PROD_CC\n        bcc = \"\" if is_test else PROD_BCC\n        prefix = \"TEST \" if is_test else \"\"\n        subject = f\"{prefix}Mautzusammenstellung Zeitraum {data['date_start']} - {data['date_end']}\"\n\n        html = build_html(data[\"date_start\"], data[\"date_end\"], data.get(\"fehler_liste\", []))\n        attachment_b64 = base64.b64encode(xlsx_path.read_bytes()).decode(\"ascii\")\n\n        payload = {\n            \"to\": to, \"cc\": cc, \"bcc\": bcc,\n            \"subject\": subject,\n            \"html\": html,\n            \"from_name\": \"Bot Mautzusammenstellung\",\n            \"attachments\": [{\n                \"filename\": xlsx_path.name,\n                \"content_b64\": attachment_b64\n            }]\n        }\n\n        log.info(f\"Sende Email an {to} (test={is_test})\")\n        resp = supabase_post(\"fleetboard-email\", payload, timeout=60)\n\n        if 200 <= resp[\"status\"] < 300:\n            log.info(f\"Email gesendet (HTTP {resp['status']})\")\n            state[\"step_status\"][\"07_send_report\"] = \"ok\"\n            state[\"data\"][\"email_sent\"] = True\n        else:\n            log.error(f\"Email-Versand HTTP {resp['status']}: {resp['body'][:200]}\")\n            state[\"step_status\"][\"07_send_report\"] = \"error\"\n            state[\"errors\"][\"07_send_report\"] = f\"HTTP {resp['status']}: {resp['body'][:500]}\"\n            state[\"data\"][\"email_sent\"] = False\n\n        write_state(state_path, state)\n        sys.exit(0)  # nicht-fatal\n    except Exception as e:\n        log.error(f\"send_report failed: {e}\")\n        state[\"step_status\"][\"07_send_report\"] = \"error\"\n        state[\"errors\"][\"07_send_report\"] = str(e)\n        state[\"data\"][\"email_sent\"] = False\n        write_state(state_path, state)\n        sys.exit(0)\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "code": "\"\"\"Step 07: Email-Report via direkten SMTP-Versand (gvlog@uxuix.de).\n\nLoest die Edge Function fleetboard-email ab — direkter SMTP-Versand\nueber gvlog@uxuix.de (Kasserver, Port 587 STARTTLS, Fallback 465 SSL).\n\nBegruendung: Edge Function-zentralisierter Versand fuehrte zu Account-Risiko\n(automation@uxuix.de wurde fuer mehrere Workflows genutzt). gvlog ist die\nGV-spezifische Adresse, die ohnehin fuer GV-Themen verwendet werden soll.\n\"\"\"\nimport argparse\nimport smtplib\nimport ssl\nimport sys\nfrom email.message import EmailMessage\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).parent.parent))\nfrom lib.common import read_state, write_state, init_logging, load_env  # noqa: E402\n\nPROD_TO = \"dispo@gvgladbach.de\"\nPROD_CC = \"Markus.Neumann@gvsped.de\"\nPROD_BCC = \"bodo.buschick@uxuix.de;mk@uxuix.de\"\nTEST_TO = \"bodo.buschick@uxuix.de\"\n\nSMTP_SERVER = \"w00f31fe.kasserver.com\"\nSMTP_PORT_STARTTLS = 587\nSMTP_PORT_SSL = 465\nSMTP_USER = \"gvlog@uxuix.de\"\nFROM_DISPLAY = \"Bot Mautzusammenstellung <gvlog@uxuix.de>\"\n\n\ndef build_html(date_start, date_end, fehler_liste):\n    if not fehler_liste:\n        body_intro = \"anbei der Report, es gab keine Abweichungen.\"\n        fehler_html = \"\"\n    else:\n        body_intro = \"anbei der Report und hier die Liste mit den abweichenden Mautberechnungen:\"\n        rows = [\n            f'{f[\"kennzeichen\"]} &nbsp; {f[\"maut_gesamt\"]} EUR / {f[\"km_gesamt\"]} km = {f[\"maut_pro_km\"]} EUR/km'\n            for f in fehler_liste\n        ]\n        fehler_html = \"<br>\".join(rows)\n\n    return f\"\"\"<html><body>\n<p style=\"font-family:Calibri,sans-serif;font-size:11pt\">\nSehr geehrte Damen und Herren,<br><br>\n{body_intro}<br><br>\n{fehler_html}\n</p></body></html>\"\"\"\n\n\ndef send_smtp(log, msg, password):\n    \"\"\"Versuch 587 STARTTLS, Fallback 465 SSL.\"\"\"\n    try:\n        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT_STARTTLS, timeout=60) as s:\n            s.starttls(context=ssl.create_default_context())\n            s.login(SMTP_USER, password)\n            s.send_message(msg)\n        log.info(f\"Mail versendet via {SMTP_SERVER}:{SMTP_PORT_STARTTLS} STARTTLS\")\n        return\n    except Exception as e:\n        log.warning(f\"STARTTLS 587 fehlgeschlagen: {e} -> Fallback SSL 465\")\n    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT_SSL, timeout=60) as s:\n        s.login(SMTP_USER, password)\n        s.send_message(msg)\n    log.info(f\"Mail versendet via {SMTP_SERVER}:{SMTP_PORT_SSL} SSL (Fallback)\")\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--state\", required=True)\n    args = parser.parse_args()\n\n    log = init_logging(\"07_send_report\")\n    state_path = Path(args.state)\n    state = read_state(state_path)\n\n    env_path = Path(__file__).parent.parent / \".env\"\n    if env_path.exists():\n        env = load_env(env_path)\n    else:\n        env = {}\n\n    try:\n        password = env.get(\"GVLOG_PASSWORD\")\n        if not password:\n            raise ValueError(\"GVLOG_PASSWORD nicht in .env gesetzt\")\n\n        data = state[\"data\"]\n        xlsx_path = Path(data[\"xlsx_path\"])\n        if not xlsx_path.exists():\n            raise FileNotFoundError(f\"XLSX nicht gefunden: {xlsx_path}\")\n\n        is_test = bool(state.get(\"test_mode\"))\n        to = TEST_TO if is_test else PROD_TO\n        cc = \"\" if is_test else PROD_CC\n        bcc = \"\" if is_test else PROD_BCC\n        prefix = \"TEST \" if is_test else \"\"\n        subject = f\"{prefix}Mautzusammenstellung Zeitraum {data['date_start']} - {data['date_end']}\"\n\n        html = build_html(data[\"date_start\"], data[\"date_end\"], data.get(\"fehler_liste\", []))\n\n        msg = EmailMessage()\n        msg[\"Subject\"] = subject\n        msg[\"From\"] = FROM_DISPLAY\n        msg[\"To\"] = to\n        if cc:\n            msg[\"Cc\"] = cc\n        if bcc:\n            msg[\"Bcc\"] = bcc\n        msg.set_content(\"HTML-Report (siehe HTML-Teil)\")\n        msg.add_alternative(html, subtype=\"html\")\n        msg.add_attachment(\n            xlsx_path.read_bytes(),\n            maintype=\"application\",\n            subtype=\"vnd.openxmlformats-officedocument.spreadsheetml.sheet\",\n            filename=xlsx_path.name,\n        )\n\n        log.info(f\"Sende Email an {to} (test={is_test}, CC={cc or '-'}, BCC={bcc or '-'})\")\n        send_smtp(log, msg, password)\n\n        state[\"step_status\"][\"07_send_report\"] = \"ok\"\n        state[\"data\"][\"email_sent\"] = True\n        write_state(state_path, state)\n        sys.exit(0)\n    except Exception as e:\n        log.error(f\"send_report failed: {e}\")\n        state[\"step_status\"][\"07_send_report\"] = \"error\"\n        state[\"errors\"][\"07_send_report\"] = str(e)\n        state[\"data\"][\"email_sent\"] = False\n        write_state(state_path, state)\n        sys.exit(0)  # nicht-fatal\n\n\nif __name__ == \"__main__\":\n    main()\n",
       "source": {
         "type": "github-gist",
+        "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
-        "filename": "modules_07_send_report.py",
-        "lines": 98,
-        "size": 3411
+        "file": "modules_07_send_report.py",
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "lines": 137,
+        "size": 4727
       }
     },
     "linkedin/load-accounts": {
@@ -2087,7 +2092,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "lib_common.py",
-        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
         "lines": 114,
         "size": 3948
       },
@@ -2115,7 +2120,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_01_date_calculator.py",
-        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
         "lines": 55,
         "size": 1697
       },
@@ -2143,9 +2148,9 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_02_shell_login.py",
-        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
-        "lines": 100,
-        "size": 3782
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "lines": 189,
+        "size": 7133
       },
       "gate": {
         "passed": false,
@@ -2171,7 +2176,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_03_select_account.py",
-        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
         "lines": 54,
         "size": 1704
       },
@@ -2199,7 +2204,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_04_download_data.py",
-        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
         "lines": 97,
         "size": 3371
       },
@@ -2227,7 +2232,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_05_calculate_tolls.py",
-        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
         "lines": 171,
         "size": 5665
       },
@@ -2255,7 +2260,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_06_upload_results.py",
-        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
         "lines": 70,
         "size": 2454
       },
@@ -2283,9 +2288,9 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "modules_07_send_report.py",
-        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
-        "lines": 98,
-        "size": 3411
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
+        "lines": 138,
+        "size": 4727
       },
       "gate": {
         "passed": false,
@@ -2311,7 +2316,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "requirements.txt",
-        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
         "lines": 6,
         "size": 92
       },
@@ -2339,7 +2344,7 @@
         "owner": "ExasyncOU",
         "gistId": "93b95884e6c8231794b4bba98f0a07f8",
         "file": "run_maut.py",
-        "sha": "606cb17bf1034d7a9d62d1c229d06bebd73e45e7",
+        "sha": "5513fa78109bdec4e73bcf473b53fc8bddf3ba9f",
         "lines": 172,
         "size": 5987
       },
