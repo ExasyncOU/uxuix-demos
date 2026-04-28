@@ -1,0 +1,89 @@
+{
+  "$schema": "workflow-v1",
+  "id": "linkedin-bodo",
+  "name": "LinkedIn Auto-Connect — Bodo Buschick",
+  "version": "3.0.0",
+  "status": "ready",
+  "description": "Auto-Vernetzung fuer Bodos LinkedIn (bodo@buschick.de) auf social-media VM. Aktuell KEIN aktiver Cron — Profil + Code sind bereit, Aktivierung erfolgt durch Hinzufuegen von Cron-Eintrag wenn Bodo das automatisieren will.",
+  "owner": "linkedin-agent",
+  "vm": "social-media",
+  "schedule": {
+    "cron": "(noch nicht aktiviert)",
+    "human": "Bei Aktivierung: empfohlen MO-FR 10:00 + 15:00 Berlin (zeitlich versetzt zu Michael)",
+    "timezone": "Europe/Berlin",
+    "earliestRunDate": null
+  },
+  "account": {
+    "email": "bodo@buschick.de",
+    "supabase_id": "22222222-2222-2222-2222-222222222222",
+    "display_name": "Bodo Buschick",
+    "profile_dir": "/home/exasync/profiles/bodo",
+    "cdp_port": 9301,
+    "xvfb_display": ":94",
+    "tier": "established",
+    "daily_cap": 15,
+    "weekly_cap": 80,
+    "search_keywords": ["Geschäftsführer", "CEO", "HR Leiter", "Personalleiter", "CHRO", "Head of HR"],
+    "geo_focus": "Schweiz (geo_urn=106693272)"
+  },
+  "guardrails": {
+    "constraints": {
+      "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "allowedHours": { "start": "09:00", "end": "20:00" },
+      "maxConcurrentRuns": 1,
+      "timeoutMinutes": 10,
+      "maxConnectionsPerDay": 15,
+      "hardRules": [
+        "Banner-Detection STOP bei jedem LinkedIn-Limit/Restriction-Banner",
+        "Verify auf Ausstehend-Status nach jedem Send",
+        "Skip-Liste pro Run via aria-label",
+        "Xvfb virtuelles Display :94 (kollisionsfrei mit Michael auf :91)"
+      ]
+    }
+  },
+  "lanes": [
+    { "id": "orchestrator", "label": "Cron + Wrapper", "icon": "🎯", "color": "#4A90D9" },
+    { "id": "guard", "label": "Banner Guard", "icon": "🛡️", "color": "#E74C3C" },
+    { "id": "browser", "label": "Chrome + Playwright", "icon": "🔗", "color": "#0077B5" },
+    { "id": "data", "label": "Logging + Verify", "icon": "📊", "color": "#27AE60" }
+  ],
+  "steps": [
+    { "id": "cron-trigger", "lane": "orchestrator", "module": "linkedin/run-connect-cron", "label": "Cron Wrapper", "description": "Cron-Trigger (noch nicht aktiv), startet Xvfb :94, source .env, ruft connect.mjs", "next": ["login-check"] },
+    { "id": "login-check", "lane": "browser", "module": "linkedin/connect", "label": "Login-Check via /feed/", "description": "launchPersistentContext mit /home/exasync/profiles/bodo, prueft ob Cookie-Login greift", "next": ["navigate-target"] },
+    { "id": "navigate-target", "lane": "browser", "module": "linkedin/connect", "label": "Zielseite ansteuern", "description": "Goto mynetwork/grow + Klick auf 'Alle anzeigen' bei Aktivitaeten-Vorschlaegen", "next": ["banner-precheck"] },
+    { "id": "banner-precheck", "lane": "guard", "module": "linkedin/connect", "label": "Banner-Check (pre-click)", "description": "4 Detection-Layer", "next": ["click-vernetzen", "stop-blocking-banner"] },
+    { "id": "click-vernetzen", "lane": "browser", "module": "linkedin/connect", "label": "Vernetzen + Senden", "description": "Vernetzen-Button per aria-label, dann 'Ohne Notiz senden'", "next": ["banner-postcheck"] },
+    { "id": "banner-postcheck", "lane": "guard", "module": "linkedin/connect", "label": "Banner-Check (post-send)", "description": "800ms nach Send: nochmal Banner-Check", "next": ["verify-pending", "stop-blocking-banner"] },
+    { "id": "verify-pending", "lane": "data", "module": "linkedin/connect", "label": "Verify Ausstehend-Status", "description": "waitForFunction max 5s: Button auf 'Ausstehend' wechseln", "next": ["click-vernetzen", "log-run"] },
+    { "id": "stop-blocking-banner", "lane": "guard", "module": "linkedin/connect", "label": "STOP bei Banner", "description": "Screenshot + stop_reason=blocking_banner", "next": ["log-run"] },
+    { "id": "log-run", "lane": "data", "module": "linkedin/connect", "label": "Run loggen (workflow_runs)", "description": "INSERT workflow_runs mit metrics", "next": [] }
+  ],
+  "source": {
+    "type": "vm-only",
+    "vm": "social-media",
+    "files": [
+      { "path": "/home/exasync/linkedin/connect.mjs", "module": "linkedin/connect", "lines": 404, "size": 17860 },
+      { "path": "/home/exasync/linkedin/run-connect.sh", "module": "linkedin/run-connect-cron", "lines": 63, "size": 1961 },
+      { "path": "/home/exasync/linkedin/start-chrome-bodo.sh", "module": "linkedin/start-chrome", "lines": 8, "size": 252 }
+    ],
+    "currentSHA": "20368bd1009ae5e493cda2e89fbb8f4e6d7ba74cbcd53ab2d4c8a99c6726bfdf",
+    "lastDeploy": "2026-04-28T15:20:00Z"
+  },
+  "monitoring": {
+    "supabase": {
+      "table": "workflow_runs",
+      "filter": "workflow_id = 'linkedin-auto-connect' AND metrics->>'account' = 'bodo'"
+    },
+    "metrics": [
+      "connects_verified", "attempts", "failed_count", "banner_hits",
+      "duration_ms", "ms_per_connect", "phase_timings", "stop_reason", "verified_persons"
+    ]
+  },
+  "activationChecklist": [
+    "Bodo signalisiert: Auto-Connect fuer eigenen Account aktivieren",
+    "Crontab-Eintrag hinzufuegen: 0 10,15 * * 1-5 /home/exasync/linkedin/run-connect.sh bodo 8 2026-MM-DD",
+    "Earliest-Run-Date setzen (typisch nahe Aktivierungs-Datum)",
+    "Verify dass Profil eingeloggt ist (Bodos /home/exasync/profiles/bodo Cookie aktuell)",
+    "Workflow.status auf 'active' setzen + redeploy"
+  ]
+}
