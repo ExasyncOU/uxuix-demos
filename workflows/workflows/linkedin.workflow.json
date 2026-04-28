@@ -1,107 +1,171 @@
 {
   "$schema": "workflow-v1",
   "id": "linkedin",
-  "name": "LinkedIn Smart Connect",
-  "version": "2.0.0",
-  "description": "Multi-Account LinkedIn Vernetzung mit Rate-Limiting und Ban-Schutz",
+  "name": "LinkedIn Auto-Connect (Multi-Account VM)",
+  "version": "3.0.0",
+  "description": "Auto-Vernetzung von Multi-Account-VM mit Banner-Detection, Person-Tracking und persistentem Chrome-Profil. Generic — wiederverwendbar fuer alle Accounts auf social-media VM.",
   "owner": "linkedin-agent",
-  "vm": "B-Hive",
+  "vm": "social-media",
   "schedule": {
-    "cron": "*/30 8-20 * * 1-5",
-    "human": "Alle 30min, Mo-Fr 08:00-20:00 Uhr",
+    "cron": "30 9,14 * * 1-5",
+    "human": "MO-FR 09:30 + 14:30 Berlin (1. Run = 14 Connects, 2. Run = 13 Connects)",
     "timezone": "Europe/Berlin"
   },
   "guardrails": {
     "constraints": {
       "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      "allowedHours": { "start": "08:00", "end": "20:00" },
+      "allowedHours": { "start": "09:00", "end": "15:00" },
       "maxConcurrentRuns": 1,
-      "timeoutMinutes": 45,
-      "maxConnectionsPerDay": 25,
-      "maxConnectionsPerHour": 8,
-      "sessionDurationMinutes": { "min": 25, "max": 45 },
-      "browseOnlyProbability": 0.12,
+      "timeoutMinutes": 10,
+      "maxConnectionsPerDay": 27,
       "hardRules": [
-        "7-Tage Rolling Window: Max 100 Verbindungsanfragen",
-        "Bei Ban-Verdacht: Sofort Session beenden",
-        "Humanisierte Delays mit Gauss-Verteilung",
-        "12% Browse-Only Sessions (kein Connect)"
+        "Banner-Detection STOP bei jedem LinkedIn-Limit/Restriction-Banner (4 Detection-Layer)",
+        "Verify auf Ausstehend-Status nach jedem Send (max 5s waitForFunction)",
+        "Skip-Liste pro Run via aria-label — keine Person 2x angeklickt",
+        "Earliest-Run-Date Filter im Wrapper-Skript",
+        "Xvfb virtuelles Display (kein RDP-Login noetig)",
+        "Singleton-Lock Cleanup vor jedem Run (verhindert haengende Sessions)"
       ]
     },
     "variables": [
-      { "name": "ACCOUNT_ID", "type": "string", "default": "from_supabase", "description": "LinkedIn Account aus linkedin_accounts Tabelle" },
-      { "name": "MAX_CONNECTS_PER_RUN", "type": "number", "default": 8, "min": 1, "max": 15, "description": "Max Connects pro Session" },
-      { "name": "TARGET_GEO", "type": "string", "default": "DACH", "description": "Zielregion (DACH, Nordics, etc.)" },
-      { "name": "SEARCH_KEYWORDS", "type": "string[]", "default": ["CEO", "CTO", "Managing Director"], "description": "Suchbegriffe fuer Zielgruppe" },
-      { "name": "MIN_DELAY_MS", "type": "number", "default": 3000, "min": 2000, "max": 10000, "description": "Minimale Verzoegerung zwischen Aktionen (ms)" }
+      { "name": "ACCOUNT", "type": "string", "description": "Profile-Name (zB michael, bodo) — referenziert /home/exasync/profiles/{ACCOUNT}" },
+      { "name": "MAX_CONNECTS", "type": "number", "min": 1, "max": 30, "description": "Max Connects pro Run" },
+      { "name": "SEARCH_URL", "type": "string", "default": "https://www.linkedin.com/mynetwork/grow/", "description": "Start-URL — mynetwork/grow oder Search-URL mit Industry-Filter" },
+      { "name": "EARLIEST_RUN_DATE", "type": "string", "description": "Wrapper skipt vor diesem Datum (zB 2026-05-05 fuer Wochenlimit-Reset)" },
+      { "name": "HEADLESS", "type": "boolean", "default": false, "description": "headless=false + Xvfb empfohlen (LinkedIn detected echtes headless)" }
     ]
   },
   "lanes": [
-    { "id": "orchestrator", "label": "Orchestrator", "icon": "🎯", "color": "#4A90D9" },
-    { "id": "guard", "label": "Account Guard", "icon": "🛡️", "color": "#E74C3C" },
-    { "id": "browser", "label": "LinkedIn Browser", "icon": "🔗", "color": "#0077B5" },
-    { "id": "data", "label": "Daten", "icon": "📊", "color": "#27AE60" }
+    { "id": "orchestrator", "label": "Cron + Wrapper", "icon": "🎯", "color": "#4A90D9" },
+    { "id": "guard", "label": "Banner Guard", "icon": "🛡️", "color": "#E74C3C" },
+    { "id": "browser", "label": "Chrome + Playwright", "icon": "🔗", "color": "#0077B5" },
+    { "id": "data", "label": "Logging + Verify", "icon": "📊", "color": "#27AE60" }
   ],
   "steps": [
     {
-      "id": "load-accounts",
-      "lane": "data",
-      "module": "linkedin/load-accounts",
-      "label": "Accounts laden",
-      "description": "Aktive LinkedIn-Accounts aus Supabase laden",
-      "next": ["check-limits"],
-      "inputs": ["supabase:linkedin_accounts"],
-      "outputs": ["accounts[]"]
+      "id": "cron-trigger",
+      "lane": "orchestrator",
+      "module": "linkedin/run-connect-cron",
+      "label": "Cron Wrapper",
+      "description": "Cron-Trigger MO-FR 09:30+14:30, prueft EARLIEST_RUN_DATE, startet Xvfb, source .env, ruft connect.mjs",
+      "next": ["login-check"]
     },
     {
-      "id": "check-limits",
+      "id": "login-check",
+      "lane": "browser",
+      "module": "linkedin/connect",
+      "label": "Login-Check via /feed/",
+      "description": "launchPersistentContext mit Profil-Dir, navigiere zu /feed/, prueft ob Cookie-Login greift",
+      "next": ["navigate-target"]
+    },
+    {
+      "id": "navigate-target",
+      "lane": "browser",
+      "module": "linkedin/connect",
+      "label": "Zielseite ansteuern",
+      "description": "Goto SEARCH_URL — bei mynetwork/grow zusätzlich auf 'Alle anzeigen' bei Aktivitaeten-Vorschlaegen klicken",
+      "next": ["banner-precheck"]
+    },
+    {
+      "id": "banner-precheck",
       "lane": "guard",
-      "module": "linkedin/account-guard",
-      "label": "Rate Limits pruefen",
-      "description": "7-Tage Rolling Window, Ban-Status, Session-Cooldown pruefen",
-      "next": ["start-session"],
-      "inputs": ["accounts[]"],
-      "outputs": ["eligible_account"]
+      "module": "linkedin/connect",
+      "label": "Banner-Check (pre-click)",
+      "description": "VOR jedem Klick: 4 Detection-Layer (role=alert / artdeco-error-banner / error-icons / Text-Pattern)",
+      "next": ["click-vernetzen", "stop-blocking-banner"]
     },
     {
-      "id": "start-session",
+      "id": "click-vernetzen",
       "lane": "browser",
-      "module": "linkedin/start-session",
-      "label": "Session starten",
-      "description": "Playwright Session mit Cookies + humanisiertem Browserprofil",
-      "next": ["search-targets"],
-      "inputs": ["eligible_account"],
-      "outputs": ["browser_session"]
+      "module": "linkedin/connect",
+      "label": "Vernetzen + Senden",
+      "description": "1. button_search aller Vernetzen-Buttons mit aria-label  2. fresh-Filter (Skip-Set)  3. Klick erste fresh Person  4. modal_handle 'Ohne Notiz senden'",
+      "next": ["banner-postcheck"]
     },
     {
-      "id": "search-targets",
-      "lane": "browser",
-      "module": "linkedin/search-targets",
-      "label": "Ziele suchen",
-      "description": "LinkedIn Search mit Keywords und Geo-Filter",
-      "next": ["send-connects"],
-      "inputs": ["browser_session", "SEARCH_KEYWORDS", "TARGET_GEO"],
-      "outputs": ["targets[]"]
+      "id": "banner-postcheck",
+      "lane": "guard",
+      "module": "linkedin/connect",
+      "label": "Banner-Check (post-send)",
+      "description": "800ms nach Send: nochmal Banner-Check — LinkedIn zeigt Wochenlimit oft erst nach Submit",
+      "next": ["verify-pending", "stop-blocking-banner"]
     },
     {
-      "id": "send-connects",
-      "lane": "browser",
-      "module": "linkedin/send-connects",
-      "label": "Connects senden",
-      "description": "Verbindungsanfragen mit humanisierten Delays senden",
-      "next": ["log-activity"],
-      "inputs": ["targets[]", "MAX_CONNECTS_PER_RUN", "MIN_DELAY_MS"],
-      "outputs": ["sent_connects[]"]
-    },
-    {
-      "id": "log-activity",
+      "id": "verify-pending",
       "lane": "data",
-      "module": "linkedin/log-activity",
-      "label": "Aktivitaet loggen",
-      "description": "Alle Aktionen in linkedin_activity Tabelle loggen",
-      "next": [],
-      "inputs": ["sent_connects[]"],
-      "outputs": ["logged"]
+      "module": "linkedin/connect",
+      "label": "Verify Ausstehend-Status",
+      "description": "page.waitForFunction max 5s: Card-Button muss von 'Vernetzen' auf 'Ausstehend'/'Pending' wechseln. Erst dann zaehlt Connect als verified.",
+      "next": ["click-vernetzen", "log-run"]
+    },
+    {
+      "id": "stop-blocking-banner",
+      "lane": "guard",
+      "module": "linkedin/connect",
+      "label": "STOP bei Banner",
+      "description": "Screenshot in /home/exasync/testruns/{ts}-{account}-banner.png + stop_reason=blocking_banner — Loop bricht ab",
+      "next": ["log-run"]
+    },
+    {
+      "id": "log-run",
+      "lane": "data",
+      "module": "linkedin/connect",
+      "label": "Run loggen (workflow_runs)",
+      "description": "INSERT workflow_runs mit metrics: connects_verified, attempts, failed_count, banner_hits, phase_timings, ms_per_connect, verified_persons, stop_reason",
+      "next": []
     }
-  ]
+  ],
+  "source": {
+    "type": "vm-only",
+    "vm": "social-media",
+    "files": [
+      { "path": "/home/exasync/linkedin/connect.mjs", "module": "linkedin/connect", "lines": 404, "size": 17860 },
+      { "path": "/home/exasync/linkedin/run-connect.sh", "module": "linkedin/run-connect-cron", "lines": 63, "size": 1961 },
+      { "path": "/home/exasync/linkedin/start-chrome-{account}.sh", "module": "linkedin/start-chrome", "lines": 14, "size": 408 }
+    ],
+    "currentSHA": "20368bd1009ae5e493cda2e89fbb8f4e6d7ba74cbcd53ab2d4c8a99c6726bfdf",
+    "lastDeploy": "2026-04-28T15:11:00Z"
+  },
+  "monitoring": {
+    "supabase": {
+      "table": "workflow_runs",
+      "filter": "workflow_id = 'linkedin-auto-connect'"
+    },
+    "metrics": [
+      "connects_verified",
+      "attempts",
+      "failed_count",
+      "banner_hits",
+      "duration_ms",
+      "ms_per_connect",
+      "phase_timings",
+      "stop_reason",
+      "verified_persons"
+    ]
+  },
+  "accounts": {
+    "michael": {
+      "email": "info@michael-klix.de",
+      "supabase_id": "77ddafdc-809c-441f-b534-e0e5e3fed012",
+      "profile_dir": "/home/exasync/profiles/michael",
+      "cdp_port": 9302,
+      "daily_cap": 27,
+      "weekly_cap": 135,
+      "tier": "warmup",
+      "earliest_run_date": "2026-05-05",
+      "cron_split": [14, 13],
+      "first_message_template": "Hallo, schoen, dass wir jetzt vernetzt sind. Wenn du irgendwann mal was brauchst — einfach melden. LG Klixi",
+      "industry_focus": "Logistik/Trucking (industry=116)"
+    },
+    "bodo": {
+      "email": "bodo@buschick.de",
+      "supabase_id": "22222222-2222-2222-2222-222222222222",
+      "profile_dir": "/home/exasync/profiles/bodo",
+      "cdp_port": 9301,
+      "daily_cap": 15,
+      "weekly_cap": 80,
+      "tier": "established",
+      "search_keywords": ["CEO", "CTO", "HR Leiter", "Personalleiter", "CHRO"]
+    }
+  }
 }
