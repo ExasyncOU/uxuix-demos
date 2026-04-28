@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-04-15T12:28:15.074Z",
+  "generatedAt": "2026-04-15T12:31:48.699Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
     "core/metrics-collector": {
@@ -79,7 +79,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "orchestrator.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 1172,
         "size": 48982
       },
@@ -110,7 +110,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_browser.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 246,
         "size": 9664
       },
@@ -143,7 +143,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "picklist_generator.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 1026,
         "size": 43129
       },
@@ -192,7 +192,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "picklist_pdf.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 249,
         "size": 8277
       },
@@ -239,7 +239,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "master_data.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 359,
         "size": 12571
       },
@@ -269,7 +269,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "overconfirmation.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 214,
         "size": 7854
       },
@@ -299,7 +299,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "daily_report.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 546,
         "size": 11051
       },
@@ -314,10 +314,10 @@
     "nacke/printer": {
       "id": "nacke/printer",
       "name": "Windows Printer Integration",
-      "version": "5.0.0",
-      "status": "frozen",
+      "version": "5.2.0",
+      "status": "active",
       "language": "python",
-      "description": "Windows-Drucker-Integration: Druckt generierte Picklists auf dem konfigurierten Netzwerkdrucker der Nacke-VM.",
+      "description": "Windows-Drucker-Integration mit Fallback: Prueft Erreichbarkeit (Port 9100), waehlt Primary (192.168.5.165 iR-ADV 6555) oder Fallback (192.168.5.25 iR-ADV 6575).",
       "usedBy": [
         "nacke"
       ],
@@ -329,9 +329,10 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "printer.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
-        "lines": 256,
-        "size": 9764
+        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "lines": 281,
+        "size": 10904,
+        "lastFetched": "2026-04-27T11:04:44Z"
       },
       "gate": {
         "passed": true,
@@ -339,7 +340,7 @@
         "checkedAt": "2026-03-11T08:00:00Z"
       },
       "frozenAt": "2026-03-11T08:00:00Z",
-      "code": "\"\"\"\nprinter.py â€“ PDF-Druck mit Start/Ende-Kontrollblaettern.\n\nv5.1 Aenderungen (13.03.2026):\n  - NUR PDFs drucken (nicht mehr xlsx)\n  - Simplex (einseitig) erzwingen via win32print DevMode\n  - Canon-Drucker aus Config\n\n  - LPR statt SumatraPDF (headless, kein GUI/RDP noetig)\n  - NUR PDFs drucken\n  - Canon Netzwerkdrucker via IP 192.168.5.25\n  3. Ende-Blatt: \"// ENDE // Letzte Liste: Nr. Y\"\n\nWindows-Druck via win32print (RAW/Simplex).\nWindows-Druck via LPR (headless, kein GUI noetig).\n\"\"\"\n\nimport json\nimport logging\nimport os\nimport subprocess\nimport tempfile\nimport time\nfrom datetime import datetime\nfrom pathlib import Path\n\nfrom dotenv import load_dotenv\n\nlogger = logging.getLogger(__name__)\nload_dotenv()\n\n\nclass Printer:\n    \"\"\"Druckt Picklisten-PDFs mit Kontrollblaettern.\"\"\"\n\n    def __init__(self, config_path: str = \"config.json\"):\n        with open(config_path, \"r\", encoding=\"utf-8\") as f:\n            self.cfg = json.load(f)\n\n        printer_cfg = self.cfg.get(\"printer\", {})\n        self.printer_name = os.getenv(\"PRINTER_NAME\", printer_cfg.get(\"name\", \"\"))\n        self.copies = printer_cfg.get(\"copies\", 1)\n        self.orientation = printer_cfg.get(\"orientation\", \"landscape\")\n        self.duplex = printer_cfg.get(\"duplex\", False)  # False = Simplex\n\n        self.logs_dir = Path(self.cfg[\"paths\"][\"logs_dir\"])\n        self.logs_dir.mkdir(parents=True, exist_ok=True)\n\n    def print_all(self, generated_lists: list[dict]) -> dict:\n        \"\"\"Druckt alle Picklisten-PDFs mit Kontrollblaettern.\n\n        Args:\n            generated_lists: Liste von Dicts mit list_nr, filepath, filename, pdf_path\n\n        Returns:\n            Dict mit Statistiken: {printed, errors, first_nr, last_nr}\n        \"\"\"\n        if not generated_lists:\n            logger.warning(\"Keine Listen zum Drucken.\")\n            return {\"printed\": 0, \"errors\": 0, \"first_nr\": 0, \"last_nr\": 0}\n\n        # Simplex (einseitig) am Drucker erzwingen\n        self._set_simplex()\n\n        sorted_lists = sorted(generated_lists, key=lambda x: x[\"list_nr\"])\n        first_nr = sorted_lists[0][\"list_nr\"]\n        last_nr = sorted_lists[-1][\"list_nr\"]\n        count = len(sorted_lists)\n\n        printed = 0\n        errors = 0\n        batch_count = 0  # zaehlt erfolgreich gedruckte Listen fuer 10er-Batch-Pause\n\n        # 1. Start-Kontrollblatt\n        logger.info(\n            \"Druck starten: Listen %04d bis %04d (%d Stueck)\",\n            first_nr, last_nr, count,\n        )\n        try:\n            self._print_control_sheet(\n                f\"// START //\\n\\n\"\n                f\"Listen Nr. {first_nr:04d} bis {last_nr:04d}\\n\"\n                f\"Anzahl: {count}\\n\\n\"\n                f\"// START //\"\n            )\n            printed += 1\n        except Exception as e:\n            logger.error(\"Start-Blatt Druck fehlgeschlagen: %s\", e)\n            errors += 1\n\n        # 2. Alle Picklisten â€” PDF bevorzugen\n        for item in sorted_lists:\n            pdf_path = item.get(\"pdf_path\", \"\")\n            filepath = item.get(\"filepath\", \"\")\n            list_nr = item.get(\"list_nr\", 0)\n            filename = item.get(\"filename\", \"\")\n\n            # PDF bevorzugen, Fallback auf xlsx\n            print_file = \"\"\n            if pdf_path and Path(pdf_path).exists():\n                print_file = pdf_path\n            elif filepath and Path(filepath).exists():\n                print_file = filepath\n                logger.warning(\"PDF fehlt fuer %04d, drucke xlsx: %s\", list_nr, filepath)\n            else:\n                logger.error(\"Keine druckbare Datei fuer %04d: %s\", list_nr, filename)\n                errors += 1\n                continue\n\n            try:\n                self._print_file(print_file)\n                printed += 1\n                batch_count += 1\n                logger.debug(\"Gedruckt: %04d â€“ %s\", list_nr, Path(print_file).name)\n                # Alle 10 Listen: 60s Pause damit Drucker-Buffer komplett leer laeuft\n                # (Empirisch 2026-04-09: Buffer blockt sonst bei jeder ~12. Liste, lpr.exe timeout = 60s)\n                if batch_count % 10 == 0:\n                    logger.info(\"Batch-Pause nach %d Listen (60s, Drucker-Buffer leeren)...\", batch_count)\n                    time.sleep(60.0)\n            except Exception as e:\n                logger.error(\"Druck fehlgeschlagen %04d: %s\", list_nr, e)\n                errors += 1\n\n        # 3. Ende-Kontrollblatt\n        lists_printed = printed - 1  # -1 fuer Start-Blatt\n        try:\n            self._print_control_sheet(\n                f\"// ENDE //\\n\\n\"\n                f\"Letzte Liste: Nr. {last_nr:04d}\\n\"\n                f\"Listen gedruckt: {lists_printed} von {count}\\n\\n\"\n                f\"// ENDE //\"\n            )\n            printed += 1\n        except Exception as e:\n            logger.error(\"Ende-Blatt Druck fehlgeschlagen: %s\", e)\n            errors += 1\n\n        result = {\n            \"printed\": printed,\n            \"errors\": errors,\n            \"first_nr\": first_nr,\n            \"last_nr\": last_nr,\n            \"total_jobs\": count + 2,\n        }\n\n        self._log_print_job(result, sorted_lists)\n\n        logger.info(\n            \"Druck abgeschlossen: %d/%d gedruckt, %d Fehler\",\n            printed, count + 2, errors,\n        )\n\n        return result\n\n    # ------------------------------------------------------------------\n    # Simplex-Erzwingung (einseitiger Druck)\n    # ------------------------------------------------------------------\n\n    def _set_simplex(self):\n        \"\"\"Setzt den Drucker auf Simplex (einseitig) via win32print DevMode.\"\"\"\n        if self.duplex:\n            logger.debug(\"Duplex in Config aktiviert â€” ueberspringe Simplex-Erzwingung\")\n            return\n\n        try:\n            import win32print\n\n            printer = self.printer_name or win32print.GetDefaultPrinter()\n            handle = win32print.OpenPrinter(printer)\n            try:\n                props = win32print.GetPrinter(handle, 2)\n                devmode = props[\"pDevMode\"]\n                # DMDUP_SIMPLEX = 1\n                devmode.Duplex = 1\n                devmode.Fields |= 0x00001000  # DM_DUPLEX\n                props[\"pDevMode\"] = devmode\n                win32print.SetPrinter(handle, 2, props, 0)\n                logger.info(\"Drucker '%s' auf Simplex (einseitig) gesetzt\", printer)\n            finally:\n                win32print.ClosePrinter(handle)\n\n        except ImportError:\n            logger.warning(\"win32print nicht verfuegbar â€” Simplex kann nicht erzwungen werden\")\n        except Exception as e:\n            logger.warning(\"Simplex-Einstellung fehlgeschlagen: %s\", e)\n\n    # ------------------------------------------------------------------\n    # Druck-Funktionen\n    # ------------------------------------------------------------------\n\n    # Drucker-IP fuer LPR (Canon Netzwerkdrucker)\n    PRINTER_IP = \"192.168.5.25\"\n\n    def _print_file(self, filepath: str):\n        \"\"\"Druckt eine PDF-Datei via LPR (headless, kein GUI noetig).\"\"\"\n        printer_ip = os.getenv(\"PRINTER_IP\", self.PRINTER_IP)\n        result = subprocess.run(\n            [\"lpr.exe\", \"-S\", printer_ip, \"-P\", \"lp\", \"-o\", \"l\", filepath],\n            capture_output=True, timeout=60,\n        )\n        if result.returncode != 0:\n            err = (result.stderr or b\"\").decode(\"utf-8\", errors=\"replace\").strip()\n            raise RuntimeError(f\"LPR print failed (exit {result.returncode}): {err}\")\n        time.sleep(2.0)\n\n    def _print_control_sheet(self, text: str):\n        \"\"\"Druckt ein Text-Kontrollblatt via PowerShell Out-Printer.\"\"\"\n        printer = self.printer_name or \"Canon\"\n        escaped_printer = printer.replace(\"'\", \"''\")\n        escaped_text = text.replace(\"'\", \"''\")\n        cmd = f\"'{escaped_text}' | Out-Printer -Name '{escaped_printer}'\"\n        result = subprocess.run(\n            [\"powershell\", \"-NoProfile\", \"-Command\", cmd],\n            capture_output=True, timeout=30,\n        )\n        if result.returncode != 0:\n            err = (result.stderr or b\"\").decode(\"utf-8\", errors=\"replace\").strip()\n            raise RuntimeError(f\"Out-Printer control sheet failed: {err}\")\n\n    # ------------------------------------------------------------------\n    # Logging\n    # ------------------------------------------------------------------\n\n    def _log_print_job(self, result: dict, sorted_lists: list[dict]):\n        \"\"\"Schreibt einen Druck-Log-Eintrag.\"\"\"\n        log_path = self.logs_dir / \"print_log.txt\"\n        with open(log_path, \"a\", encoding=\"utf-8\") as f:\n            f.write(f\"\\n{'='*50}\\n\")\n            f.write(f\"Druckjob: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\")\n            f.write(f\"Drucker: {self.printer_name or 'Standard'}\\n\")\n            f.write(f\"Modus: {'Duplex' if self.duplex else 'Simplex (einseitig)'}\\n\")\n            f.write(\n                f\"Listen: {result['first_nr']:04d} bis {result['last_nr']:04d}\\n\"\n            )\n            f.write(\n                f\"Gedruckt: {result['printed']}/{result['total_jobs']}\\n\"\n            )\n            f.write(f\"Fehler: {result['errors']}\\n\")\n            f.write(\"Dateien:\\n\")\n            for item in sorted_lists:\n                pdf = item.get(\"pdf_path\", \"\")\n                marker = \" (PDF)\" if pdf and Path(pdf).exists() else \" (xlsx)\"\n                f.write(f\"  {item['list_nr']:04d}: {item['filename']}{marker}\\n\")\n\n\n# ------------------------------------------------------------------\n# Standalone-Test\n# ------------------------------------------------------------------\n\nif __name__ == \"__main__\":\n    logging.basicConfig(level=logging.DEBUG)\n    p = Printer()\n    print(\"printer.py â€“ Module-Check OK\")\n    print(f\"  Drucker: {p.printer_name or '(Standard)'}\")\n    print(f\"  Modus: {'Duplex' if p.duplex else 'Simplex (einseitig)'}\")\n"
+      "code": "\"\"\"\nprinter.py â€“ PDF-Druck mit Start/Ende-Kontrollblaettern.\n\nv5.2 Aenderungen (27.04.2026):\n  - lpr.exe Timeout 60s -> 180s (Canon 165 PCL6 Buffer ist langsamer)\n  - Batch-Pause: nach 8 Listen (statt 10), 90s (statt 60s) - LPR Timeouts alle ~12 Listen\n  - _print_control_sheet: Out-Printer (Plain-Text) -> PDF via fpdf2 + LPR\n    Grund: Canon Generic Plus PCL6 Treiber verwirft Plain-Text stumm (Job in Queue,\n    kein physischer Druck) - verifiziert 2026-04-27 mit 3 Test-Drucken (0 Seiten raus).\n\nv5.1 Aenderungen (13.03.2026):\n  - NUR PDFs drucken (nicht mehr xlsx)\n  - Simplex (einseitig) erzwingen via win32print DevMode\n  - Canon-Drucker aus Config\n  - LPR statt SumatraPDF (headless, kein GUI/RDP noetig)\n  3. Ende-Blatt: \"// ENDE // Letzte Liste: Nr. Y\"\n\nWindows-Druck via win32print (RAW/Simplex).\nWindows-Druck via LPR (headless, kein GUI noetig).\n\"\"\"\n\nimport json\nimport logging\nimport os\nimport subprocess\nimport tempfile\nimport time\nfrom datetime import datetime\nfrom pathlib import Path\n\nfrom dotenv import load_dotenv\n\nlogger = logging.getLogger(__name__)\nload_dotenv()\n\n\nclass Printer:\n    \"\"\"Druckt Picklisten-PDFs mit Kontrollblaettern.\"\"\"\n\n    def __init__(self, config_path: str = \"config.json\"):\n        with open(config_path, \"r\", encoding=\"utf-8\") as f:\n            self.cfg = json.load(f)\n\n        printer_cfg = self.cfg.get(\"printer\", {})\n        self.printer_name = os.getenv(\"PRINTER_NAME\", printer_cfg.get(\"name\", \"\"))\n        self.copies = printer_cfg.get(\"copies\", 1)\n        self.orientation = printer_cfg.get(\"orientation\", \"landscape\")\n        self.duplex = printer_cfg.get(\"duplex\", False)  # False = Simplex\n\n        self.logs_dir = Path(self.cfg[\"paths\"][\"logs_dir\"])\n        self.logs_dir.mkdir(parents=True, exist_ok=True)\n\n    def print_all(self, generated_lists: list[dict]) -> dict:\n        \"\"\"Druckt alle Picklisten-PDFs mit Kontrollblaettern.\n\n        Args:\n            generated_lists: Liste von Dicts mit list_nr, filepath, filename, pdf_path\n\n        Returns:\n            Dict mit Statistiken: {printed, errors, first_nr, last_nr}\n        \"\"\"\n        if not generated_lists:\n            logger.warning(\"Keine Listen zum Drucken.\")\n            return {\"printed\": 0, \"errors\": 0, \"first_nr\": 0, \"last_nr\": 0}\n\n        # Simplex (einseitig) am Drucker erzwingen\n        self._set_simplex()\n\n        sorted_lists = sorted(generated_lists, key=lambda x: x[\"list_nr\"])\n        first_nr = sorted_lists[0][\"list_nr\"]\n        last_nr = sorted_lists[-1][\"list_nr\"]\n        count = len(sorted_lists)\n\n        printed = 0\n        errors = 0\n        batch_count = 0  # zaehlt erfolgreich gedruckte Listen fuer 10er-Batch-Pause\n\n        # 1. Start-Kontrollblatt\n        logger.info(\n            \"Druck starten: Listen %04d bis %04d (%d Stueck)\",\n            first_nr, last_nr, count,\n        )\n        try:\n            self._print_control_sheet(\n                f\"// START //\\n\\n\"\n                f\"Listen Nr. {first_nr:04d} bis {last_nr:04d}\\n\"\n                f\"Anzahl: {count}\\n\\n\"\n                f\"// START //\"\n            )\n            printed += 1\n        except Exception as e:\n            logger.error(\"Start-Blatt Druck fehlgeschlagen: %s\", e)\n            errors += 1\n\n        # 2. Alle Picklisten â€” PDF bevorzugen\n        for item in sorted_lists:\n            pdf_path = item.get(\"pdf_path\", \"\")\n            filepath = item.get(\"filepath\", \"\")\n            list_nr = item.get(\"list_nr\", 0)\n            filename = item.get(\"filename\", \"\")\n\n            # PDF bevorzugen, Fallback auf xlsx\n            print_file = \"\"\n            if pdf_path and Path(pdf_path).exists():\n                print_file = pdf_path\n            elif filepath and Path(filepath).exists():\n                print_file = filepath\n                logger.warning(\"PDF fehlt fuer %04d, drucke xlsx: %s\", list_nr, filepath)\n            else:\n                logger.error(\"Keine druckbare Datei fuer %04d: %s\", list_nr, filename)\n                errors += 1\n                continue\n\n            try:\n                self._print_file(print_file)\n                printed += 1\n                batch_count += 1\n                logger.debug(\"Gedruckt: %04d â€“ %s\", list_nr, Path(print_file).name)\n                # Alle 8 Listen: 90s Pause damit Drucker-Buffer komplett leer laeuft\n                # (27.04.2026: Canon 165 PCL6 ist langsamer, alte Schwelle 10/60s reichte\n                #  nicht - LPR Timeouts bei jeder ~12. Liste. Frueher pausieren + laenger.)\n                if batch_count % 8 == 0:\n                    logger.info(\"Batch-Pause nach %d Listen (90s, Drucker-Buffer leeren)...\", batch_count)\n                    time.sleep(90.0)\n            except Exception as e:\n                logger.error(\"Druck fehlgeschlagen %04d: %s\", list_nr, e)\n                errors += 1\n\n        # 3. Ende-Kontrollblatt\n        lists_printed = printed - 1  # -1 fuer Start-Blatt\n        try:\n            self._print_control_sheet(\n                f\"// ENDE //\\n\\n\"\n                f\"Letzte Liste: Nr. {last_nr:04d}\\n\"\n                f\"Listen gedruckt: {lists_printed} von {count}\\n\\n\"\n                f\"// ENDE //\"\n            )\n            printed += 1\n        except Exception as e:\n            logger.error(\"Ende-Blatt Druck fehlgeschlagen: %s\", e)\n            errors += 1\n\n        result = {\n            \"printed\": printed,\n            \"errors\": errors,\n            \"first_nr\": first_nr,\n            \"last_nr\": last_nr,\n            \"total_jobs\": count + 2,\n        }\n\n        self._log_print_job(result, sorted_lists)\n\n        logger.info(\n            \"Druck abgeschlossen: %d/%d gedruckt, %d Fehler\",\n            printed, count + 2, errors,\n        )\n\n        return result\n\n    # ------------------------------------------------------------------\n    # Simplex-Erzwingung (einseitiger Druck)\n    # ------------------------------------------------------------------\n\n    def _set_simplex(self):\n        \"\"\"Setzt den Drucker auf Simplex (einseitig) via win32print DevMode.\"\"\"\n        if self.duplex:\n            logger.debug(\"Duplex in Config aktiviert â€” ueberspringe Simplex-Erzwingung\")\n            return\n\n        try:\n            import win32print\n\n            printer = self.printer_name or win32print.GetDefaultPrinter()\n            handle = win32print.OpenPrinter(printer)\n            try:\n                props = win32print.GetPrinter(handle, 2)\n                devmode = props[\"pDevMode\"]\n                # DMDUP_SIMPLEX = 1\n                devmode.Duplex = 1\n                devmode.Fields |= 0x00001000  # DM_DUPLEX\n                props[\"pDevMode\"] = devmode\n                win32print.SetPrinter(handle, 2, props, 0)\n                logger.info(\"Drucker '%s' auf Simplex (einseitig) gesetzt\", printer)\n            finally:\n                win32print.ClosePrinter(handle)\n\n        except ImportError:\n            logger.warning(\"win32print nicht verfuegbar â€” Simplex kann nicht erzwungen werden\")\n        except Exception as e:\n            logger.warning(\"Simplex-Einstellung fehlgeschlagen: %s\", e)\n\n    # ------------------------------------------------------------------\n    # Druck-Funktionen\n    # ------------------------------------------------------------------\n\n    # Drucker-IP fuer LPR (Canon Netzwerkdrucker)\n    PRINTER_IP = \"192.168.5.165\"\n\n    def _print_file(self, filepath: str):\n        \"\"\"Druckt eine PDF-Datei via LPR (headless, kein GUI noetig).\n\n        Timeout 180s (27.04.2026): Canon 165 PCL6 Buffer braucht laenger als 60s\n        bei groesseren Picklist-PDFs. Alte 60s-Schwelle fuehrte zu LPR-Timeouts\n        bei jeder ~12. Liste. 180s gibt Sicherheitspuffer.\n        \"\"\"\n        printer_ip = os.getenv(\"PRINTER_IP\", self.PRINTER_IP)\n        result = subprocess.run(\n            [\"lpr.exe\", \"-S\", printer_ip, \"-P\", \"lp\", \"-o\", \"l\", filepath],\n            capture_output=True, timeout=180,\n        )\n        if result.returncode != 0:\n            err = (result.stderr or b\"\").decode(\"utf-8\", errors=\"replace\").strip()\n            raise RuntimeError(f\"LPR print failed (exit {result.returncode}): {err}\")\n        time.sleep(2.0)\n\n    def _print_control_sheet(self, text: str):\n        \"\"\"Druckt ein Kontrollblatt als PDF via LPR (gleicher Pfad wie Picklisten).\n\n        v5.2 (27.04.2026): Out-Printer durch PDF+LPR ersetzt.\n        Grund: Canon Generic Plus PCL6 Treiber verwirft Plain-Text-Streams stumm\n        (Job in Queue, return code 0, aber 0 physische Seiten - verifiziert mit\n        3 Test-Drucken am 27.04.2026). PDF+LPR ist der gleiche bewaehrte Pfad\n        wie fuer Picklisten und funktioniert garantiert.\n        \"\"\"\n        from fpdf import FPDF\n\n        pdf = FPDF(orientation=\"L\", unit=\"mm\", format=\"A4\")\n        pdf.add_page()\n        pdf.set_font(\"Helvetica\", size=24)\n        # Vertikal mittig: A4 Landscape Hoehe = 210mm, 4 Zeilen a 12mm = 48mm\n        pdf.set_y(80)\n        for line in text.split(\"\\n\"):\n            pdf.cell(0, 12, line.strip(), ln=1, align=\"C\")\n\n        tmp = Path(tempfile.gettempdir()) / f\"nacke_control_{int(time.time() * 1000)}.pdf\"\n        pdf.output(str(tmp))\n        try:\n            self._print_file(str(tmp))\n        finally:\n            try:\n                tmp.unlink()\n            except Exception:\n                pass\n\n    # ------------------------------------------------------------------\n    # Logging\n    # ------------------------------------------------------------------\n\n    def _log_print_job(self, result: dict, sorted_lists: list[dict]):\n        \"\"\"Schreibt einen Druck-Log-Eintrag.\"\"\"\n        log_path = self.logs_dir / \"print_log.txt\"\n        with open(log_path, \"a\", encoding=\"utf-8\") as f:\n            f.write(f\"\\n{'='*50}\\n\")\n            f.write(f\"Druckjob: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\")\n            f.write(f\"Drucker: {self.printer_name or 'Standard'}\\n\")\n            f.write(f\"Modus: {'Duplex' if self.duplex else 'Simplex (einseitig)'}\\n\")\n            f.write(\n                f\"Listen: {result['first_nr']:04d} bis {result['last_nr']:04d}\\n\"\n            )\n            f.write(\n                f\"Gedruckt: {result['printed']}/{result['total_jobs']}\\n\"\n            )\n            f.write(f\"Fehler: {result['errors']}\\n\")\n            f.write(\"Dateien:\\n\")\n            for item in sorted_lists:\n                pdf = item.get(\"pdf_path\", \"\")\n                marker = \" (PDF)\" if pdf and Path(pdf).exists() else \" (xlsx)\"\n                f.write(f\"  {item['list_nr']:04d}: {item['filename']}{marker}\\n\")\n\n\n# ------------------------------------------------------------------\n# Standalone-Test\n# ------------------------------------------------------------------\n\nif __name__ == \"__main__\":\n    logging.basicConfig(level=logging.DEBUG)\n    p = Printer()\n    print(\"printer.py â€“ Module-Check OK\")\n    print(f\"  Drucker: {p.printer_name or '(Standard)'}\")\n    print(f\"  Modus: {'Duplex' if p.duplex else 'Simplex (einseitig)'}\")\n\n"
     },
     "nacke/config": {
       "id": "nacke/config",
@@ -357,9 +358,10 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "config.json",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
-        "lines": 73,
-        "size": 2304
+        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "lines": 77,
+        "size": 2538,
+        "lastFetched": "2026-04-27T11:04:44Z"
       },
       "gate": {
         "passed": true,
@@ -367,7 +369,7 @@
         "checkedAt": "2026-03-11T08:00:00Z"
       },
       "frozenAt": "2026-03-11T08:00:00Z",
-      "code": "{\n  \"config_version\": \"5.3\",\n  \"config_changelog\": [\n    \"1.0 - Initiale Config\",\n    \"2.0 - Retry-Logik, Reporting, NaN-Fixes\",\n    \"3.0 - Picklist v3 (Laender-Bundle, Summengruppen, Kommissionierer)\",\n    \"4.0 - Picklist v4: Bundle->Karton, OL ohne Karton, PPP schmaler, Kartonanzahlen bei Summen, Paletten unter ITEM/PREIS, Scheduler 04:30\",\n    \"5.0 - Picklist v5: korrigierte Menge + Gesamt pro Land entfernt, Leerzeilen Summen, Schrift gross fuer Lager, PDF-Export, Breite=1Seite Hoehe=beliebig\",\n    \"5.1 - output_dir auf K:\\\\Raussuchlisten, idis_export_fields entfernt (toter Code)\",\n    \"5.2 - PDF-Druck: Footer (Dateiname+Seitenzahl), Simplex (einseitig), Canon-Drucker, nur PDFs drucken\",\n    \"5.3 - paths.todo_dir hinzugefuegt; generate_todo_list.py liest Pfade jetzt aus config.json statt hardcoded\"\n  ],\n  \"paths\": {\n    \"masterdatei\": \"K:\\\\Masterdatei Orders.xlsx\",\n    \"over_matrix\": \"data\\\\Over Matrix.xlsx\",\n    \"exports_dir\": \"K:\\\\Raussuchlisten\\\\Export\",\n    \"output_dir\": \"K:\\\\Raussuchlisten\",\n    \"todo_dir\": \"K:\\\\Raussuchlisten\\\\ToDo\",\n    \"logs_dir\": \"C:\\\\NackeScript\\\\logs\",\n    \"state_dir\": \"C:\\\\NackeScript\\\\state\"\n  },\n  \"idis\": {\n    \"url\": \"https://idis.retail-sc.com\",\n    \"mailbox\": \"729\",\n    \"filter_name\": \"Liegeware\",\n    \"timeout_ms\": 30000,\n    \"screenshot_on_error\": true,\n    \"export_format\": \"CSV\",\n    \"export_separator\": \";\",\n    \"export_fix_field_length\": true\n  },\n  \"masterdatei_sheets\": {\n    \"alle_orders\": \"Alle Orders\",\n    \"ol_kartonage\": \"OL Kartonage\"\n  },\n  \"overconfirmation\": {\n    \"never_hochsetzen_countries\": [\n      \"D\"\n    ],\n    \"factor_pcs\": 1,\n    \"factor_ppp\": 1\n  },\n  \"picklist\": {\n    \"list_number_min\": 1001,\n    \"list_number_max\": 9999,\n    \"date_format\": \"%d.%m.%y\",\n    \"filename_pattern\": \"{list_nr:04d} - {order_code} - {date} - UXUIX_AI.xlsx\"\n  },\n  \"printer\": {\n    \"name\": \"Canon\",\n    \"copies\": 1,\n    \"orientation\": \"landscape\",\n    \"duplex\": false\n  },\n  \"reporting\": {\n    \"edge_function_url\": \"https://crslpxgwxjmovrhyxiim.supabase.co/functions/v1/nacke-report\",\n    \"machine_name\": \"nacke-vm\",\n    \"enabled\": true\n  },\n  \"schedule\": {\n    \"start_time\": \"04:30\",\n    \"deadline\": \"07:00\",\n    \"weekdays\": [\n      \"Mon\",\n      \"Tue\",\n      \"Wed\",\n      \"Thu\"\n    ],\n    \"retry_count\": 3,\n    \"retry_delay_minutes\": 20\n  }\n}\n"
+      "code": "{\n  \"config_version\": \"5.4\",\n  \"config_changelog\": [\n    \"1.0 - Initiale Config\",\n    \"2.0 - Retry-Logik, Reporting, NaN-Fixes\",\n    \"3.0 - Picklist v3 (Laender-Bundle, Summengruppen, Kommissionierer)\",\n    \"4.0 - Picklist v4: Bundle->Karton, OL ohne Karton, PPP schmaler, Kartonanzahlen bei Summen, Paletten unter ITEM/PREIS, Scheduler 04:30\",\n    \"5.0 - Picklist v5: korrigierte Menge + Gesamt pro Land entfernt, Leerzeilen Summen, Schrift gross fuer Lager, PDF-Export, Breite=1Seite Hoehe=beliebig\",\n    \"5.1 - output_dir auf K:\\\\Raussuchlisten, idis_export_fields entfernt (toter Code)\",\n    \"5.2 - PDF-Druck: Footer (Dateiname+Seitenzahl), Simplex (einseitig), Canon-Drucker, nur PDFs drucken\",\n    \"5.3 - paths.todo_dir hinzugefuegt; generate_todo_list.py liest Pfade jetzt aus config.json statt hardcoded\",\n    \"5.4 - printer.py: lpr.exe timeout 60s->180s, batch-pause 10/60s->8/90s, _print_control_sheet via PDF+LPR (Canon PCL6 Out-Printer Silent Fail Fix - 27.04.2026)\"\n  ],\n  \"paths\": {\n    \"masterdatei\": \"K:\\\\Masterdatei Orders.xlsx\",\n    \"over_matrix\": \"data\\\\Over Matrix.xlsx\",\n    \"exports_dir\": \"K:\\\\Raussuchlisten\\\\Export\",\n    \"output_dir\": \"K:\\\\Raussuchlisten\",\n    \"todo_dir\": \"K:\\\\Raussuchlisten\\\\ToDo\",\n    \"logs_dir\": \"C:\\\\NackeScript\\\\logs\",\n    \"state_dir\": \"C:\\\\NackeScript\\\\state\"\n  },\n  \"idis\": {\n    \"url\": \"https://idis.retail-sc.com\",\n    \"mailbox\": \"729\",\n    \"filter_name\": \"Liegeware\",\n    \"timeout_ms\": 30000,\n    \"screenshot_on_error\": true,\n    \"export_format\": \"CSV\",\n    \"export_separator\": \";\",\n    \"export_fix_field_length\": true\n  },\n  \"masterdatei_sheets\": {\n    \"alle_orders\": \"Alle Orders\",\n    \"ol_kartonage\": \"OL Kartonage\"\n  },\n  \"overconfirmation\": {\n    \"never_hochsetzen_countries\": [\n      \"D\"\n    ],\n    \"factor_pcs\": 1,\n    \"factor_ppp\": 1\n  },\n  \"picklist\": {\n    \"list_number_min\": 1001,\n    \"list_number_max\": 9999,\n    \"date_format\": \"%d.%m.%y\",\n    \"filename_pattern\": \"{list_nr:04d} - {order_code} - {date} - UXUIX_AI.xlsx\"\n  },\n  \"printer\": {\n    \"name\": \"Canon 165\",\n    \"ip\": \"192.168.5.165\",\n    \"fallback_ip\": \"192.168.5.25\",\n    \"copies\": 1,\n    \"orientation\": \"landscape\",\n    \"duplex\": false\n  },\n  \"reporting\": {\n    \"edge_function_url\": \"https://crslpxgwxjmovrhyxiim.supabase.co/functions/v1/nacke-report\",\n    \"machine_name\": \"nacke-vm\",\n    \"enabled\": true\n  },\n  \"schedule\": {\n    \"start_time\": \"04:30\",\n    \"deadline\": \"07:00\",\n    \"weekdays\": [\n      \"Mon\",\n      \"Tue\",\n      \"Wed\",\n      \"Thu\"\n    ],\n    \"retry_count\": 3,\n    \"retry_delay_minutes\": 20\n  }\n}\n\n\n"
     },
     "maut/date-calculator": {
       "id": "maut/date-calculator",
@@ -941,7 +943,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "fulltest.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 501,
         "size": 21399
       },
@@ -970,7 +972,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_amend.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 296,
         "size": 10807
       },
@@ -999,7 +1001,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_connect.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 176,
         "size": 6169
       },
@@ -1028,7 +1030,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_export.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 413,
         "size": 13992
       },
@@ -1057,7 +1059,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_login.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 171,
         "size": 5021
       },
@@ -1086,7 +1088,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_packaging.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 239,
         "size": 7744
       },
@@ -1115,7 +1117,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_save_back.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 116,
         "size": 3688
       },
@@ -1144,7 +1146,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_selectors.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 147,
         "size": 5773
       },
@@ -1173,7 +1175,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "nacke_email.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 220,
         "size": 8942
       },
@@ -1202,7 +1204,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "requirements.txt",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 7,
         "size": 86
       },
@@ -1709,7 +1711,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "generate_todo_list.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 567,
         "size": 20658
       },
@@ -1755,7 +1757,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "preflight_check.py",
-        "sha": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "sha": "b1a16df65841c155f4a9888c852ac85be73a466a",
         "lines": 603,
         "size": 22418
       },
@@ -2355,6 +2357,93 @@
         "notes": "Auto-registriert — Deploy Gate noch nicht durchlaufen"
       },
       "frozenAt": "2026-04-14T12:27:28.249Z"
+    },
+    "linkedin/connect": {
+      "id": "linkedin/connect",
+      "name": "LinkedIn Connect (Multi-Account)",
+      "version": "3.0.0",
+      "status": "production",
+      "language": "javascript",
+      "description": "Hauptskript fuer LinkedIn Auto-Connect: persistentes Profil, mynetwork/grow Flow + Search-URL, 4-Layer Banner-Detection (pre+post send), Person-Tracking via aria-label, Verify auf Ausstehend-Status, Phase-Timings fuer Bottleneck-Analyse, workflow_runs Logging.",
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "playwright"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-04-28",
+        "notes": "Banner-Detection getestet bei Wochenlimit (28.04.), Person-Tracking + Ausstehend-Verify implementiert"
+      },
+      "code": "// LinkedIn Auto-Connect fuer Multi-Account-VM\n// - Nutzt persistenten Chrome-Profil (Cookie aus manuellem Login + 2FA)\n// - Iteriert ueber Suchergebnisse oder mynetwork/grow Vorschlaege\n// - Klickt \"Vernetzen\" + \"Ohne Notiz senden\", max MAX_CONNECTS pro Run\n// - Schreibt workflow_runs Eintrag (R7)\n//\n// ENV:\n//   LINKEDIN_PROFILE_DIR (req)  Profilverzeichnis, z.B. /home/exasync/profiles/michael\n//   LINKEDIN_ACCOUNT      (req)  Account-Name fuer Logs, z.B. michael\n//   MAX_CONNECTS          (opt)  Max Vernetzungen pro Run (default 5)\n//   SEARCH_URL            (opt)  Start-URL (default: mynetwork/grow)\n//   HEADLESS              (opt)  true/false (default false - sichtbar)\n//   SUPABASE_URL,SUPABASE_ANON_KEY (opt) - fuer workflow_runs\n\nimport { chromium } from 'playwright';\nimport fs from 'node:fs';\nimport os from 'node:os';\nimport path from 'node:path';\n\nconst PROFILE_DIR = process.env.LINKEDIN_PROFILE_DIR;\nconst ACCOUNT     = process.env.LINKEDIN_ACCOUNT || 'unknown';\nconst MAX_CONNECTS = parseInt(process.env.MAX_CONNECTS || '5', 10);\nconst SEARCH_URL  = process.env.SEARCH_URL || 'https://www.linkedin.com/mynetwork/grow/';\nconst HEADLESS    = process.env.HEADLESS === 'true';\nconst SUPABASE_URL = process.env.SUPABASE_URL;\nconst SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;\n\nif (!PROFILE_DIR) { console.error('ERROR: LINKEDIN_PROFILE_DIR fehlt'); process.exit(2); }\n\nconst TS = new Date().toISOString().replace(/[:.]/g, '-');\nconst LOG_DIR = '/home/exasync/logs';\nconst SHOT_DIR = '/home/exasync/testruns';\nfs.mkdirSync(LOG_DIR, { recursive: true });\nfs.mkdirSync(SHOT_DIR, { recursive: true });\nconst LOGFILE = `${LOG_DIR}/connect-${ACCOUNT}-${TS.slice(0,10)}.log`;\n\nconst log = (msg, level='INFO') => {\n  const line = `[${new Date().toISOString()}] [${level}] ${msg}`;\n  console.log(line);\n  fs.appendFileSync(LOGFILE, line + '\\n');\n};\n\nconst sleep = ms => new Promise(r => setTimeout(r, ms));\nconst jitter = (min, max) => min + Math.floor(Math.random() * (max-min));\n\n// Phase-Timing fuer Bottleneck-Analyse\nconst phaseEvents = []; // [{name, ms}]\nconst timed = async (name, fn) => {\n  const t0 = Date.now();\n  try { return await fn(); }\n  finally { phaseEvents.push({ name, ms: Date.now() - t0 }); }\n};\nconst aggregateTimings = () => {\n  const byName = {};\n  for (const e of phaseEvents) {\n    byName[e.name] = byName[e.name] || { n: 0, total: 0, min: Infinity, max: 0, samples: [] };\n    const x = byName[e.name];\n    x.n++; x.total += e.ms; x.min = Math.min(x.min, e.ms); x.max = Math.max(x.max, e.ms);\n    x.samples.push(e.ms);\n  }\n  for (const k in byName) {\n    const x = byName[k];\n    x.mean = Math.round(x.total / x.n);\n    x.samples.sort((a,b)=>a-b);\n    x.p50 = x.samples[Math.floor(x.samples.length*0.5)];\n    x.p95 = x.samples[Math.floor(x.samples.length*0.95)] || x.max;\n    delete x.samples; // sparen fuer JSON\n  }\n  return byName;\n};\n\nconst startTime = new Date();\nlet status = 'success';\nlet errorDetails = null;\nlet connectsSent = 0;\nlet attemptedClicks = 0;\nlet stopReason = '';\nlet finalUrl = '';\nlet loggedIn = false;\n// Vorab-Deklaration fuer metrics-Block (Sets werden im try-Block befuellt)\nlet verifiedAria, failedAria;\nlet bannerHits = 0;\n\nlet browser;\ntry {\n  log(`Auto-Connect startet | account=${ACCOUNT} max=${MAX_CONNECTS} url=${SEARCH_URL}`);\n  log(`Profile: ${PROFILE_DIR}`);\n\n  browser = await timed('browser_launch', () => chromium.launchPersistentContext(PROFILE_DIR, {\n    channel: 'chrome',\n    headless: HEADLESS,\n    viewport: { width: 1280, height: 900 },\n    args: ['--no-first-run', '--no-default-browser-check']\n  }));\n\n  const page = browser.pages()[0] || await browser.newPage();\n\n  // 1. Login-Check via /feed/\n  log('Pruefe Login via /feed/');\n  await timed('login_check_navigate', () => page.goto('https://www.linkedin.com/feed/', { waitUntil: 'domcontentloaded', timeout: 30000 }));\n  await sleep(2500);\n  finalUrl = page.url();\n  loggedIn = finalUrl.includes('/feed') && !finalUrl.includes('/login') && !finalUrl.includes('/checkpoint');\n\n  if (!loggedIn) {\n    stopReason = `not_logged_in (url=${finalUrl})`;\n    status = 'error';\n    errorDetails = stopReason;\n    log(`Nicht eingeloggt - stop. URL=${finalUrl}`, 'ERROR');\n    await page.screenshot({ path: `${SHOT_DIR}/${TS}-${ACCOUNT}-notlogged.png` }).catch(()=>{});\n    throw new Error(stopReason);\n  }\n  log(`Eingeloggt (url=${finalUrl})`, 'OK');\n\n  // 2. Navigation zur Such-/Vorschlaegeseite\n  log(`Navigiere zu Zielseite: ${SEARCH_URL}`);\n  await timed('target_navigate', () => page.goto(SEARCH_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }));\n  await sleep(jitter(2500, 4000));\n  finalUrl = page.url();\n  log(`URL nach Navigate: ${finalUrl}`);\n  await page.screenshot({ path: `${SHOT_DIR}/${TS}-${ACCOUNT}-page.png` }).catch(()=>{});\n\n  // 2b. Auf mynetwork/grow/: \"Alle anzeigen\" neben \"Personen aus Aktivitaeten\" klicken (auto-connect.md V1.2)\n  if (/mynetwork\\/grow/.test(finalUrl)) {\n    log('mynetwork/grow erkannt — klicke \"Alle anzeigen\" bei Aktivitaeten-Vorschlaegen');\n    const clicked = await timed('alle_anzeigen_click', () => page.evaluate(() => {\n      const candidates = Array.from(document.querySelectorAll('a[aria-label], button[aria-label]'));\n      const target = candidates.find(el => /Aktivit[aä]ten/i.test(el.getAttribute('aria-label') || ''));\n      if (target) { target.click(); return target.getAttribute('aria-label'); }\n      return null;\n    }));\n    if (clicked) {\n      log(`\"Alle anzeigen\" geklickt: ${clicked}`, 'OK');\n      await sleep(jitter(2500, 4000));\n      finalUrl = page.url();\n      log(`URL nach Alle-Anzeigen: ${finalUrl}`);\n      await page.screenshot({ path: `${SHOT_DIR}/${TS}-${ACCOUNT}-cohort.png` }).catch(()=>{});\n    } else {\n      log('Kein Aktivitaeten-Alle-Anzeigen gefunden — nutze direkte Vorschlaegeseite', 'WARN');\n    }\n  }\n\n  // Helper: erkennt LinkedIn-Blocker-Banner (Wochenlimit, Sicherheits-Warning, etc.)\n  const checkBlockingBanner = async () => {\n    return await page.evaluate(() => {\n      // (1) Sichtbare role=alert / aria-live Notifications\n      const alerts = Array.from(document.querySelectorAll('[role=\"alert\"], [aria-live=\"assertive\"]'));\n      for (const a of alerts) {\n        if (!a.offsetParent) continue;\n        const txt = (a.textContent || '').trim();\n        if (txt.length > 0 && txt.length < 600) {\n          return { found: true, source: 'role=alert', text: txt.slice(0, 250) };\n        }\n      }\n      // (2) Sichtbare LinkedIn Inline-Feedback Error-Komponenten\n      const errBlocks = Array.from(document.querySelectorAll('.artdeco-inline-feedback--error, .artdeco-toast-item--error, [data-test-banner-type=\"error\"]'));\n      for (const e of errBlocks) {\n        if (!e.offsetParent) continue;\n        const txt = (e.textContent || '').trim();\n        if (txt.length > 0) return { found: true, source: 'inline-feedback-error', text: txt.slice(0, 250) };\n      }\n      // (3) Sichtbare Error/Warning Icons + ihr umgebender Text\n      const errIcons = Array.from(document.querySelectorAll('svg[data-test-icon*=\"error\"], svg[data-test-icon*=\"warning\"], li-icon[type*=\"error\"], li-icon[type*=\"warning\"]'));\n      for (const e of errIcons) {\n        if (!e.offsetParent) continue;\n        const wrap = e.closest('[role], section, div, span');\n        const txt = (wrap?.textContent || '').trim();\n        if (txt.length > 5 && txt.length < 400) return { found: true, source: 'error-icon', text: txt.slice(0, 250) };\n      }\n      // (4) Body-Text-Pattern fuer harte Limits / Restrictions\n      const bodyTxt = document.body.innerText || '';\n      const patterns = [\n        /Wochenlimit\\s+(?:fast\\s+)?erreicht/i,\n        /weekly\\s+invitation\\s+limit/i,\n        /Sie haben Ihr w[oö]chentliches Limit/i,\n        /Sie\\s+haben\\s+(?:zu\\s+viele|in\\s+kurzer\\s+Zeit\\s+zu\\s+viele)/i,\n        /You.*(?:weekly|invitation).*limit/i,\n        /vor[uü]bergehend\\s+nicht\\s+m[oö]glich/i,\n        /Anmeldung\\s+vor[uü]bergehend\\s+gesperrt/i,\n        /This\\s+account\\s+is\\s+(?:restricted|blocked)/i,\n        /try\\s+again\\s+(?:in\\s+a\\s+few|later)/i,\n        /Ihr Konto wurde eingeschr[aä]nkt/i\n      ];\n      for (const re of patterns) {\n        const m = bodyTxt.match(re);\n        if (m) return { found: true, source: 'text-pattern', pattern: re.source, text: m[0] };\n      }\n      return { found: false };\n    });\n  };\n\n  // 3. Connect-Loop mit Person-Tracking + Status-Verifikation + Banner-Stop\n  log(`Starte Connect-Loop (max ${MAX_CONNECTS})`);\n  const attemptedAria = new Set();   // bereits geklickte Personen (per aria-label)\n  verifiedAria = new Set();          // Personen, deren Button auf \"Ausstehend\" gewechselt hat\n  failedAria = new Set();            // Personen, die nicht verifiziert werden konnten\n  let consecutiveEmpty = 0;\n\n  while (connectsSent < MAX_CONNECTS) {\n    // (a) Banner-Check VOR jedem neuen Klick — wenn Limit/Warning sichtbar, sofort stoppen\n    const preBanner = await timed('banner_check', () => checkBlockingBanner());\n    if (preBanner.found) {\n      bannerHits++;\n      stopReason = `blocking_banner: [${preBanner.source}] ${preBanner.text}`;\n      log(`STOP: Blocker-Banner erkannt (${preBanner.source}): \"${preBanner.text}\"`, 'WARN');\n      await page.screenshot({ path: `${SHOT_DIR}/${TS}-${ACCOUNT}-banner.png`, fullPage: true }).catch(()=>{});\n      break;\n    }\n\n    // Liste ALLER sichtbaren Vernetzen-Buttons mit ihrem aria-label\n    const candidates = await timed('button_search', () => page.evaluate(() => {\n      return Array.from(document.querySelectorAll('button'))\n        .filter(b => {\n          if (!b.offsetParent) return false;\n          const txt = (b.textContent || '').trim();\n          const aria = b.getAttribute('aria-label') || '';\n          return txt === 'Vernetzen' || txt === 'Connect' || aria.includes('als Kontakt einladen') || aria.toLowerCase().includes('invite');\n        })\n        .map(b => b.getAttribute('aria-label') || '');\n    }));\n\n    // Filter raus die wir schon versucht haben\n    const fresh = candidates.filter(a => !attemptedAria.has(a));\n    log(`Buttons sichtbar: ${candidates.length} | davon frisch: ${fresh.length}`);\n\n    if (fresh.length === 0) {\n      consecutiveEmpty++;\n      if (consecutiveEmpty >= 3) {\n        stopReason = 'no_more_fresh_targets';\n        log('3x in Folge keine frischen Personen - stop', 'WARN');\n        break;\n      }\n      await timed('scroll_load_more', () => page.evaluate(() => window.scrollBy(0, 600)));\n      await sleep(jitter(1500, 2500));\n      continue;\n    }\n    consecutiveEmpty = 0;\n\n    const targetAria = fresh[0];\n    attemptedAria.add(targetAria);\n    attemptedClicks++;\n\n    // Klick auf genau diesen Button (per aria-label match)\n    const clicked = await timed('button_click', () => page.evaluate((aria) => {\n      const btn = Array.from(document.querySelectorAll('button')).find(b =>\n        b.offsetParent && b.getAttribute('aria-label') === aria\n      );\n      if (!btn) return false;\n      btn.scrollIntoView({ block: 'center' });\n      btn.click();\n      return true;\n    }, targetAria));\n    if (!clicked) {\n      log(`Klick #${attemptedClicks}: Button verschwunden vor Klick (${targetAria})`, 'WARN');\n      failedAria.add(targetAria);\n      continue;\n    }\n    log(`Klick #${attemptedClicks}: ${targetAria}`, 'INFO');\n\n    // Modal abwarten + \"Ohne Notiz senden\"\n    const modalWaitMs = jitter(800, 1400);\n    await sleep(modalWaitMs);\n    phaseEvents.push({ name: 'modal_wait_sleep', ms: modalWaitMs });\n\n    const modalHandled = await timed('modal_handle', () => page.evaluate(() => {\n      const sendNoNote = Array.from(document.querySelectorAll('button')).find(b => {\n        const t = (b.textContent || '').trim();\n        return t === 'Ohne Notiz senden' || t === 'Send without a note' || t === 'Senden' || t === 'Send now';\n      });\n      if (sendNoNote) { sendNoNote.click(); return 'sent_without_note'; }\n      const limitText = document.body.innerText || '';\n      if (/Wochenlimit|weekly limit|invitation limit|too many/i.test(limitText)) return 'weekly_limit';\n      return 'no_modal';\n    }));\n\n    if (modalHandled === 'weekly_limit') {\n      stopReason = 'weekly_limit';\n      log('Wochenlimit erreicht - stop', 'WARN');\n      await page.screenshot({ path: `${SHOT_DIR}/${TS}-${ACCOUNT}-limit.png` }).catch(()=>{});\n      break;\n    }\n    if (modalHandled !== 'sent_without_note') {\n      log(`Kein \"Ohne Notiz senden\" Modal (${modalHandled}) - skip Person`, 'WARN');\n      failedAria.add(targetAria);\n      continue;\n    }\n\n    // (b) Banner-Check NACH dem Send — LinkedIn zeigt Limit-Toast oft erst nach Submit\n    await sleep(800);\n    const postBanner = await timed('banner_check', () => checkBlockingBanner());\n    if (postBanner.found) {\n      bannerHits++;\n      stopReason = `blocking_banner_after_send: [${postBanner.source}] ${postBanner.text}`;\n      log(`STOP nach Send: Blocker-Banner (${postBanner.source}): \"${postBanner.text}\"`, 'WARN');\n      await page.screenshot({ path: `${SHOT_DIR}/${TS}-${ACCOUNT}-banner-postsend.png`, fullPage: true }).catch(()=>{});\n      // Diesen Send NICHT als verified zaehlen — LinkedIn kann ihn verworfen haben\n      failedAria.add(targetAria);\n      break;\n    }\n\n    // KRITISCH: Warte bis Button auf \"Ausstehend\"/\"Pending\" wechselt = echte Bestaetigung\n    const verified = await timed('verify_pending', () => page.waitForFunction((aria) => {\n      // Button mit gleichem aria-label suchen\n      const btn = Array.from(document.querySelectorAll('button')).find(b => b.getAttribute('aria-label') === aria);\n      if (!btn) return true; // Button verschwunden = wahrscheinlich erfolgreich\n      const txt = (btn.textContent || '').trim();\n      return txt === 'Ausstehend' || txt === 'Pending';\n    }, targetAria, { timeout: 5000 }).then(() => true).catch(() => false));\n\n    if (verified) {\n      connectsSent++;\n      verifiedAria.add(targetAria);\n      log(`Connect #${connectsSent} VERIFIZIERT (Ausstehend): ${targetAria}`, 'OK');\n    } else {\n      failedAria.add(targetAria);\n      log(`Connect NICHT verifiziert nach 5s: ${targetAria}`, 'WARN');\n      await page.screenshot({ path: `${SHOT_DIR}/${TS}-${ACCOUNT}-unverified-${attemptedClicks}.png` }).catch(()=>{});\n    }\n\n    const interMs = jitter(2000, 3500);\n    await sleep(interMs);\n    phaseEvents.push({ name: 'inter_click_sleep', ms: interMs });\n\n    // Nach jedem 4. Klick scrollen\n    if (attemptedClicks % 4 === 0) {\n      await timed('scroll_after_4', () => page.evaluate(() => window.scrollBy(0, 500)));\n      await sleep(jitter(1500, 2500));\n    }\n  }\n\n  if (!stopReason) stopReason = `max_reached (${connectsSent}/${MAX_CONNECTS})`;\n\n  await page.screenshot({ path: `${SHOT_DIR}/${TS}-${ACCOUNT}-final.png` }).catch(()=>{});\n  log(`Loop fertig: verified=${connectsSent}, attempts=${attemptedClicks}, failed=${failedAria.size}, stop=${stopReason}`, 'OK');\n  if (verifiedAria.size > 0) log(`Verifiziert: ${[...verifiedAria].slice(0,5).join(' | ')}${verifiedAria.size>5?' ...':''}`);\n\n} catch (err) {\n  status = 'error';\n  errorDetails = (errorDetails || '') + ' | ' + err.message;\n  log(`FEHLER: ${err.message}`, 'ERROR');\n  log(err.stack, 'ERROR');\n} finally {\n  if (browser) {\n    try { await browser.close(); log('Chrome geschlossen'); } catch(e) { log(`close-err: ${e.message}`, 'WARN'); }\n  }\n}\n\n// Phase-Aggregat fuer Bottleneck-Analyse\nconst timings = aggregateTimings();\nlog('=== BOTTLENECK-ANALYSE (alle Werte in ms) ===');\nlog(`${'Phase'.padEnd(24)} ${'n'.padStart(4)} ${'mean'.padStart(7)} ${'p50'.padStart(7)} ${'p95'.padStart(7)} ${'min'.padStart(7)} ${'max'.padStart(7)} ${'total'.padStart(8)}`);\nconst sortedPhases = Object.entries(timings).sort((a,b) => b[1].total - a[1].total);\nfor (const [name, t] of sortedPhases) {\n  log(`${name.padEnd(24)} ${String(t.n).padStart(4)} ${String(t.mean).padStart(7)} ${String(t.p50).padStart(7)} ${String(t.p95).padStart(7)} ${String(t.min).padStart(7)} ${String(t.max).padStart(7)} ${String(t.total).padStart(8)}`);\n}\nconst totalMs = Date.now() - startTime.getTime();\nlog(`GESAMT-RUN: ${totalMs} ms = ${(totalMs/1000).toFixed(1)}s = ${(totalMs/60000).toFixed(2)}min`);\nif (connectsSent > 0) log(`PRO CONNECT (mean): ${Math.round(totalMs/connectsSent)} ms = ${(totalMs/connectsSent/1000).toFixed(1)}s`);\n\n// workflow_runs (R7)\nif (SUPABASE_URL && SUPABASE_KEY) {\n  try {\n    const res = await fetch(`${SUPABASE_URL}/rest/v1/workflow_runs`, {\n      method: 'POST',\n      headers: {\n        'apikey': SUPABASE_KEY,\n        'Authorization': `Bearer ${SUPABASE_KEY}`,\n        'Content-Type': 'application/json',\n        'Prefer': 'return=minimal'\n      },\n      body: JSON.stringify({\n        workflow_id: 'linkedin-auto-connect',\n        status,\n        vm: os.hostname(),\n        started_at: startTime.toISOString(),\n        finished_at: new Date().toISOString(),\n        metrics: {\n          account: ACCOUNT,\n          logged_in: loggedIn,\n          connects_verified: connectsSent,\n          attempts: attemptedClicks,\n          failed_count: failedAria ? failedAria.size : 0,\n          verified_persons: verifiedAria ? [...verifiedAria].slice(0, 50) : [],\n          banner_hits: typeof bannerHits === 'number' ? bannerHits : 0,\n          max_connects: MAX_CONNECTS,\n          stop_reason: stopReason,\n          search_url: SEARCH_URL,\n          duration_ms: totalMs,\n          ms_per_connect: connectsSent > 0 ? Math.round(totalMs/connectsSent) : null,\n          phase_timings: timings\n        },\n        trigger: 'manual',\n        agent_id: ACCOUNT,\n        error_message: errorDetails\n      })\n    });\n    log(`workflow_runs: HTTP ${res.status}`, res.ok ? 'OK' : 'WARN');\n  } catch (e) {\n    log(`workflow_runs Fehler: ${e.message}`, 'WARN');\n  }\n}\n\nlog(`FERTIG | account=${ACCOUNT} status=${status} connects=${connectsSent} stop=${stopReason}`);\nprocess.exit(status === 'error' ? 1 : 0);\n",
+      "source": {
+        "type": "vm-only",
+        "vm": "social-media",
+        "path": "/home/exasync/linkedin/connect.mjs",
+        "lines": 405,
+        "size": 17860,
+        "sha": "20368bd1009ae5e493cda2e89fbb8f4e6d7ba74cbcd53ab2d4c8a99c6726bfdf"
+      }
+    },
+    "linkedin/run-connect-cron": {
+      "id": "linkedin/run-connect-cron",
+      "name": "LinkedIn Cron-Wrapper",
+      "version": "1.0.0",
+      "status": "production",
+      "language": "bash",
+      "description": "Generic Cron-Wrapper fuer LinkedIn-Auto-Connect: Earliest-Date Skip, Xvfb-Display pro Account, Singleton-Lock Cleanup, .env-source, Logging. Aufruf: run-connect.sh <ACCOUNT> <MAX_CONNECTS> [EARLIEST_DATE]",
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "Xvfb",
+        "google-chrome",
+        "node>=22"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-04-28"
+      },
+      "code": "#!/bin/bash\n# Generic Auto-Connect Cron-Wrapper fuer LinkedIn Multi-Account-VM\n#\n# Aufruf: run-connect.sh <ACCOUNT> <MAX_CONNECTS> [EARLIEST_RUN_DATE]\n# Bsp:    run-connect.sh michael 14 2026-05-05\n#\n# Features:\n# - Xvfb virtuelles Display pro Account (DISPLAY_NUM = 90 + char-summe(account) % 9)\n# - Earliest-Date Skip (verhindert Runs vor Wochenlimit-Reset)\n# - Singleton-Lock Cleanup\n# - Logging in /home/exasync/logs/cron-{account}-{ts}.log\n\nset -u\nACCOUNT=\"${1:?account required}\"\nMAX_CONNECTS=\"${2:?max_connects required}\"\nEARLIEST=\"${3:-1970-01-01}\"\n\nLOG_DIR=/home/exasync/logs\nmkdir -p \"$LOG_DIR\"\nTS=$(date +%Y%m%d-%H%M%S)\nLOG=\"$LOG_DIR/cron-$ACCOUNT-$TS.log\"\n\nlogmsg() { echo \"[$(date -Is)] [$1] $2\" | tee -a \"$LOG\"; }\n\nTODAY=$(date +%Y-%m-%d)\nif [[ \"$TODAY\" < \"$EARLIEST\" ]]; then\n  logmsg INFO \"Skip — heute=$TODAY < earliest=$EARLIEST\"\n  exit 0\nfi\n\nif [ -f /home/exasync/linkedin/.env ]; then\n  set -a; source /home/exasync/linkedin/.env; set +a\nelse\n  logmsg WARN \"/home/exasync/linkedin/.env nicht gefunden — workflow_runs faellt aus\"\nfi\n\nPROFILE_DIR=\"/home/exasync/profiles/$ACCOUNT\"\nrm -f \"$PROFILE_DIR/Singleton\"* 2>/dev/null || true\n\nDISPLAY_NUM=$((90 + $(echo -n \"$ACCOUNT\" | od -An -tu1 | tr -s ' ' '+' | sed 's/^+//' | bc) % 9))\nif ! pgrep -f \"Xvfb :$DISPLAY_NUM \" >/dev/null; then\n  logmsg INFO \"Starte Xvfb auf :$DISPLAY_NUM\"\n  Xvfb \":$DISPLAY_NUM\" -screen 0 1280x900x24 -ac >/dev/null 2>&1 &\n  sleep 2\nfi\n\nlogmsg INFO \"Run startet: account=$ACCOUNT max=$MAX_CONNECTS display=:$DISPLAY_NUM\"\ncd /home/exasync/linkedin\nexport DISPLAY=\":$DISPLAY_NUM\"\nexport LINKEDIN_PROFILE_DIR=\"$PROFILE_DIR\"\nexport LINKEDIN_ACCOUNT=\"$ACCOUNT\"\nexport MAX_CONNECTS=\"$MAX_CONNECTS\"\nexport HEADLESS=false\n\nnode connect.mjs >> \"$LOG\" 2>&1\nEXIT=$?\nlogmsg INFO \"Run fertig: exit=$EXIT — Log: $LOG\"\nexit $EXIT\n",
+      "source": {
+        "type": "vm-only",
+        "vm": "social-media",
+        "path": "/home/exasync/linkedin/run-connect.sh",
+        "lines": 59,
+        "size": 1814,
+        "sha": "7711183498d6810dea98c13089e99a030954f3f1da3335f05453a7f4726dbd30"
+      }
+    },
+    "linkedin/start-chrome": {
+      "id": "linkedin/start-chrome",
+      "name": "LinkedIn Chrome-Launcher (manueller Login)",
+      "version": "1.0.0",
+      "status": "production",
+      "language": "bash",
+      "description": "Per-Account Chrome-Launcher mit xrdp-safe Flags + CDP-Port. Wird manuell aufgerufen damit User initial einloggt + 2FA durchklickt. Cookie wird im persistenten Profil gespeichert. Template — eine Datei pro Account: start-chrome-{account}.sh. Aktuell auf VM: start-chrome-bodo.sh (Port 9301) + start-chrome-michael.sh (Port 9302).",
+      "usedBy": [
+        "linkedin"
+      ],
+      "dependencies": [
+        "google-chrome",
+        "xrdp"
+      ],
+      "gate": {
+        "passed": true,
+        "score": "11/11",
+        "lastCheck": "2026-04-28"
+      },
+      "code": "#!/bin/bash\n# Startet Chrome mit {ACCOUNT}-Profil - xrdp-kompatibel\n# CDP-Port {PORT}\nexec /usr/bin/google-chrome   --user-data-dir=/home/exasync/profiles/{ACCOUNT}   --no-first-run   --no-default-browser-check   --no-sandbox   --disable-gpu   --disable-dev-shm-usage   --disable-features=UseOzonePlatform   --ozone-platform=x11   --remote-debugging-port={PORT}   https://www.linkedin.com/login\n",
+      "source": {
+        "type": "vm-only",
+        "vm": "social-media",
+        "path": "/home/exasync/linkedin/start-chrome-{account}.sh",
+        "lines": 5,
+        "size": 395
+      }
     }
   },
   "summary": {
