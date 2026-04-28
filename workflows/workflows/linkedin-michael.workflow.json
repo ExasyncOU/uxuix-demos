@@ -1,0 +1,92 @@
+{
+  "$schema": "workflow-v1",
+  "id": "linkedin-michael",
+  "name": "LinkedIn Auto-Connect — Michael Klix",
+  "version": "3.0.0",
+  "status": "active",
+  "description": "Auto-Vernetzung fuer Michaels LinkedIn (info@michael-klix.de) auf social-media VM. 27 Connects pro Tag (14+13), MO-FR. Industry-Fokus Logistik/Trucking. Banner-Detection + Person-Tracking + Verify-Pending.",
+  "owner": "linkedin-agent",
+  "vm": "social-media",
+  "schedule": {
+    "cron": "30 9,14 * * 1-5",
+    "human": "MO-FR 09:30 + 14:30 Berlin (1. Run = 14 Connects, 2. Run = 13 Connects)",
+    "timezone": "Europe/Berlin",
+    "earliestRunDate": "2026-05-04"
+  },
+  "account": {
+    "email": "info@michael-klix.de",
+    "supabase_id": "77ddafdc-809c-441f-b534-e0e5e3fed012",
+    "display_name": "Michael Klix (Klixi)",
+    "profile_dir": "/home/exasync/profiles/michael",
+    "cdp_port": 9302,
+    "xvfb_display": ":91",
+    "tier": "warmup",
+    "daily_cap": 27,
+    "weekly_cap": 135,
+    "cron_split": [14, 13],
+    "industry_focus": "Logistik/Trucking (industry=116)",
+    "search_keywords": [
+      "Teamleitung", "Head of Digital Transformation", "CEO", "Geschäftsführer",
+      "Disponent", "Transportleiter", "CTO", "Betriebsleiter", "Abteilungsleiter",
+      "Projektmanager", "Logistikleiter", "Operations Manager", "Vertriebsleiter",
+      "Personalleiter", "CFO", "Bereichsleiter", "Niederlassungsleiter",
+      "Key Account Manager", "Fuhrparkleiter", "Supply Chain Manager"
+    ],
+    "first_message_template": "Hallo, schoen, dass wir jetzt vernetzt sind. Wenn du irgendwann mal was brauchst — einfach melden. LG Klixi"
+  },
+  "guardrails": {
+    "constraints": {
+      "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "allowedHours": { "start": "09:00", "end": "15:00" },
+      "maxConcurrentRuns": 1,
+      "timeoutMinutes": 10,
+      "maxConnectionsPerDay": 27,
+      "hardRules": [
+        "Banner-Detection STOP bei jedem LinkedIn-Limit/Restriction-Banner (4 Detection-Layer)",
+        "Verify auf Ausstehend-Status nach jedem Send (max 5s waitForFunction)",
+        "Skip-Liste pro Run via aria-label — keine Person 2x angeklickt",
+        "Earliest-Run-Date Filter im Wrapper (vor 04.05.2026 = skip)",
+        "Xvfb virtuelles Display :91 (kollisionsfrei mit anderen Accounts)",
+        "Singleton-Lock Cleanup vor jedem Run"
+      ]
+    }
+  },
+  "lanes": [
+    { "id": "orchestrator", "label": "Cron + Wrapper", "icon": "🎯", "color": "#4A90D9" },
+    { "id": "guard", "label": "Banner Guard", "icon": "🛡️", "color": "#E74C3C" },
+    { "id": "browser", "label": "Chrome + Playwright", "icon": "🔗", "color": "#0077B5" },
+    { "id": "data", "label": "Logging + Verify", "icon": "📊", "color": "#27AE60" }
+  ],
+  "steps": [
+    { "id": "cron-trigger", "lane": "orchestrator", "module": "linkedin/run-connect-cron", "label": "Cron Wrapper", "description": "Cron-Trigger MO-FR 09:30+14:30, prueft EARLIEST_RUN_DATE=2026-05-04, startet Xvfb :91, source .env, ruft connect.mjs", "next": ["login-check"] },
+    { "id": "login-check", "lane": "browser", "module": "linkedin/connect", "label": "Login-Check via /feed/", "description": "launchPersistentContext mit /home/exasync/profiles/michael, navigiere zu /feed/, prueft ob Cookie-Login greift", "next": ["navigate-target"] },
+    { "id": "navigate-target", "lane": "browser", "module": "linkedin/connect", "label": "Zielseite ansteuern", "description": "Goto mynetwork/grow + Klick auf 'Alle anzeigen' bei Aktivitaeten-Vorschlaegen", "next": ["banner-precheck"] },
+    { "id": "banner-precheck", "lane": "guard", "module": "linkedin/connect", "label": "Banner-Check (pre-click)", "description": "VOR jedem Klick: 4 Detection-Layer (role=alert / artdeco-error / error-icons / Text-Pattern)", "next": ["click-vernetzen", "stop-blocking-banner"] },
+    { "id": "click-vernetzen", "lane": "browser", "module": "linkedin/connect", "label": "Vernetzen + Senden", "description": "1. button_search aller Vernetzen-Buttons mit aria-label  2. fresh-Filter (Skip-Set)  3. Klick erste fresh Person  4. modal_handle 'Ohne Notiz senden'", "next": ["banner-postcheck"] },
+    { "id": "banner-postcheck", "lane": "guard", "module": "linkedin/connect", "label": "Banner-Check (post-send)", "description": "800ms nach Send: nochmal Banner-Check — LinkedIn zeigt Wochenlimit oft erst nach Submit", "next": ["verify-pending", "stop-blocking-banner"] },
+    { "id": "verify-pending", "lane": "data", "module": "linkedin/connect", "label": "Verify Ausstehend-Status", "description": "page.waitForFunction max 5s: Card-Button muss von 'Vernetzen' auf 'Ausstehend'/'Pending' wechseln. Erst dann zaehlt Connect als verified.", "next": ["click-vernetzen", "log-run"] },
+    { "id": "stop-blocking-banner", "lane": "guard", "module": "linkedin/connect", "label": "STOP bei Banner", "description": "Screenshot in /home/exasync/testruns/{ts}-michael-banner.png + stop_reason=blocking_banner — Loop bricht ab", "next": ["log-run"] },
+    { "id": "log-run", "lane": "data", "module": "linkedin/connect", "label": "Run loggen (workflow_runs)", "description": "INSERT workflow_runs mit metrics: connects_verified, attempts, failed_count, banner_hits, phase_timings, ms_per_connect, verified_persons, stop_reason", "next": [] }
+  ],
+  "source": {
+    "type": "vm-only",
+    "vm": "social-media",
+    "files": [
+      { "path": "/home/exasync/linkedin/connect.mjs", "module": "linkedin/connect", "lines": 404, "size": 17860 },
+      { "path": "/home/exasync/linkedin/run-connect.sh", "module": "linkedin/run-connect-cron", "lines": 63, "size": 1961 },
+      { "path": "/home/exasync/linkedin/start-chrome-michael.sh", "module": "linkedin/start-chrome", "lines": 14, "size": 408 }
+    ],
+    "currentSHA": "20368bd1009ae5e493cda2e89fbb8f4e6d7ba74cbcd53ab2d4c8a99c6726bfdf",
+    "lastDeploy": "2026-04-28T15:20:00Z"
+  },
+  "monitoring": {
+    "supabase": {
+      "table": "workflow_runs",
+      "filter": "workflow_id = 'linkedin-auto-connect' AND metrics->>'account' = 'michael'"
+    },
+    "metrics": [
+      "connects_verified", "attempts", "failed_count", "banner_hits",
+      "duration_ms", "ms_per_connect", "phase_timings", "stop_reason", "verified_persons"
+    ]
+  }
+}
