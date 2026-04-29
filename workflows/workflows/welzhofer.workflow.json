@@ -66,57 +66,57 @@
       "order_pipeline.py": {
         "module": "welzhofer/order-pipeline",
         "description": "Order Pipeline: Email -> OCR -> Zuordnung -> XLSX -> Versand",
-        "lines": 380
+        "lines": 427
       },
       "article_resolver.py": {
         "module": "welzhofer/article-resolver",
         "description": "Artikel-Aufloesung: Spalten-Wahl, Smart Match, Auto-Korrektur",
-        "lines": 427
+        "lines": 362
       },
       "doc_analyzer.py": {
         "module": "welzhofer/doc-analyzer",
         "description": "Dokument-Analyse: OCR, PDF-Text, Rotations-Fallback",
-        "lines": 57
+        "lines": 55
       },
       "email_client.py": {
         "module": "welzhofer/email-client",
         "description": "IMAP Email-Client: Polling, Attachment-Extraktion",
-        "lines": 380
+        "lines": 338
       },
       "master_data.py": {
         "module": "welzhofer/master-data",
         "description": "Stammdaten-Verwaltung: Artikel, Kunden, Cache",
-        "lines": 430
+        "lines": 407
       },
       "learning.py": {
         "module": "welzhofer/learning",
         "description": "Lern-System: Korrekturen speichern und anwenden",
-        "lines": 230
+        "lines": 207
       },
       "config.json": {
         "module": "welzhofer/config",
         "description": "Konfiguration: Email, API-Keys, Pfade, Schwellwerte",
-        "lines": 65
+        "lines": 69
       },
       "document_processor.py": {
         "module": "welzhofer/document-processor",
         "description": "Dokumenten-Verarbeitung: PDF/JPG Konvertierung, OCR via GPT",
-        "lines": 480
+        "lines": 472
       },
       "welzhofer_processor.py": {
         "module": "welzhofer/order-processor",
         "description": "Bestellverarbeitung: Artikelzuordnung, Validierung",
-        "lines": 450
+        "lines": 414
       },
       "xlsx_exporter.py": {
         "module": "welzhofer/export",
         "description": "XLSX-Export: Bestellungen als Excel exportieren",
-        "lines": 340
+        "lines": 299
       },
       "analyzer.py": {
         "module": "welzhofer/analyzer",
         "description": "Analyse: Bestellmuster, Kategorisierung, Statistiken",
-        "lines": 320
+        "lines": 264
       },
       "start-welzhofer.bat": {
         "module": "welzhofer/start",
@@ -126,12 +126,27 @@
       "stop-welzhofer.bat": {
         "module": "welzhofer/stop",
         "description": "Stop-Script: Python-Prozesse beenden",
-        "lines": 6
+        "lines": 4
       },
       "requirements.txt": {
         "module": "welzhofer/requirements",
         "description": "Python-Abhaengigkeiten",
-        "lines": 10
+        "lines": 11
+      },
+      "order_reporter.py": {
+        "lines": 170,
+        "module": "welzhofer/order-reporter",
+        "logging": true
+      },
+      "unknown_reporter.py": {
+        "lines": 258,
+        "module": "welzhofer/unknown-reporter",
+        "logging": true
+      },
+      "webhook_processor.py": {
+        "lines": 400,
+        "module": "welzhofer/webhook-processor",
+        "logging": true
       }
     },
     "moduleAliases": {
@@ -150,7 +165,7 @@
       "welzhofer/metrics": null
     },
     "currentSHA": "ba14110bc5baced3fca6ac1f93b5d30d3a54af4f",
-    "lastSynced": "2026-04-14T08:56:56.000Z"
+    "lastSynced": "2026-04-29T13:25:11.654Z"
   },
   "schedule": {
     "cron": "0 7 * * 1-5",
