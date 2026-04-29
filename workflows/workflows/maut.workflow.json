@@ -2,23 +2,23 @@
   "$schema": "workflow-v1",
   "id": "maut",
   "name": "Mautberechnung Shell Fleet Hub",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Toll4Europe Mautdaten aus Shell Fleet Hub herunterladen, berechnen, Report senden",
   "owner": "maut-agent",
   "vm": "B-Drone",
   "schedule": {
-    "cron": "0 8 * * 1",
-    "human": "Jeden Montag um 08:00 Uhr",
-    "timezone": "Europe/Berlin"
+    "cron": "0 9 * * 3",
+    "human": "Jeden Mittwoch um 11:00 (MESZ) / 09:00 UTC",
+    "timezone": "UTC"
   },
   "guardrails": {
     "constraints": {
       "allowedDays": [
-        "Monday"
+        "Wednesday"
       ],
       "allowedHours": {
-        "start": "07:00",
-        "end": "12:00"
+        "start": "09:00",
+        "end": "13:00"
       },
       "maxConcurrentRuns": 1,
       "timeoutMinutes": 30,
@@ -99,6 +99,12 @@
       "label": "Berechnung",
       "icon": "🔢",
       "color": "#27AE60"
+    },
+    {
+      "id": "enrich",
+      "label": "Anreicherung",
+      "icon": "link",
+      "color": "#16A085"
     },
     {
       "id": "reporting",
@@ -213,7 +219,7 @@
       "label": "Maut berechnen",
       "description": "Maut/km berechnen, Anomalien erkennen",
       "next": [
-        "upload-results"
+        "enrich-driver"
       ],
       "inputs": [
         "excel_file"
@@ -223,6 +229,26 @@
         "anomalies"
       ],
       "script": "modules_05_calculate_tolls.py"
+    },
+    {
+      "id": "enrich-driver",
+      "lane": "enrich",
+      "module": "maut/enrich-driver",
+      "label": "Tour + Fahrer anreichern",
+      "description": "Joint Maut-Zeilen mit fleetboard_arrivals (Tour) + Driver-Snapshot. 5 neue Spalten in XLSX.",
+      "next": [
+        "upload-results"
+      ],
+      "inputs": [
+        "xlsx_path",
+        "plate_vehicle_map.json",
+        "_snapshot_vid_to_driver.json",
+        "driver_lookup.json"
+      ],
+      "outputs": [
+        "enriched_xlsx_path"
+      ],
+      "script": "modules_05b_enrich_driver.py"
     },
     {
       "id": "upload-results",
@@ -282,8 +308,8 @@
     "type": "gist",
     "gistId": "93b95884e6c8231794b4bba98f0a07f8",
     "gistUrl": "https://gist.github.com/ExasyncOU/93b95884e6c8231794b4bba98f0a07f8",
-    "lastSynced": "2026-04-15T12:28:15.073Z",
-    "gistUpdatedAt": "2026-04-15T12:04:57Z",
+    "lastSynced": "2026-04-29T10:52:40.371253Z",
+    "gistUpdatedAt": "2026-04-29T10:50:11Z",
     "files": {
       "run_maut.py": {
         "lines": 172,
@@ -306,12 +332,12 @@
         "logging": true
       },
       "modules_03_select_account.py": {
-        "lines": 54,
+        "lines": 112,
         "module": "maut/select-account",
         "logging": true
       },
       "modules_04_download_data.py": {
-        "lines": 97,
+        "lines": 99,
         "module": "maut/download-data",
         "logging": true
       },
@@ -334,8 +360,13 @@
         "lines": 6,
         "module": "maut/requirements",
         "logging": true
+      },
+      "modules_05b_enrich_driver.py": {
+        "lines": 366,
+        "module": "maut/enrich-driver",
+        "logging": true
       }
     },
-    "currentSHA": "92b58dd2485d3f08942817970dccd1aa12ffa62b"
+    "currentSHA": "4cab64aca2367429acca75115d3af128b2146d28"
   }
 }
