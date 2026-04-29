@@ -11,11 +11,17 @@
     "gistId": "00dcf34dcce25e7d7a5bb88c8f2ac101",
     "owner": "ExasyncOU",
     "currentSHA": "2b96907873cc7442067822b1ce276914cafa620c",
-    "lastSynced": null,
-    "files": ["edatagate_worker.py", "orchestrator.py", "config.json"]
+    "lastSynced": "2026-04-29T13:25:13.995Z",
+    "files": [
+      null,
+      null,
+      null
+    ]
   },
   "supabase": {
-    "tables": ["workflow_runs"],
+    "tables": [
+      "workflow_runs"
+    ],
     "healthCheckSQL": "SELECT * FROM workflow_runs WHERE workflow = 'ntl' AND status = 'success' ORDER BY finished_at DESC LIMIT 1;"
   },
   "schedule": "*/15 * * * *",
