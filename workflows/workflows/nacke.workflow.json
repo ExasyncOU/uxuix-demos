@@ -10,8 +10,8 @@
     "type": "github-gist",
     "gistId": "d8fe35c43d948ed0e898e4eb76049934",
     "owner": "ExasyncOU",
-    "currentSHA": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
-    "lastSynced": "2026-04-14T15:18:34.651Z",
+    "currentSHA": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+    "lastSynced": "2026-04-29T13:24:42.297Z",
     "files": {
       "orchestrator.py": {
         "lines": 1172,
@@ -82,10 +82,11 @@
         "logging": true
       },
       "printer.py": {
-        "lines": 256,
+        "lines": 282,
         "module": "nacke/printer",
         "logging": true,
-        "size": 9764
+        "size": 10904,
+        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e"
       },
       "nacke_email.py": {
         "lines": 220,
@@ -93,9 +94,10 @@
         "logging": true
       },
       "config.json": {
-        "lines": 73,
+        "lines": 78,
         "module": "nacke/config",
-        "size": 2304
+        "size": 2538,
+        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e"
       },
       "fulltest.py": {
         "lines": 501,
@@ -123,7 +125,8 @@
         "module": "nacke/preflight-check",
         "logging": true
       }
-    }
+    },
+    "previousSHA": "d62424266a1ba979cf0daa7c3ab6024b663b16d6"
   },
   "schedule": {
     "cron": "10 4 * * 1-4",
@@ -169,7 +172,7 @@
       "frozenLogic": {
         "version": "7.6.0",
         "frozenAt": "2026-03-24",
-        "pipelineGistSHA": "c8911ba90d0ebef532b13b2d24e3f0d5dfcf8262",
+        "pipelineGistSHA": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
         "deployGistSHA": "0b026c34902224d608b645ea463658d3715be167",
         "bundleSource": "Col K (Einstellung RPR Kartonage), OL: OL Kartonage Sheet",
         "overconfirmationFactor": {
