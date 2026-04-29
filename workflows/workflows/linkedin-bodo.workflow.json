@@ -3,15 +3,15 @@
   "id": "linkedin-bodo",
   "name": "LinkedIn Auto-Connect — Bodo Buschick",
   "version": "3.0.0",
-  "status": "ready",
-  "description": "Auto-Vernetzung fuer Bodos LinkedIn (bodo@buschick.de) auf social-media VM. Aktuell KEIN aktiver Cron — Profil + Code sind bereit, Aktivierung erfolgt durch Hinzufuegen von Cron-Eintrag wenn Bodo das automatisieren will.",
+  "status": "active",
+  "description": "Auto-Vernetzung fuer Bodos LinkedIn (bodo@buschick.de) auf social-media VM. 15 Connects/Tag (8+7), MO-FR 10:30 + 15:30 Berlin (1h zeitversetzt zu Michael). Profile-Bootstrap via auto-login.mjs (Plan B), Cookies basic-mode (kein keyring), 10/10 Smoke-Test gruen am 2026-04-29.",
   "owner": "linkedin-agent",
   "vm": "social-media",
   "schedule": {
-    "cron": "(noch nicht aktiviert)",
-    "human": "Bei Aktivierung: empfohlen MO-FR 10:00 + 15:00 Berlin (zeitlich versetzt zu Michael)",
+    "cron": "30 10,15 * * 1-5",
+    "human": "MO-FR 10:30 + 15:30 Berlin (1h zeitversetzt zu Michael, Split 8+7)",
     "timezone": "Europe/Berlin",
-    "earliestRunDate": null
+    "earliestRunDate": "2026-05-04"
   },
   "account": {
     "email": "bodo@buschick.de",
@@ -23,6 +23,7 @@
     "tier": "established",
     "daily_cap": 15,
     "weekly_cap": 80,
+    "cron_split": [8, 7],
     "search_keywords": [
       "Geschäftsführer",
       "CEO",
@@ -31,7 +32,9 @@
       "CHRO",
       "Head of HR"
     ],
-    "geo_focus": "Schweiz (geo_urn=106693272)"
+    "geo_focus": "Schweiz (geo_urn=106693272)",
+    "search_url_default": "https://www.linkedin.com/mynetwork/grow/ (Worker-Default — search_keywords/geo_urn werden vom Worker AKTUELL nicht gelesen, siehe TODO worker-db-config-integration)",
+    "login_method": "auto-login.mjs (Plan B, Email+PW aus credential_vault.linkedin-bodo-buschick) — KEIN xrdp-Manual-Login, weil keyring-Encryption-Trap"
   },
   "guardrails": {
     "constraints": {
@@ -195,15 +198,27 @@
         "path": "/home/exasync/linkedin/run-connect.sh"
       },
       "start-chrome-bodo.sh": {
-        "lines": 8,
-        "size": 252,
+        "lines": 4,
+        "size": 465,
         "module": "linkedin/start-chrome",
         "logging": false,
-        "path": "/home/exasync/linkedin/start-chrome-bodo.sh"
+        "path": "/home/exasync/linkedin/start-chrome-bodo.sh",
+        "sha256": "88aaefca77024c61fe4597fdc52e118a2c1197b84481cef927c1f451f7b0dc20",
+        "lastFix": "2026-04-29 v2 — --password-store=basic ergaenzt (vermeidet gnome-keyring-Encryption die Worker-Cookie-Reads blockiert)."
+      },
+      "auto-login.mjs": {
+        "lines": 130,
+        "size": 4947,
+        "module": "linkedin/auto-login",
+        "logging": true,
+        "path": "/home/exasync/linkedin/auto-login.mjs",
+        "sha256": "2e6525529ead6fe91df6f087770b8a17f9f6c8dfd4fbb7a533c25b2d2edec63d",
+        "purpose": "Onboarding-Login via Playwright (umgeht xrdp-Manual-Login + keyring-Trap). Liest Email+Passwort aus ENV, oeffnet /login, fuellt Form, wartet bis zu 90s auf 2FA/Standort-Verifikation, persistiert Cookies in PROFILE_DIR. Einmal pro Account-Onboarding ausreichend (li_at expires +1y).",
+        "repoSource": "A.I.D.A/flows/LinkedIn/vm-scripts/auto-login.mjs"
       }
     },
-    "currentSHA": "20368bd1009ae5e493cda2e89fbb8f4e6d7ba74cbcd53ab2d4c8a99c6726bfdf",
-    "lastDeploy": "2026-04-28T15:20:00Z"
+    "currentSHA": "linkedin-bodo-active-20260429",
+    "lastDeploy": "2026-04-29T13:33:00Z"
   },
   "monitoring": {
     "supabase": {
@@ -222,11 +237,13 @@
       "verified_persons"
     ]
   },
-  "activationChecklist": [
-    "Bodo signalisiert: Auto-Connect fuer eigenen Account aktivieren",
-    "Crontab-Eintrag hinzufuegen: 0 10,15 * * 1-5 /home/exasync/linkedin/run-connect.sh bodo 8 2026-MM-DD",
-    "Earliest-Run-Date setzen (typisch nahe Aktivierungs-Datum)",
-    "Verify dass Profil eingeloggt ist (Bodos /home/exasync/profiles/bodo Cookie aktuell)",
-    "Workflow.status auf 'active' setzen + redeploy"
-  ]
+  "activatedAt": "2026-04-29T13:33:00+02:00",
+  "activationLog": {
+    "manualLoginAttempts": 6,
+    "manualLoginFailures": "xrdp-Chrome-Crash, gnome-keyring-Encryption-Mismatch, Profile-Init-Issue — siehe learnings/linkedin-gnome-keyring-encryption-trap, linkedin-chrome-xrdp-crash-flags",
+    "resolution": "Plan B: auto-login.mjs (Playwright headless mit Vault-Passwort) — Login in 14s durch, Smoke-Test 10/10 Connects in 70s",
+    "smokeTestResult": "10/10 verifiziert (success), 0 banner_hits, 0 failed, 7.0s pro Connect, GESAMT-RUN 69.9s",
+    "smokeTestPersons": ["Martin Galler", "Stefan Svahn", "Anders Carlbark", "Valérie Brägger", "Amiel Mambuini", "Kadri Koplimäe", "René Meier", "Mohamed El Mimoun Hajji", "Davide Corna", "Meysam Asgari-Chenaghlu"],
+    "cronInstalled": "30 10,15 * * 1-5 als crontab fuer user exasync (verifiziert)"
+  }
 }
