@@ -216,11 +216,23 @@
         "path": "/home/exasync/linkedin/run-connect.sh"
       },
       "start-chrome-michael.sh": {
-        "lines": 14,
-        "size": 408,
+        "lines": 3,
+        "size": 390,
         "module": "linkedin/start-chrome",
         "logging": false,
-        "path": "/home/exasync/linkedin/start-chrome-michael.sh"
+        "path": "/home/exasync/linkedin/start-chrome-michael.sh",
+        "sha256": "b389fdbfa38508f4899a8499959a5958de0de5a3b7a7c93861cf940c1addc028",
+        "lastFix": "2026-04-29 — --password-store=basic prophylaktisch ergaenzt. Klixis bestehendes Profile bleibt funktional. Bei einem zukuenftigen Profile-Reset auto-login.mjs nutzen statt Manual-Login."
+      },
+      "auto-login.mjs": {
+        "lines": 130,
+        "size": 4947,
+        "module": "linkedin/auto-login",
+        "logging": true,
+        "path": "/home/exasync/linkedin/auto-login.mjs",
+        "sha256": "2e6525529ead6fe91df6f087770b8a17f9f6c8dfd4fbb7a533c25b2d2edec63d",
+        "purpose": "Onboarding-Login via Playwright. Bei Klixi aktuell NICHT genutzt (Original-Profile vom 28.04 ist bootstrap), aber Standard fuer kuenftige Re-Logins (z.B. wenn Cookie expires).",
+        "repoSource": "A.I.D.A/flows/LinkedIn/vm-scripts/auto-login.mjs"
       }
     },
     "currentSHA": "20368bd1009ae5e493cda2e89fbb8f4e6d7ba74cbcd53ab2d4c8a99c6726bfdf",
