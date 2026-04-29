@@ -11,17 +11,32 @@
     "type": "github-gist",
     "gistId": "ac9c582883a14fab7caa73c3d2759371",
     "owner": "ExasyncOU",
-    "lastSynced": "2026-04-14T12:18:52Z",
+    "lastSynced": "2026-04-29T13:25:16.257Z",
     "files": {
       "gv_overconfirmation.py": {
         "module": "gv-overconfirmation/main",
         "gistId": "ac9c582883a14fab7caa73c3d2759371",
-        "lines": 949
+        "lines": 950
       },
       "run_multi.ps1": {
         "module": "gv-overconfirmation/launcher",
         "gistId": "ac9c582883a14fab7caa73c3d2759371",
         "lines": 43
+      },
+      "dual_login_test.py": {
+        "lines": 84,
+        "module": "gv-overconfirmation/dual-login-test",
+        "logging": true
+      },
+      "selector_audit.py": {
+        "lines": 102,
+        "module": "gv-overconfirmation/selector-audit",
+        "logging": true
+      },
+      "test_bidirectional_setup.py": {
+        "lines": 172,
+        "module": "gv-overconfirmation/test-bidirectional-setup",
+        "logging": true
       }
     },
     "vmOnlyFiles": {
