@@ -8,8 +8,8 @@
   "vm": "B-Drone",
   "schedule": {
     "cron": "0 9 * * 3",
-    "human": "Jeden Mittwoch um 11:00 (MESZ) / 09:00 UTC",
-    "timezone": "UTC"
+    "human": "Jeden Mittwoch um 09:00 Uhr (Europe/Berlin)",
+    "timezone": "Europe/Berlin"
   },
   "guardrails": {
     "constraints": {
