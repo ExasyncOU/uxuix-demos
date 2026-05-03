@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "title": "Exasync Master-Roadmap 2026",
+  "subtitle": "Mai - Dezember 2026 | Operative + Holding + Investment",
+  "scope": "monthly",
+  "anchors": [
+    { "id": "anchor-may", "month": "2026-05", "label": "Q2-Sprint Start", "icon": "rocket" },
+    { "id": "anchor-jun", "month": "2026-06", "label": "MRR-5k Trigger", "icon": "target" },
+    { "id": "anchor-jul", "month": "2026-07", "label": "Holding-Setup", "icon": "lock" },
+    { "id": "anchor-aug", "month": "2026-08", "label": "OUe-Aurum Live + Stock-AI", "icon": "diamond" },
+    { "id": "anchor-sep", "month": "2026-09", "label": "MRR-12k + Holding-AUM", "icon": "target" },
+    { "id": "anchor-oct", "month": "2026-10", "label": "MA-Reise #2 Vorbereitung", "icon": "compass" },
+    { "id": "anchor-nov", "month": "2026-11", "label": "MA-SARL Gegruendet", "icon": "diamond" },
+    { "id": "anchor-dec", "month": "2026-12", "label": "MRR-25k + Stock-AI Verdict", "icon": "trophy" }
+  ],
+  "lanes": [
+    { "id": "operative", "label": "Operative AI-Firma", "color": "#00d4aa", "glow": "rgba(0,212,170,0.35)" },
+    { "id": "holding", "label": "Holding & Beteiligungen", "color": "#ffab40", "glow": "rgba(255,171,64,0.35)" },
+    { "id": "investment", "label": "Investments (Stock-AI + MA-RE)", "color": "#4fc3f7", "glow": "rgba(79,195,247,0.35)" },
+    { "id": "brand", "label": "Brand / Speaker / Social", "color": "#b388ff", "glow": "rgba(179,136,255,0.35)" }
+  ],
+  "gates": [
+    {
+      "id": "gate-q2-q3",
+      "after_month": "2026-06",
+      "label": "Holding-GREEN-LIGHT",
+      "trigger": "MRR >= 5.000 EUR + Liquiditaet >= 25k EUR",
+      "unlocks": "Q3 Holding-Gruendung + Speaker-Karriere"
+    },
+    {
+      "id": "gate-q3-q4",
+      "after_month": "2026-09",
+      "label": "MA-SARL GREEN-LIGHT",
+      "trigger": "MRR >= 12.000 EUR + OUe-Aurum live + Stock-AI Pilot deployed",
+      "unlocks": "MA-Reise #2 + SARL-Gruendung"
+    },
+    {
+      "id": "gate-q4-q1-2027",
+      "after_month": "2026-12",
+      "label": "Bill-Restart + Vollautonomie",
+      "trigger": "MRR >= 25.000 EUR + MA-SARL gegruendet + Stock-AI GREEN",
+      "unlocks": "Q1 2027 Bill 3D KI Restart + 7 C-Suite Agents"
+    }
+  ],
+  "months": [
+    {
+      "id": "2026-05", "label": "Mai 2026", "theme": "Foundation Sprint",
+      "kpis": [
+        { "id": "may-1", "lane": "brand", "title": "KI-Content-Creator MVP-Brief gefreezt", "detail": "Sandro: Architektur + Voice-Sample + Output-Schema final", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-05-15" },
+        { "id": "may-2", "lane": "brand", "title": "Instagram @exasync.ai Account live + Branded", "detail": "Logo, Bio, Highlights, Verified-Antrag eingereicht", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-05-14" },
+        { "id": "may-3", "lane": "brand", "title": "Instagram Bodo Refresh", "detail": "Bio 'KI + Lebensoptimierung' + Pin-Posts Speaker/Mobile-Office", "stars": 1, "type": "manual", "tier": "pflicht", "deadline": "2026-05-14" },
+        { "id": "may-4", "lane": "brand", "title": "Cross-Promotion-Kalender produktiv", "detail": "Wochenrhythmus Personal <-> Company, Reposting 1:3 + 1:4 Regel", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-05-31" },
+        { "id": "may-5", "lane": "operative", "title": "Outreach-Plan Q2 finalisiert", "detail": "4 Personas, 200 qualifizierte Touches, A/B-Test 3 Subject-Lines", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-05-15" },
+        { "id": "may-6", "lane": "operative", "title": "Pipeline-Templating gestartet", "detail": "Erste 2 Pipeline-Templates (Logistik + Doku-KI) als reusable Module", "stars": 2, "type": "manual", "tier": "optional", "deadline": "2026-05-31" },
+        { "id": "may-7", "lane": "holding", "title": "EE-StB Erstkontakt (3 Calls)", "detail": "Comistar / Silva Hunt / Wisor je 30min, Auswahl bis Monatsende", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-05-31" }
+      ]
+    },
+    {
+      "id": "2026-06", "label": "Juni 2026", "theme": "Sprint-Ende + MRR-Trigger",
+      "kpis": [
+        { "id": "jun-1", "lane": "operative", "title": "5.000 EUR MRR erreicht", "detail": "Stripe MRR Schwelle - aktiviert Holding-GREEN-LIGHT", "stars": 5, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "active_mrr" }, "tier": "pflicht", "anchor": true },
+        { "id": "jun-2", "lane": "operative", "title": "25.000 EUR Liquiditaet auf Exasync-Konto", "detail": "Trigger fuer Holding-Gruendung", "stars": 5, "type": "auto", "source": { "table": "banking_balances", "account": "exasync_lhv" }, "tier": "pflicht", "anchor": true },
+        { "id": "jun-3", "lane": "operative", "title": "3-4 Vertraege closed (Maksim/Coterie/IPB/Scaleinvest)", "detail": "Bestehende Termine-Pipeline abgearbeitet", "stars": 3, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "new_contracts_q2" }, "tier": "pflicht" },
+        { "id": "jun-4", "lane": "brand", "title": "KI-Content-Creator produktiv (15+ Reels/Wo)", "detail": "Sandro: automatisierter Workflow Source -> Cut -> Caption -> Schedule", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2026-06-30" },
+        { "id": "jun-5", "lane": "brand", "title": "Social-Media-Analytics-Modul live", "detail": "Hephaestus + Apollo: Hook-Analyse, Time-Optimierung, Audience-Overlap-Tracking", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-06-30" },
+        { "id": "jun-6", "lane": "brand", "title": "LinkedIn Bodo 5k-Marke geknackt", "detail": "Mobile-Office-Serie + Thought Leadership", "stars": 2, "type": "auto", "source": { "platform": "linkedin", "account": "bodo", "metric": "followers" }, "tier": "optional" },
+        { "id": "jun-7", "lane": "operative", "title": "Pipeline-Fehlerrate < 5%", "detail": "Nacke + Fleetboard + GV + Maut autonom", "stars": 3, "type": "auto", "source": { "table": "workflow_runs", "metric": "error_rate_30d" }, "tier": "pflicht" },
+        { "id": "jun-8", "lane": "investment", "title": "Stock-Trading-KI Spec entworfen", "detail": "Plutus + Bodo: Architektur + Plattform-Wahl (IBKR/Alpaca)", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-06-30" }
+      ]
+    },
+    {
+      "id": "2026-07", "label": "Juli 2026", "theme": "Holding-Setup-Phase",
+      "kpis": [
+        { "id": "jul-1", "lane": "holding", "title": "EE-StB mandatiert (Auswahl getroffen)", "detail": "Mandatsvertrag unterschrieben, 1. Rechnung gebucht", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-07-15", "anchor": true },
+        { "id": "jul-2", "lane": "holding", "title": "DE Uebergangs-StB Termin abgehalten (JUHN/FGS/GHM)", "detail": "DE-Steuererklaerung 2025 Plan, §2 AStG-Ausschluss-Memo", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-07-31" },
+        { "id": "jul-3", "lane": "holding", "title": "DE §2 AStG-Doku abgeschlossen", "detail": "Lebensmittelpunkt EE final dokumentiert", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-07-31" },
+        { "id": "jul-4", "lane": "brand", "title": "Speaker-Profil exasync.ai/speaker LIVE", "detail": "Demo-Reel + 3 Talk-Themen + Referenzen-Page", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-07-31" },
+        { "id": "jul-5", "lane": "brand", "title": "Speaking-Recycling-Pipeline live", "detail": "Jeder Talk -> 5-10 Reels + 3 LI-Posts + 1 Blog in 7 Tagen", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-07-31" },
+        { "id": "jul-6", "lane": "brand", "title": "Talk-Themen finalisiert", "detail": "KI im Alltag / Lebensoptimierung / Passion finden", "stars": 1, "type": "manual", "tier": "pflicht", "deadline": "2026-07-15" },
+        { "id": "jul-7", "lane": "investment", "title": "Real-Estate-Analyst Phase 2 (Listing-Scout MVP)", "detail": "Avito/Mubawab Daily-Digest + Score-Logik", "stars": 3, "type": "manual", "tier": "optional", "deadline": "2026-07-31" }
+      ]
+    },
+    {
+      "id": "2026-08", "label": "August 2026", "theme": "Holding live + Stock-AI Pilot",
+      "kpis": [
+        { "id": "aug-1", "lane": "holding", "title": "OUe-Aurum Handelsregister-Eintrag", "detail": "EE aeriregister Aurum-Nr. vorhanden, 5k Stammkapital + 45k Darlehen-Rahmen", "stars": 5, "type": "auto", "source": { "registry": "ee_aeriregister", "name": "Aurum OUe" }, "tier": "pflicht", "anchor": true },
+        { "id": "aug-2", "lane": "holding", "title": "Aurum Bank-Konto live (LHV/SEB)", "detail": "Stammkapital eingezahlt, Online-Banking aktiv", "stars": 3, "type": "auto", "source": { "table": "banking_balances", "account": "aurum_lhv" }, "tier": "pflicht" },
+        { "id": "aug-3", "lane": "investment", "title": "Stock-Trading-KI 10k Pilot deployed", "detail": "Brokerage-Konto funded, 1. Trade ausgefuehrt, Risk-Cap 5% DD aktiv", "stars": 5, "type": "auto", "source": { "broker": "ibkr_or_alpaca", "metric": "deployed_capital" }, "tier": "pflicht", "anchor": true },
+        { "id": "aug-4", "lane": "brand", "title": "Erster Talk gehalten", "detail": "KI im Alltag / Lebensoptimierung / Passion", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2026-08-31" },
+        { "id": "aug-5", "lane": "brand", "title": "Erster Investor-Lead aus Speaker-Funnel qualifiziert", "detail": "Talk -> 1:1 -> Investment-Memo gestartet", "stars": 3, "type": "manual", "tier": "stretch", "deadline": "2026-08-31" },
+        { "id": "aug-6", "lane": "operative", "title": "Hermes (COO) Onboarding vollautonom", "detail": "0 Bodo-Touches bei Routine-Onboarding", "stars": 4, "type": "auto", "source": { "agent": "hermes", "metric": "autonomous_onboarding_rate" }, "tier": "pflicht" },
+        { "id": "aug-7", "lane": "holding", "title": "Holding-Strategie-Statut definiert", "detail": "Atlas: Spielregeln Investments, Risk-Caps pro Saeule", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-08-31" }
+      ]
+    },
+    {
+      "id": "2026-09", "label": "September 2026", "theme": "MRR-12k + MA-Vorbereitung",
+      "kpis": [
+        { "id": "sep-1", "lane": "operative", "title": "12.000 EUR MRR erreicht", "detail": "Trigger fuer MA-SARL-GREEN-LIGHT", "stars": 5, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "active_mrr" }, "tier": "pflicht", "anchor": true },
+        { "id": "sep-2", "lane": "holding", "title": "Holding-AUM 25k erreicht (Erst-Dividende)", "detail": "Erste Dividenden-Ausschuettung Exasync -> Aurum durchgelaufen", "stars": 4, "type": "auto", "source": { "table": "banking_balances", "account": "aurum_lhv" }, "tier": "pflicht" },
+        { "id": "sep-3", "lane": "investment", "title": "MA-Avocat + Notar Shortlist final", "detail": "3 Avocats + 2 Notare in 30min-Calls + Honorar-Vergleich", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-09-30" },
+        { "id": "sep-4", "lane": "brand", "title": "LinkedIn Exasync Company 1.5k-Marke", "detail": "Pipeline-Cases + Customer Stories + 5 viral Posts (>1k Reactions)", "stars": 2, "type": "auto", "source": { "platform": "linkedin", "account": "exasync", "metric": "followers" }, "tier": "optional" },
+        { "id": "sep-5", "lane": "brand", "title": "30%-Audience-Overlap Personal/Company", "detail": "Story-Polls + Cross-Promotion-Mechanik greift", "stars": 2, "type": "manual", "tier": "stretch", "deadline": "2026-09-30" },
+        { "id": "sep-6", "lane": "investment", "title": "Firmen-Analyse-Agent v0.1 live", "detail": "DCF + SWOT + Markt-Analyse + M&A-Screening", "stars": 3, "type": "manual", "tier": "optional", "deadline": "2026-09-30" },
+        { "id": "sep-7", "lane": "brand", "title": "3 Talks gehalten kumuliert", "detail": "1-2 Talks/Monat seit August", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-09-30" }
+      ]
+    },
+    {
+      "id": "2026-10", "label": "Oktober 2026", "theme": "MA-Reise #2 Vorbereitung",
+      "kpis": [
+        { "id": "oct-1", "lane": "investment", "title": "Apostillen + FR-Uebersetzungen abgeholt", "detail": "OUe-Aurum HRB + Satzung apostilliert, FR-uebersetzt", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-10-31" },
+        { "id": "oct-2", "lane": "investment", "title": "MA-Reise #2 gebucht (Mitte Oktober, 10-14 Tage)", "detail": "Fluege + Unterkunft + Termine mit Avocat + Notar + Bank", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-10-15" },
+        { "id": "oct-3", "lane": "brand", "title": "IG Personal 7k-Marke + Mobile-Office #4-6 (MA-Reise)", "detail": "Reise-Content live waehrend MA-Aufenthalt", "stars": 2, "type": "auto", "source": { "platform": "instagram", "account": "bodo", "metric": "followers" }, "tier": "optional" },
+        { "id": "oct-4", "lane": "operative", "title": "Apollo (CMO) Content-Pipeline vollautonom", "detail": "Wochenrhythmus 3x LI + 2x Blog ohne Bodo-Touch", "stars": 4, "type": "auto", "source": { "agent": "apollo", "metric": "autonomous_publish_rate" }, "tier": "pflicht" },
+        { "id": "oct-5", "lane": "operative", "title": "Pipeline-Templating: Time-to-Value < 72h", "detail": "3-Tages-Onboarding fuer neue Standard-Kunden", "stars": 3, "type": "auto", "source": { "table": "customer_onboarding", "metric": "median_ttv_hours" }, "tier": "pflicht" },
+        { "id": "oct-6", "lane": "operative", "title": "Pipeline-Fehlerrate < 4%", "detail": "Stabilisierung aller aktiven Workflows", "stars": 2, "type": "auto", "source": { "table": "workflow_runs", "metric": "error_rate_30d" }, "tier": "optional" }
+      ]
+    },
+    {
+      "id": "2026-11", "label": "November 2026", "theme": "Marokko-Reise + SARL-Gruendung",
+      "kpis": [
+        { "id": "nov-1", "lane": "investment", "title": "MA-SARL gegruendet (F2 ausgestellt)", "detail": "100k MAD Stammkapital, 50/50 Aurum + US-LLC, Attijariwafa-Konto live", "stars": 5, "type": "manual", "tier": "pflicht", "anchor": true, "deadline": "2026-11-30" },
+        { "id": "nov-2", "lane": "investment", "title": "Property-Management Anbieter ausgewaehlt", "detail": "YourHostHelper / Armonia / lokal — Vertragsentwurf vorhanden", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-11-30" },
+        { "id": "nov-3", "lane": "investment", "title": "5-10 Apartments besichtigt (Q1-Watchlist)", "detail": "Reality-Calibration der AirBtics-Daten, Watchlist mit 10 Score>75", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-11-30" },
+        { "id": "nov-4", "lane": "investment", "title": "Aleksi-Netzwerk + Aourir-Mikromarkt verifiziert", "detail": "Surflehrer + Hostel-Besitzer + Specialty-Coffee-Score live", "stars": 2, "type": "manual", "tier": "optional", "deadline": "2026-11-30" },
+        { "id": "nov-5", "lane": "brand", "title": "5 Talks gehalten kumuliert", "detail": "Nov-Talk: ggf. waehrend MA-Reise (Casablanca/Tanger Tech-Event?)", "stars": 2, "type": "manual", "tier": "stretch", "deadline": "2026-11-30" },
+        { "id": "nov-6", "lane": "operative", "title": "1. Enterprise-Tier-Vertrag mit Logistik-Konzern", "detail": "Pilot 2-3k EUR/Monat", "stars": 4, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "enterprise_count" }, "tier": "stretch" }
+      ]
+    },
+    {
+      "id": "2026-12", "label": "Dezember 2026", "theme": "Jahres-End-Trigger + Bill-GREEN-LIGHT",
+      "kpis": [
+        { "id": "dec-1", "lane": "operative", "title": "25.000 EUR MRR erreicht", "detail": "Trigger fuer Q1 2027 Bill-Restart + Vollautonomie-Phase", "stars": 5, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "active_mrr" }, "tier": "pflicht", "anchor": true },
+        { "id": "dec-2", "lane": "operative", "title": "2 Enterprise-Tier-Vertraege live", "detail": "2-3k EUR/Monat pro Pilot, Skalier-Validierung", "stars": 3, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "enterprise_count" }, "tier": "pflicht" },
+        { "id": "dec-3", "lane": "investment", "title": "Stock-AI Validation-Verdict (GREEN/YELLOW/RED)", "detail": ">+8% YTD & DD<5% = GREEN -> Skalierung Q1 auf 50k", "stars": 5, "type": "auto", "source": { "broker": "ibkr_or_alpaca", "metric": "validation_verdict" }, "tier": "pflicht" },
+        { "id": "dec-4", "lane": "holding", "title": "Cash-Reserve Holding 50k+ EUR (Bodos Haelfte fuer MA-Kauf)", "detail": "Trigger fuer Q2 2027 Apartment-Kauf", "stars": 4, "type": "auto", "source": { "table": "banking_balances", "account": "aurum_lhv" }, "tier": "pflicht" },
+        { "id": "dec-5", "lane": "brand", "title": "12k LinkedIn Bodo + 5k IG Company + 8 Talks kumuliert", "detail": "Triple-Brand-Lock erreicht", "stars": 3, "type": "auto", "source": { "platforms": ["linkedin", "instagram"], "metric": "combined_followers" }, "tier": "stretch" },
+        { "id": "dec-6", "lane": "operative", "title": "Bodo-Wochenzeit Operative < 15h/Woche", "detail": "Vollautonomie-Vorstufe, Trigger Q1 fuer Bill-Fokus", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2026-12-31" },
+        { "id": "dec-7", "lane": "investment", "title": "MA-Watchlist mit 5 Apartments Score>80", "detail": "Vorbereitung fuer Q2 2027 Compromis-Phase", "stars": 2, "type": "manual", "tier": "optional", "deadline": "2026-12-31" }
+      ]
+    }
+  ]
+}
