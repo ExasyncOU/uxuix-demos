@@ -1,7 +1,7 @@
 {
-  "version": 1,
-  "title": "Exasync Master-Roadmap 2026",
-  "subtitle": "Mai - Dezember 2026 | Operative + Holding + Investment",
+  "version": 2,
+  "title": "Exasync Master-Roadmap 2026 - 2027",
+  "subtitle": "Mai 2026 - Dezember 2027 | Operative + Holding + Investment + Brand + Bill 3D",
   "scope": "monthly",
   "anchors": [
     { "id": "anchor-may", "month": "2026-05", "label": "Q2-Sprint Start", "icon": "rocket" },
@@ -11,7 +11,15 @@
     { "id": "anchor-sep", "month": "2026-09", "label": "MRR-12k + Holding-AUM", "icon": "target" },
     { "id": "anchor-oct", "month": "2026-10", "label": "MA-Reise #2 Vorbereitung", "icon": "compass" },
     { "id": "anchor-nov", "month": "2026-11", "label": "MA-SARL Gegruendet", "icon": "diamond" },
-    { "id": "anchor-dec", "month": "2026-12", "label": "MRR-25k + Stock-AI Verdict", "icon": "trophy" }
+    { "id": "anchor-dec", "month": "2026-12", "label": "MRR-25k + Stock-AI Verdict", "icon": "trophy" },
+    { "id": "anchor-jan-27", "month": "2027-01", "label": "Vollautonomie-Phase + Bill-Restart", "icon": "rocket" },
+    { "id": "anchor-mar-27", "month": "2027-03", "label": "MRR-40k + Bill-Benchmarks", "icon": "diamond" },
+    { "id": "anchor-apr-27", "month": "2027-04", "label": "MA-Reise #3 Start", "icon": "compass" },
+    { "id": "anchor-jun-27", "month": "2027-06", "label": "Kapital-Entnahme + Bodo<5h", "icon": "diamond" },
+    { "id": "anchor-jul-27", "month": "2027-07", "label": "MA-Acte-Authentique", "icon": "lock" },
+    { "id": "anchor-sep-27", "month": "2027-09", "label": "Reno-Start + MRR-70k + TF eingetragen", "icon": "rocket" },
+    { "id": "anchor-nov-27", "month": "2027-11", "label": "Reno Fertig + CRT Klassement", "icon": "diamond" },
+    { "id": "anchor-dec-27", "month": "2027-12", "label": "ARR 1M + MA Live + Bodo Autonomie", "icon": "trophy" }
   ],
   "lanes": [
     { "id": "operative", "label": "Operative AI-Firma", "color": "#00d4aa", "glow": "rgba(0,212,170,0.35)" },
@@ -40,6 +48,27 @@
       "label": "Bill-Restart + Vollautonomie",
       "trigger": "MRR >= 25.000 EUR + MA-SARL gegruendet + Stock-AI GREEN",
       "unlocks": "Q1 2027 Bill 3D KI Restart + 7 C-Suite Agents"
+    },
+    {
+      "id": "gate-q1-q2-2027",
+      "after_month": "2027-03",
+      "label": "MA-Apartment-Kauf-GREEN-LIGHT",
+      "trigger": "MRR >= 40.000 EUR + Bodo<7h/Wo + MA-Watchlist 10 Apartments Score>75 + Holding-AUM 150k+",
+      "unlocks": "MA-Reise #3 + Compromis + Kapital-Entnahme Q2"
+    },
+    {
+      "id": "gate-q2-q3-2027",
+      "after_month": "2027-06",
+      "label": "Reno-START-GREEN-LIGHT",
+      "trigger": "Compromis unterschrieben + DD bestanden + 90k EUR in MA-SARL + Bauunternehmer-Vertrag",
+      "unlocks": "Acte Authentique Q3 + Reno-Start September"
+    },
+    {
+      "id": "gate-q4-2027-end",
+      "after_month": "2027-12",
+      "label": "Phase-2027-Abschluss / ARR 1M",
+      "trigger": "MRR >= 80.000 EUR + ARR >= 1M + MA-Apartment Live (>=10 Buchungen) + Bodo<1h/Tag + Bill 3D Open Source",
+      "unlocks": "2028-Roadmap-Planung (Holding-Skalierung, Suedamerika, Bill-Funding-Round)"
     }
   ],
   "months": [
@@ -136,6 +165,142 @@
         { "id": "dec-5", "lane": "brand", "title": "12k LinkedIn Bodo + 5k IG Company + 8 Talks kumuliert", "detail": "Triple-Brand-Lock erreicht", "stars": 3, "type": "auto", "source": { "platforms": ["linkedin", "instagram"], "metric": "combined_followers" }, "tier": "stretch" },
         { "id": "dec-6", "lane": "operative", "title": "Bodo-Wochenzeit Operative < 15h/Woche", "detail": "Vollautonomie-Vorstufe, Trigger Q1 fuer Bill-Fokus", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2026-12-31" },
         { "id": "dec-7", "lane": "investment", "title": "MA-Watchlist mit 5 Apartments Score>80", "detail": "Vorbereitung fuer Q2 2027 Compromis-Phase", "stars": 2, "type": "manual", "tier": "optional", "deadline": "2026-12-31" }
+      ]
+    },
+    {
+      "id": "2027-01", "label": "Januar 2027", "theme": "Vollautonomie-Start + Bill-Restart",
+      "kpis": [
+        { "id": "jan27-1", "lane": "operative", "title": "Plutus (CFO) Agent vollautonom", "detail": "Buchhaltung + Reporting + Tax-Triggers, 0 Bodo-Touches im Routine-Reporting", "stars": 4, "type": "auto", "source": { "agent": "plutus", "metric": "autonomous_reports_rate" }, "tier": "pflicht", "anchor": true, "deadline": "2027-01-31" },
+        { "id": "jan27-2", "lane": "operative", "title": "Bill 3D - Datenbasis aus Pipelines aggregiert", "detail": "Nacke + Fleetboard + GV + MA-RE + Stock-AI in Trainings-Korpus zusammengefuehrt (6+ Monate Fluss)", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2027-01-31" },
+        { "id": "jan27-3", "lane": "investment", "title": "Active-Rental-Setup-Plan finalisiert", "detail": "PM-Vertrag + Cleaning + Concierge + Pricing-Tool (RE-Analyst + Plutus)", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2027-01-31" },
+        { "id": "jan27-4", "lane": "operative", "title": "MRR 40.000 EUR erreicht", "detail": "Q1-Schwelle, Vollautonomie-Trajektorie bestaetigt", "stars": 5, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "active_mrr" }, "tier": "pflicht" },
+        { "id": "jan27-5", "lane": "investment", "title": "Stock-AI AUM 30-50k (skaliert nach GREEN)", "detail": "Aufstockung von 10k Pilot, fortlaufendes Monitoring", "stars": 4, "type": "auto", "source": { "broker": "ibkr_or_alpaca", "metric": "deployed_capital" }, "tier": "pflicht" },
+        { "id": "jan27-6", "lane": "brand", "title": "1-2 Investment-Gespraeche aktiv", "detail": "Speaker-Funnel -> qualifizierter Lead -> Investment-Memo gestartet", "stars": 3, "type": "manual", "tier": "stretch" }
+      ]
+    },
+    {
+      "id": "2027-02", "label": "Februar 2027", "theme": "C-Suite Vollausbau + Bill-Training",
+      "kpis": [
+        { "id": "feb27-1", "lane": "operative", "title": "Hephaestus (CTO) Agent vollautonom", "detail": "Tech-Stack + Pipeline-Wartung + Incident-Response, 24/7 ohne Bodo-Eskalation", "stars": 4, "type": "auto", "source": { "agent": "hephaestus", "metric": "autonomous_incident_resolve_rate" }, "tier": "pflicht", "deadline": "2027-02-28" },
+        { "id": "feb27-2", "lane": "operative", "title": "Athena (CPO) Agent vollautonom", "detail": "Produkt-Roadmap + Feature-Triage, autonom priorisiert", "stars": 4, "type": "auto", "source": { "agent": "athena", "metric": "autonomous_triage_rate" }, "tier": "pflicht", "deadline": "2027-02-28" },
+        { "id": "feb27-3", "lane": "operative", "title": "Bill 3D - PyTorch-Backend echtes Training", "detail": "RTX 4080 Super lokal, dann Cloud-Burst — keine Simulation mehr", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2027-02-28" },
+        { "id": "feb27-4", "lane": "investment", "title": "Aurum-Comptable-Agent v0.1", "detail": "KI-Hybrid-Buchhaltung MA, Belege OCR + plan-comptable-Vorschlag (sign-off Comptable agréé)", "stars": 3, "type": "manual", "tier": "optional", "deadline": "2027-02-28" },
+        { "id": "feb27-5", "lane": "brand", "title": "IG Personal 11k-Marke", "detail": "Mobile-Office-Serie + Speaker-Recaps + Lebensoptimierung-Cluster", "stars": 2, "type": "auto", "source": { "platform": "instagram", "account": "bodo", "metric": "followers" }, "tier": "optional" },
+        { "id": "feb27-6", "lane": "operative", "title": "Pipeline-Fehlerrate < 3%", "detail": "Hephaestus-Stabilisierung greift", "stars": 3, "type": "auto", "source": { "table": "workflow_runs", "metric": "error_rate_30d" }, "tier": "pflicht" }
+      ]
+    },
+    {
+      "id": "2027-03", "label": "Maerz 2027", "theme": "C-Suite komplett + Bill-Benchmarks",
+      "kpis": [
+        { "id": "mar27-1", "lane": "operative", "title": "Themis (CISO) Agent vollautonom", "detail": "Security + Compliance + DSGVO, autonom Audits + Patches", "stars": 4, "type": "auto", "source": { "agent": "themis", "metric": "autonomous_audit_rate" }, "tier": "pflicht", "deadline": "2027-03-31" },
+        { "id": "mar27-2", "lane": "operative", "title": "Hera (CHRO) Agent vollautonom", "detail": "Agent-Performance + Lifecycle-Mgmt, eigenstaendige Skalierung", "stars": 3, "type": "auto", "source": { "agent": "hera", "metric": "autonomous_lifecycle_rate" }, "tier": "pflicht", "deadline": "2027-03-31" },
+        { "id": "mar27-3", "lane": "operative", "title": "Bill 3D - CUDA-Kernels fuer 3D-Distanzberechnung", "detail": "Performance-kritisches Modul, Single-GPU-Optimierung", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2027-03-31" },
+        { "id": "mar27-4", "lane": "operative", "title": "Bill 3D - WebSocket-Bridge PyTorch -> bill-brain.js", "detail": "Echtzeit-Visualisierung der 3D-Spatial-Net-Aktivierung", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2027-03-31" },
+        { "id": "mar27-5", "lane": "operative", "title": "Bill 3D - Erste Benchmarks 3D-Spatial-Net vs. Standard-Transformer", "detail": "Vergleichs-Memo + Paper-Draft-Skeleton", "stars": 4, "type": "manual", "tier": "pflicht", "anchor": true, "deadline": "2027-03-31" },
+        { "id": "mar27-6", "lane": "investment", "title": "MA-Watchlist 10 qualifizierte Apartments (Score>75)", "detail": "Stabile Pipeline, 5 davon Score>80 fuer Compromis-Phase Q2", "stars": 3, "type": "manual", "tier": "pflicht" },
+        { "id": "mar27-7", "lane": "investment", "title": "Reno-Kostenmodell pro Watchlist (3-Szenario, +30% Buffer)", "detail": "Object-Analyzer-Modul automatisiert die Modelle", "stars": 2, "type": "manual", "tier": "optional", "deadline": "2027-03-31" },
+        { "id": "mar27-8", "lane": "operative", "title": "Bodo-Wochenzeit < 7h (max 1h/Tag)", "detail": "Vollautonomie-Trigger fuer GA-Apartment-Kauf-GREEN-LIGHT", "stars": 5, "type": "auto", "source": { "table": "workflow_runs", "metric": "bodo_touch_hours_weekly" }, "tier": "pflicht", "anchor": true },
+        { "id": "mar27-9", "lane": "brand", "title": "Investor-Network 10+ qualifiziert kumuliert", "detail": "Speaker + Outreach-Funnel + 1:1-Talks", "stars": 3, "type": "manual", "tier": "stretch" }
+      ]
+    },
+    {
+      "id": "2027-04", "label": "April 2027", "theme": "MA-Reise #3 Start",
+      "kpis": [
+        { "id": "apr27-1", "lane": "investment", "title": "MA-Reise #3 begonnen (3-4 Wochen, April-Mai)", "detail": "Aufenthalt Aourir/Tamraght, 5-10 Apartments aus Watchlist besichtigen", "stars": 4, "type": "manual", "tier": "pflicht", "anchor": true, "deadline": "2027-04-15" },
+        { "id": "apr27-2", "lane": "investment", "title": "Eigener Anwalt + Notar mandatiert (Q4-2026-Shortlist)", "detail": "Mandatsvertraege unterschrieben, CDG-Treuhand-Konto verifiziert", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2027-04-30" },
+        { "id": "apr27-3", "lane": "investment", "title": "5-10 Apartments aus Watchlist live besichtigt", "detail": "Score-Verifikation vor Ort, AirBtics-Zahlen kalibriert", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2027-04-30" },
+        { "id": "apr27-4", "lane": "brand", "title": "IG Bodo Mobile-Office MA-Wohnphase Content live", "detail": "3-Wochen-Recurring-Aufenthalt als Personal-Brand-Asset", "stars": 2, "type": "manual", "tier": "optional" },
+        { "id": "apr27-5", "lane": "operative", "title": "Pipeline-Fehlerrate < 2%", "detail": "Stabilisierung weiter, autonome Selbstheilung greift", "stars": 3, "type": "auto", "source": { "table": "workflow_runs", "metric": "error_rate_30d" }, "tier": "pflicht" },
+        { "id": "apr27-6", "lane": "operative", "title": "Bodo-Wochenzeit < 5h trotz MA-Aufenthalt", "detail": "Beweis: Firma laeuft auch waehrend Bodo unterwegs ist", "stars": 4, "type": "auto", "source": { "table": "workflow_runs", "metric": "bodo_touch_hours_weekly" }, "tier": "pflicht" }
+      ]
+    },
+    {
+      "id": "2027-05", "label": "Mai 2027", "theme": "Compromis + MRR-55k",
+      "kpis": [
+        { "id": "may27-1", "lane": "investment", "title": "2-3 Apartments in Due Diligence", "detail": "ANCFCC + Geometre + Veritas/Socotec + Syndic-Quittus + Procuration-Verifikation laufen", "stars": 4, "type": "manual", "tier": "pflicht" },
+        { "id": "may27-2", "lane": "investment", "title": "Compromis de vente unterschrieben", "detail": "Anzahlung 5-10% NUR auf Notar-CDG-Treuhand, aufschiebende Bedingungen TF + Hypotheken + Syndic", "stars": 5, "type": "manual", "tier": "pflicht", "deadline": "2027-05-31" },
+        { "id": "may27-3", "lane": "operative", "title": "MRR 55.000 EUR erreicht", "detail": "Q2-Trajektorie, Holding-Cashflow steigert sich", "stars": 5, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "active_mrr" }, "tier": "pflicht" },
+        { "id": "may27-4", "lane": "operative", "title": "Bill 3D - Paper-Draft Submission-Fenster vorbereitet", "detail": "NeurIPS / ICML / ICLR Q3-Window, 3 Co-Author-Slots", "stars": 3, "type": "manual", "tier": "optional", "deadline": "2027-05-31" },
+        { "id": "may27-5", "lane": "brand", "title": "22-28 Talks kumuliert seit Speaker-Start", "detail": "1.5-2 Talks/Monat seit Aug 2026 = ~25 Talks", "stars": 2, "type": "manual", "tier": "optional" },
+        { "id": "may27-6", "lane": "investment", "title": "Apartment unter Compromis (Score>80)", "detail": "Eindeutiges Lead-Objekt bestimmt, GO-Empfehlung von RE-Analyst", "stars": 4, "type": "manual", "tier": "pflicht" }
+      ]
+    },
+    {
+      "id": "2027-06", "label": "Juni 2027", "theme": "Kapital-Entnahme + DD-Abschluss",
+      "kpis": [
+        { "id": "jun27-1", "lane": "investment", "title": "Due Diligence abgeschlossen", "detail": "ANCFCC-Auszug + Geometre-topographe + Veritas/Socotec Bauinspektion + Syndic-Quittus alle gruen", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2027-06-30" },
+        { "id": "jun27-2", "lane": "investment", "title": "Kapital-Entnahme Bodo 45k EUR", "detail": "OUe-Aurum -> Bodo-Privat -> SARL via F2 (compte-courant-Loan), GREEN-LIGHT fuer Reno-Phase", "stars": 5, "type": "auto", "source": { "table": "banking_balances", "account": "aurum_lhv" }, "tier": "pflicht", "anchor": true, "deadline": "2027-06-30" },
+        { "id": "jun27-3", "lane": "investment", "title": "Francesca Kapital-Transfer 45k EUR", "detail": "US-LLC -> SARL via F2", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2027-06-30" },
+        { "id": "jun27-4", "lane": "investment", "title": "Kapital in MA-SARL 90k EUR + 100k MAD", "detail": "Vollstaendige Finanzierung Reno-Phase verifiziert", "stars": 5, "type": "auto", "source": { "table": "banking_balances", "account": "ma_sarl_attijariwafa" }, "tier": "pflicht" },
+        { "id": "jun27-5", "lane": "operative", "title": "Bill 3D - NeurIPS/ICML Paper-Draft submitted", "detail": "Q3-Window genutzt, Peer-Review startet", "stars": 4, "type": "manual", "tier": "stretch", "deadline": "2027-06-30" },
+        { "id": "jun27-6", "lane": "brand", "title": "2-3 Investment-Gespraeche aktiv", "detail": "Speaker -> Investor -> aktive Term-Sheet-Phase erreicht", "stars": 3, "type": "manual", "tier": "stretch" },
+        { "id": "jun27-7", "lane": "operative", "title": "Bodo-Wochenzeit < 5h (Q2-Trajektorie)", "detail": "Vorbereitung Q3 Remote-Phase Marokko", "stars": 4, "type": "auto", "source": { "table": "workflow_runs", "metric": "bodo_touch_hours_weekly" }, "tier": "pflicht" }
+      ]
+    },
+    {
+      "id": "2027-07", "label": "Juli 2027", "theme": "Acte Authentique + Comptable-Agent",
+      "kpis": [
+        { "id": "jul27-1", "lane": "investment", "title": "Acte authentique beim Notar", "detail": "SARL-Geschaeftsfuehrer unterschreibt fuer SARL — Eigentum geht ueber", "stars": 5, "type": "manual", "tier": "pflicht", "anchor": true, "deadline": "2027-07-31" },
+        { "id": "jul27-2", "lane": "operative", "title": "MRR 60-65k auf Trajektorie", "detail": "Vorbereitung Q3-70k", "stars": 3, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "active_mrr" }, "tier": "optional" },
+        { "id": "jul27-3", "lane": "brand", "title": "25-30 Talks kumuliert", "detail": "Steigende Honorare ab 5k EUR/Talk-Range erreichbar", "stars": 2, "type": "manual", "tier": "optional" },
+        { "id": "jul27-4", "lane": "operative", "title": "Pipeline-Fehlerrate < 1.5%", "detail": "Beste Quartalsmessung seit Start", "stars": 3, "type": "auto", "source": { "table": "workflow_runs", "metric": "error_rate_30d" }, "tier": "pflicht" },
+        { "id": "jul27-5", "lane": "investment", "title": "Aurum-Comptable-Agent live in MA-SARL", "detail": "Belege OCR + plan-comptable-Buchung autonom, Comptable agréé nur fuer Jahresabschluss-Sign-off", "stars": 4, "type": "manual", "tier": "pflicht" }
+      ]
+    },
+    {
+      "id": "2027-08", "label": "August 2027", "theme": "Reno-Vorbereitung",
+      "kpis": [
+        { "id": "aug27-1", "lane": "investment", "title": "Reno-Genehmigungen erhalten", "detail": "Pool: Architekt + Rokhas.ma online-Antrag erfolgreich", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2027-08-31" },
+        { "id": "aug27-2", "lane": "investment", "title": "Bauunternehmer-Vertrag unterschrieben", "detail": "Tranchen-Modell + Webcam Reolink+4G + Vertrauter vor Ort als Bauleiter", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2027-08-31" },
+        { "id": "aug27-3", "lane": "operative", "title": "Bodo-Wochenzeit < 3h", "detail": "Q3-Trajektorie sub 1h/Tag", "stars": 4, "type": "auto", "source": { "table": "workflow_runs", "metric": "bodo_touch_hours_weekly" }, "tier": "pflicht" },
+        { "id": "aug27-4", "lane": "brand", "title": "3-5 Investment-Gespraeche aktiv", "detail": "Speaker-Funnel + Bill 3D Paper-Buzz", "stars": 3, "type": "manual", "tier": "stretch" },
+        { "id": "aug27-5", "lane": "holding", "title": "Holding-AUM 300-400k EUR", "detail": "Skalierung Stock-AI + Cashflow-Reinvestment", "stars": 3, "type": "auto", "source": { "table": "banking_balances", "account": "aurum_lhv" }, "tier": "pflicht" }
+      ]
+    },
+    {
+      "id": "2027-09", "label": "September 2027", "theme": "Reno-Start + Remote-Phase + MRR-70k",
+      "kpis": [
+        { "id": "sep27-1", "lane": "investment", "title": "Reno-Start (Sept-Okt-Saison: trocken, vor Hochsaison)", "detail": "Tranche 1 freigegeben, Bauleiter aktiv, Webcam live", "stars": 5, "type": "manual", "tier": "pflicht", "anchor": true, "deadline": "2027-09-15" },
+        { "id": "sep27-2", "lane": "investment", "title": "ANCFCC TF auf SARL eingetragen (30-90 Tage Lauf)", "detail": "Eintragungs-Bestaetigung, Eigentum offiziell registriert", "stars": 4, "type": "auto", "source": { "registry": "ancfcc_ma", "name": "MA-SARL" }, "tier": "pflicht", "deadline": "2027-09-30" },
+        { "id": "sep27-3", "lane": "brand", "title": "Bodo + Francesca Remote-Arbeit MA (Sept-Nov, mind. 2-3 Mo)", "detail": "Erster Long-Stay als Co-Founder-Couple, Beweis fuer Lifestyle-Vision", "stars": 3, "type": "manual", "tier": "pflicht" },
+        { "id": "sep27-4", "lane": "operative", "title": "MRR 70.000 EUR erreicht", "detail": "Q3-Schwelle bestaetigt, Firma laeuft autonom waehrend Bodo in MA ist", "stars": 5, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "active_mrr" }, "tier": "pflicht", "anchor": true },
+        { "id": "sep27-5", "lane": "investment", "title": "Reno-Fortschritt: Rohbau + Sanitaer + Elektro fertig", "detail": "Phase 1 abgeschlossen, Tranche 2 freigegeben (Tadelakt + Zellige Q4)", "stars": 4, "type": "manual", "tier": "pflicht" },
+        { "id": "sep27-6", "lane": "operative", "title": "Apartment im Eigentum SARL (TF eingetragen)", "detail": "Offizielle Bestaetigung Eigentum auf MA-SARL", "stars": 4, "type": "auto", "source": { "registry": "ancfcc_ma", "name": "MA-SARL" }, "tier": "pflicht" }
+      ]
+    },
+    {
+      "id": "2027-10", "label": "Oktober 2027", "theme": "Reno-Hauptphase",
+      "kpis": [
+        { "id": "oct27-1", "lane": "investment", "title": "Reno-Hauptphase: Tadelakt + Zellige + Pool", "detail": "Premium-Veredelung, 70%-Fortschritt zum Monatsende", "stars": 4, "type": "manual", "tier": "pflicht" },
+        { "id": "oct27-2", "lane": "investment", "title": "Solar + Outdoor-Dusche + STR-Setup gestartet", "detail": "Energie-Autarkie + Boutique-Detail + Vermietungs-Ausstattung", "stars": 3, "type": "manual", "tier": "pflicht" },
+        { "id": "oct27-3", "lane": "brand", "title": "IG Reise-Content MA Aufenthaltsphase", "detail": "Mobile-Office-Serie #X-Y (MA Long-Stay), Reno-Behind-Scenes Story", "stars": 2, "type": "manual", "tier": "optional" },
+        { "id": "oct27-4", "lane": "operative", "title": "Pipeline-Anzahl 30-35 aktiv", "detail": "Wachstumsgrenze ohne neue Tech-Schulden", "stars": 3, "type": "auto", "source": { "table": "workflow_runs", "metric": "active_pipelines_count" }, "tier": "optional" },
+        { "id": "oct27-5", "lane": "investment", "title": "Stock-AI AUM 100-150k mit +12-15% YTD", "detail": "Validierte Skalierungs-Trajektorie", "stars": 4, "type": "auto", "source": { "broker": "ibkr_or_alpaca", "metric": "deployed_capital_with_ytd" }, "tier": "pflicht" }
+      ]
+    },
+    {
+      "id": "2027-11", "label": "November 2027", "theme": "Reno-Fertig + CRT-Klassement",
+      "kpis": [
+        { "id": "nov27-1", "lane": "investment", "title": "Reno fertig", "detail": "Tadelakt + Zellige + Pool + Solar + Outdoor-Dusche + STR-Setup vollstaendig abgeschlossen", "stars": 5, "type": "manual", "tier": "pflicht", "anchor": true, "deadline": "2027-11-30" },
+        { "id": "nov27-2", "lane": "investment", "title": "Airbnb-Klassement bei CRT Agadir + Numero d'immatriculation touristique", "detail": "Vor erster Buchung Pflicht — STR-Compliance", "stars": 5, "type": "manual", "tier": "pflicht", "deadline": "2027-11-30" },
+        { "id": "nov27-3", "lane": "brand", "title": "IG Personal 20k+ Marke", "detail": "Inkl. MA-Reno-Story-Cluster + Speaker-Recaps", "stars": 2, "type": "auto", "source": { "platform": "instagram", "account": "bodo", "metric": "followers" }, "tier": "optional" },
+        { "id": "nov27-4", "lane": "operative", "title": "Hephaestus (CTO) Stress-Test Operative-Autonomie bestanden", "detail": "Bodo-Aufenthalt MA -> 0 Eskalationen in 30-Tage-Fenster", "stars": 3, "type": "manual", "tier": "pflicht" },
+        { "id": "nov27-5", "lane": "brand", "title": "38-45 Talks kumuliert seit Speaker-Start", "detail": "Etablierte Speaker-Position, Honorar-Range > 5k", "stars": 2, "type": "manual", "tier": "optional" }
+      ]
+    },
+    {
+      "id": "2027-12", "label": "Dezember 2027", "theme": "Live-Schaltung + ARR-1M + Phase-Abschluss",
+      "kpis": [
+        { "id": "dec27-1", "lane": "investment", "title": "Multi-Channel Live-Schaltung (Airbnb + Booking + Vrbo) Soft-Launch", "detail": "Friends-&-Family-Phase, Pricing-Tool aktiv", "stars": 5, "type": "auto", "source": { "platforms": ["airbnb", "booking", "vrbo"], "metric": "listing_status" }, "tier": "pflicht", "anchor": true, "deadline": "2027-12-15" },
+        { "id": "dec27-2", "lane": "investment", "title": "10+ Buchungen Soft-Launch erreicht", "detail": "Initial-Validierung der Listing-Performance + Pricing-Tool", "stars": 4, "type": "auto", "source": { "platforms": ["airbnb", "booking", "vrbo"], "metric": "bookings_count" }, "tier": "pflicht" },
+        { "id": "dec27-3", "lane": "operative", "title": "MRR 80.000+ EUR erreicht", "detail": "Jahres-End-Trigger erreicht, Firma laeuft autonom", "stars": 5, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "active_mrr" }, "tier": "pflicht", "anchor": true },
+        { "id": "dec27-4", "lane": "operative", "title": "ARR 1.000.000 EUR (Mio-Schwelle ueberschritten)", "detail": "MEILENSTEIN — psychologische und investor-relevante Schwelle", "stars": 5, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "annual_run_rate" }, "tier": "pflicht", "anchor": true },
+        { "id": "dec27-5", "lane": "holding", "title": "Holding-AUM 350-500k EUR", "detail": "Stock-AI + Reserve + RE-Equity konsolidiert", "stars": 4, "type": "auto", "source": { "table": "banking_balances", "account": "aurum_lhv" }, "tier": "pflicht" },
+        { "id": "dec27-6", "lane": "operative", "title": "Bodo-Wochenzeit < 1h/Tag (max 7h/Wo)", "detail": "Vollautonomie-Ziel der Roadmap erreicht", "stars": 5, "type": "auto", "source": { "table": "workflow_runs", "metric": "bodo_touch_hours_weekly" }, "tier": "pflicht" },
+        { "id": "dec27-7", "lane": "operative", "title": "Bill 3D Open Source Release + Community-Buildup", "detail": "GitHub-Release + Discord + erste 100 Stars; Seed-Funding-Gespraeche optional", "stars": 4, "type": "manual", "tier": "stretch", "deadline": "2027-12-31" },
+        { "id": "dec27-8", "lane": "brand", "title": "Investor-Netzwerk 25+ qualifiziert", "detail": "Stabile Investor-Base fuer kommende Rounds", "stars": 3, "type": "manual", "tier": "pflicht" },
+        { "id": "dec27-9", "lane": "brand", "title": "Erste eigene Aufenthalts-Periode (Bodo+Francesca, 2-3 Wochen Urlaub)", "detail": "Wohnen wo wir gebaut haben — Lifestyle-Trigger erreicht", "stars": 2, "type": "manual", "tier": "optional" },
+        { "id": "dec27-10", "lane": "brand", "title": "Suedamerika-Reise (4-6 Wochen)", "detail": "Optimal Nov-Dez 2027 oder Jan 2028 — Beweis fuer Lifestyle-Autonomie", "stars": 3, "type": "manual", "tier": "stretch" }
       ]
     }
   ]
