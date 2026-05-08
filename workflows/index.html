@@ -627,64 +627,177 @@ table.gist-versions a:hover { text-decoration: underline; }
 .rm-kpi-deadline.overdue { color: var(--red); font-weight: 600; }
 .rm-anchor-badge { font-size: 9px; padding: 1px 7px; border-radius: 8px; background: linear-gradient(90deg, var(--orange), var(--yellow)); color: var(--bg); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
 
-/* KPI Expand + Notes + Subtasks */
-.rm-kpi-card.has-detail-notes { padding-right: 38px; }
+/* KPI Expand button + Subtask Hint */
+.rm-kpi-card.has-detail-notes { padding-right: 40px; }
 .rm-kpi-expand-btn {
   position: absolute; top: 10px; right: 10px;
-  width: 22px; height: 22px; padding: 0;
+  width: 26px; height: 26px; padding: 0;
   border: 1px solid var(--border); background: transparent; color: var(--text-muted);
-  border-radius: 6px; cursor: pointer; font-size: 10px; line-height: 1;
+  border-radius: 6px; cursor: pointer; font-size: 13px; line-height: 1;
   display: flex; align-items: center; justify-content: center;
   transition: all .15s ease; z-index: 2;
 }
-.rm-kpi-expand-btn:hover { color: var(--blue); border-color: var(--blue); background: rgba(79,195,247,0.08); }
-.rm-kpi-card.expanded .rm-kpi-expand-btn { color: var(--blue); transform: rotate(180deg); border-color: var(--blue); }
-.rm-kpi-expanded {
-  display: none;
-  margin: 10px 0 0 32px;
-  padding: 10px 12px;
-  background: rgba(79,195,247,0.05);
-  border-left: 2px solid var(--blue);
-  border-radius: 0 4px 4px 0;
+.rm-kpi-expand-btn:hover { color: var(--blue); border-color: var(--blue); background: rgba(79,195,247,0.08); transform: scale(1.05); }
+.rm-kpi-subtask-hint {
+  font-size: 10px; padding: 1px 7px; border-radius: 8px;
+  background: rgba(79,195,247,0.12); color: var(--blue);
+  font-weight: 600; border: 1px solid rgba(79,195,247,0.3);
 }
-.rm-kpi-card.expanded .rm-kpi-expanded { display: block; }
-.rm-kpi-notes {
-  font-size: 11.5px; color: var(--text); line-height: 1.55;
-  margin-bottom: 10px; white-space: pre-wrap; word-break: break-word;
+.rm-kpi-subtask-hint.complete {
+  background: rgba(0,212,170,0.12); color: var(--green);
+  border-color: rgba(0,212,170,0.3);
 }
-.rm-kpi-notes:last-child { margin-bottom: 0; }
-.rm-kpi-notes strong { color: var(--blue); }
+
+/* Subtask styling (used in modal) */
 .rm-subtasks-header {
-  font-size: 10px; color: var(--text-muted); text-transform: uppercase;
-  letter-spacing: .5px; margin: 8px 0 4px; display: flex;
+  font-size: 11px; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: .5px; margin: 0 0 8px; display: flex;
   align-items: center; justify-content: space-between;
 }
-.rm-subtasks-progress { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+.rm-subtasks-progress { font-size: 11px; color: var(--text-muted); font-weight: 600; }
 .rm-subtasks-progress.complete { color: var(--green); }
 .rm-kpi-subtasks { display: flex; flex-direction: column; gap: 2px; }
 .rm-subtask {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 5px 6px; border-radius: 4px;
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px; border-radius: 5px;
   cursor: pointer; transition: background .12s ease;
 }
-.rm-subtask:hover { background: rgba(255,255,255,0.04); }
+.rm-subtask:hover { background: rgba(255,255,255,0.05); }
 .rm-subtask-check {
-  flex-shrink: 0; width: 14px; height: 14px;
+  flex-shrink: 0; width: 16px; height: 16px;
   border: 1.5px solid var(--text-muted); border-radius: 3px;
   margin-top: 2px; position: relative;
   transition: all .15s ease;
 }
+.rm-subtask:hover .rm-subtask-check { border-color: var(--blue); }
 .rm-subtask.done .rm-subtask-check { background: var(--green); border-color: var(--green); }
 .rm-subtask.done .rm-subtask-check::after {
   content: '✓'; position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  color: var(--bg); font-size: 11px; font-weight: bold;
+  color: var(--bg); font-size: 12px; font-weight: bold;
 }
-.rm-subtask-label { font-size: 11.5px; color: var(--text); line-height: 1.4; flex: 1; }
+.rm-subtask-label { font-size: 12.5px; color: var(--text); line-height: 1.45; flex: 1; }
 .rm-subtask.done .rm-subtask-label {
   text-decoration: line-through;
   text-decoration-color: rgba(0,212,170,0.4);
   color: var(--text-muted);
+}
+
+/* KPI Detail Modal */
+.rm-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 1000; padding: 20px;
+  animation: rmModalFadeIn .15s ease;
+}
+@keyframes rmModalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.rm-modal {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%; max-width: 720px;
+  max-height: 88vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: rmModalSlideUp .2s ease;
+}
+@keyframes rmModalSlideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.rm-modal-header {
+  display: flex; align-items: flex-start;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.rm-modal-title-wrap { flex: 1; min-width: 0; }
+.rm-modal-title {
+  font-size: 17px; font-weight: 700; color: var(--text);
+  line-height: 1.3; margin-bottom: 8px;
+}
+.rm-modal-meta {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  align-items: center;
+}
+.rm-modal-done-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 8px;
+  background: rgba(0,212,170,0.15); color: var(--green);
+  border: 1px solid rgba(0,212,170,0.4);
+  font-weight: 600;
+}
+.rm-modal-close {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--text-muted);
+  border-radius: 8px; cursor: pointer;
+  font-size: 22px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s ease;
+}
+.rm-modal-close:hover { color: var(--red); border-color: var(--red); background: rgba(255,107,107,0.08); }
+.rm-modal-body {
+  padding: 18px 20px 20px;
+  overflow-y: auto;
+  flex: 1; min-height: 0;
+}
+.rm-modal-detail {
+  font-size: 12px; color: var(--text-muted);
+  line-height: 1.5;
+  padding-bottom: 14px; margin-bottom: 14px;
+  border-bottom: 1px dashed var(--border);
+}
+.rm-modal-notes {
+  font-size: 13px; color: var(--text);
+  line-height: 1.65;
+  white-space: pre-wrap; word-break: break-word;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  background: rgba(79,195,247,0.06);
+  border-left: 3px solid var(--blue);
+  border-radius: 0 6px 6px 0;
+}
+.rm-modal-progress-bar {
+  height: 4px; background: var(--code-bg);
+  border-radius: 2px; overflow: hidden;
+  margin-bottom: 10px;
+}
+.rm-modal-progress-fill {
+  height: 100%; background: var(--blue);
+  transition: width .3s ease;
+}
+.rm-modal-progress-fill.complete { background: var(--green); }
+.rm-modal-footer {
+  margin-top: 18px; padding-top: 14px;
+  border-top: 1px dashed var(--border);
+  display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+}
+.rm-modal-btn {
+  padding: 9px 18px; border-radius: 8px;
+  border: 1px solid var(--green);
+  background: rgba(0,212,170,0.12);
+  color: var(--green);
+  cursor: pointer; font-size: 12.5px; font-weight: 600;
+  transition: all .15s ease;
+}
+.rm-modal-btn:hover { background: rgba(0,212,170,0.2); transform: translateY(-1px); }
+.rm-modal-btn.undo {
+  border-color: var(--text-muted);
+  background: transparent;
+  color: var(--text-muted);
+}
+.rm-modal-btn.undo:hover { color: var(--text); border-color: var(--text); background: rgba(255,255,255,0.04); }
+.rm-modal-hint {
+  font-size: 11px; color: var(--text-muted);
+}
+@media (max-width: 720px) {
+  .rm-modal-overlay { padding: 0; align-items: stretch; }
+  .rm-modal { max-width: none; max-height: 100vh; border-radius: 0; }
+  .rm-modal-body { padding: 14px 16px 16px; }
 }
 
 /* Mobile Roadmap */
@@ -1051,6 +1164,20 @@ table.gist-versions a:hover { text-decoration: underline; }
   </div>
   <div class="code-sheet-body">
     <pre id="codeContent"></pre>
+  </div>
+</div>
+
+<!-- ═══ ROADMAP KPI MODAL ═══ -->
+<div class="rm-modal-overlay" id="rmModal" role="dialog" aria-modal="true">
+  <div class="rm-modal">
+    <div class="rm-modal-header">
+      <div class="rm-modal-title-wrap">
+        <div class="rm-modal-title" id="rmModalTitle">…</div>
+        <div class="rm-modal-meta" id="rmModalMeta"></div>
+      </div>
+      <button class="rm-modal-close" id="rmModalClose" title="Schliessen (ESC)" aria-label="Schliessen">×</button>
+    </div>
+    <div class="rm-modal-body" id="rmModalBody"></div>
   </div>
 </div>
 
@@ -2869,6 +2996,7 @@ function rmToggleCheck(kpiId) {
   }
   rmSaveState(state);
   rmRender();
+  if (rmOpenModalKpiId === kpiId) rmRenderModal();
 }
 
 function rmIsSubtaskChecked(state, kpiId, subtaskId) {
@@ -2886,19 +3014,120 @@ function rmToggleSubtask(kpiId, subtaskId) {
   }
   rmSaveState(state);
   rmRender();
+  if (rmOpenModalKpiId === kpiId) rmRenderModal();
 }
 
-function rmIsExpanded(state, kpiId) {
-  return !!(state.expanded && state.expanded[kpiId]);
+// === Modal (KPI Detail Window) ===
+let rmOpenModalKpiId = null;
+let rmModalListenersAttached = false;
+
+function rmFindKpi(kpiId) {
+  if (!rmData) return null;
+  for (const m of rmData.months) {
+    for (const k of m.kpis) if (k.id === kpiId) return k;
+  }
+  return null;
 }
 
-function rmToggleExpand(kpiId) {
+function rmAttachModalListeners() {
+  if (rmModalListenersAttached) return;
+  rmModalListenersAttached = true;
+  const modal = document.getElementById('rmModal');
+  const closeBtn = document.getElementById('rmModalClose');
+  if (closeBtn) closeBtn.addEventListener('click', rmCloseModal);
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target.id === 'rmModal') rmCloseModal();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && rmOpenModalKpiId) rmCloseModal();
+  });
+}
+
+function rmOpenModal(kpiId) {
+  rmOpenModalKpiId = kpiId;
+  rmRenderModal();
+}
+
+function rmCloseModal() {
+  rmOpenModalKpiId = null;
+  const modal = document.getElementById('rmModal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function rmRenderModal() {
+  if (!rmOpenModalKpiId) return;
+  const kpi = rmFindKpi(rmOpenModalKpiId);
+  if (!kpi) { rmCloseModal(); return; }
   const state = rmLoadState();
-  if (!state.expanded) state.expanded = {};
-  if (state.expanded[kpiId]) delete state.expanded[kpiId];
-  else state.expanded[kpiId] = true;
-  rmSaveState(state);
-  rmRender();
+  const modal = document.getElementById('rmModal');
+  if (!modal) return;
+
+  const lane = rmLaneBy(kpi.lane);
+  const checked = rmIsChecked(state, kpi.id);
+  const overdue = rmIsOverdue(kpi.deadline, checked);
+
+  const titleEl = document.getElementById('rmModalTitle');
+  if (titleEl) titleEl.textContent = kpi.title;
+
+  const metaEl = document.getElementById('rmModalMeta');
+  if (metaEl) metaEl.innerHTML = `
+    <span class="rm-kpi-lane-pill"><span class="dot" style="background:${lane.color};"></span>${lane.label}</span>
+    <span class="rm-kpi-tier ${kpi.tier || 'optional'}">${kpi.tier || 'optional'}</span>
+    <span class="rm-kpi-stars">${rmStarString(kpi.stars||1)}</span>
+    ${kpi.deadline ? `<span class="rm-kpi-deadline ${overdue?'overdue':''}">⏱ ${rmFormatDate(kpi.deadline)}</span>` : ''}
+    ${kpi.anchor ? '<span class="rm-anchor-badge">Anker</span>' : ''}
+    ${checked ? '<span class="rm-modal-done-badge">✓ erledigt</span>' : ''}
+  `;
+
+  let body = '';
+  if (kpi.detail) body += `<div class="rm-modal-detail">${rmEscapeHtml(kpi.detail)}</div>`;
+  if (kpi.notes) body += `<div class="rm-modal-notes">${rmEscapeHtml(kpi.notes)}</div>`;
+  const subtasks = Array.isArray(kpi.subtasks) ? kpi.subtasks : [];
+  if (subtasks.length > 0) {
+    const doneCount = subtasks.filter(s => rmIsSubtaskChecked(state, kpi.id, s.id)).length;
+    const allDone = doneCount === subtasks.length;
+    const pct = Math.round((doneCount/subtasks.length)*100);
+    const items = subtasks.map(s => {
+      const sChecked = rmIsSubtaskChecked(state, kpi.id, s.id);
+      return `<div class="rm-subtask ${sChecked?'done':''}" data-subtask="${rmEscapeHtml(s.id)}">
+        <div class="rm-subtask-check"></div>
+        <div class="rm-subtask-label">${rmEscapeHtml(s.label)}</div>
+      </div>`;
+    }).join('');
+    body += `
+      <div class="rm-subtasks-header">
+        <span>Schritte</span>
+        <span class="rm-subtasks-progress ${allDone?'complete':''}">${doneCount}/${subtasks.length} (${pct}%)</span>
+      </div>
+      <div class="rm-modal-progress-bar"><div class="rm-modal-progress-fill ${allDone?'complete':''}" style="width:${pct}%;"></div></div>
+      <div class="rm-kpi-subtasks">${items}</div>
+    `;
+  }
+  body += `
+    <div class="rm-modal-footer">
+      <button id="rmModalToggleDone" class="rm-modal-btn ${checked?'undo':''}">
+        ${checked ? '↺ Wieder oeffnen' : '✓ KPI als erledigt markieren'}
+      </button>
+      <span class="rm-modal-hint">Klick ausserhalb oder ESC zum Schliessen</span>
+    </div>
+  `;
+  const bodyEl = document.getElementById('rmModalBody');
+  if (bodyEl) {
+    bodyEl.innerHTML = body;
+    bodyEl.querySelectorAll('.rm-subtask').forEach(st => {
+      st.addEventListener('click', () => {
+        rmToggleSubtask(kpi.id, st.dataset.subtask);
+      });
+    });
+    const doneBtn = bodyEl.querySelector('#rmModalToggleDone');
+    if (doneBtn) doneBtn.addEventListener('click', () => rmToggleCheck(kpi.id));
+  }
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
 
 function rmStarString(n) {
@@ -3169,10 +3398,10 @@ function rmRenderTimeline(state) {
     <div class="rm-cards">${rightHtml}</div>
   `;
 
-  // Wire KPI checkbox clicks (skip when click hits expand button or expanded section)
+  // Wire KPI clicks: card body togglet "done", Expand-Button oeffnet Modal
   tl.querySelectorAll('.rm-kpi-card').forEach(card => {
     card.addEventListener('click', (e) => {
-      if (e.target.closest('.rm-kpi-expand-btn, .rm-kpi-expanded')) return;
+      if (e.target.closest('.rm-kpi-expand-btn')) return;
       const id = card.dataset.kpi;
       rmToggleCheck(id);
     });
@@ -3180,15 +3409,9 @@ function rmRenderTimeline(state) {
     if (expandBtn) {
       expandBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        rmToggleExpand(card.dataset.kpi);
+        rmOpenModal(card.dataset.kpi);
       });
     }
-    card.querySelectorAll('.rm-subtask').forEach(st => {
-      st.addEventListener('click', (e) => {
-        e.stopPropagation();
-        rmToggleSubtask(card.dataset.kpi, st.dataset.subtask);
-      });
-    });
   });
 
   // After render, align rail markers vertically with month-block tops
@@ -3224,35 +3447,17 @@ function rmRenderKpiCard(k, state) {
   const hasNotes = !!k.notes;
   const subtasks = Array.isArray(k.subtasks) ? k.subtasks : [];
   const hasDetail = hasNotes || subtasks.length > 0;
-  const expanded = hasDetail && rmIsExpanded(state, k.id);
 
-  let subtaskBlock = '';
+  let subtaskHint = '';
   if (subtasks.length > 0) {
     const doneCount = subtasks.filter(s => rmIsSubtaskChecked(state, k.id, s.id)).length;
     const allDone = doneCount === subtasks.length;
-    const items = subtasks.map(s => {
-      const sChecked = rmIsSubtaskChecked(state, k.id, s.id);
-      return `<div class="rm-subtask ${sChecked ? 'done' : ''}" data-subtask="${rmEscapeHtml(s.id)}">
-        <div class="rm-subtask-check"></div>
-        <div class="rm-subtask-label">${rmEscapeHtml(s.label)}</div>
-      </div>`;
-    }).join('');
-    subtaskBlock = `
-      <div class="rm-subtasks-header">
-        <span>Schritte</span>
-        <span class="rm-subtasks-progress ${allDone?'complete':''}">${doneCount}/${subtasks.length}</span>
-      </div>
-      <div class="rm-kpi-subtasks">${items}</div>`;
+    subtaskHint = `<span class="rm-kpi-subtask-hint ${allDone?'complete':''}" title="Schritte (klick auf ⤢ fuer Details)">${doneCount}/${subtasks.length} Schritte</span>`;
   }
-  const expandedBlock = hasDetail ? `
-    <div class="rm-kpi-expanded">
-      ${hasNotes ? `<div class="rm-kpi-notes">${rmEscapeHtml(k.notes)}</div>` : ''}
-      ${subtaskBlock}
-    </div>` : '';
-  const expandBtn = hasDetail ? `<button class="rm-kpi-expand-btn" title="Details ein-/ausklappen">▼</button>` : '';
+  const expandBtn = hasDetail ? `<button class="rm-kpi-expand-btn" title="Details + Schritte oeffnen">⤢</button>` : '';
 
   return `
-    <div class="rm-kpi-card ${checked ? 'checked' : ''} ${k.anchor ? 'anchor' : ''} ${expanded?'expanded':''} ${hasDetail?'has-detail-notes':''}" data-kpi="${k.id}">
+    <div class="rm-kpi-card ${checked ? 'checked' : ''} ${k.anchor ? 'anchor' : ''} ${hasDetail?'has-detail-notes':''}" data-kpi="${k.id}">
       ${expandBtn}
       <div class="rm-kpi-header">
         <div class="rm-kpi-check"></div>
@@ -3266,8 +3471,8 @@ function rmRenderKpiCard(k, state) {
         <span class="rm-kpi-source ${k.type || 'manual'}">${k.type === 'auto' ? 'AUTO' : 'manuell'}</span>
         ${k.deadline ? `<span class="rm-kpi-deadline ${overdue?'overdue':''}">⏱ ${rmFormatDate(k.deadline)}</span>` : ''}
         ${k.anchor ? '<span class="rm-anchor-badge">Anker</span>' : ''}
+        ${subtaskHint}
       </div>
-      ${expandedBlock}
     </div>
   `;
 }
@@ -3288,6 +3493,7 @@ async function loadRoadmap() {
     document.getElementById('rmTitle').textContent = rmData.title || 'Roadmap';
     document.getElementById('rmSubtitle').textContent = rmData.subtitle || '';
     rmRender();
+    rmAttachModalListeners();
     roadmapLoaded = true;
     window.addEventListener('resize', () => requestAnimationFrame(rmAlignRail));
   } catch (e) {
