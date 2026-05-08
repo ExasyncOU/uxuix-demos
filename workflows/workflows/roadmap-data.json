@@ -81,7 +81,11 @@
         { "id": "may-4", "lane": "brand", "title": "Cross-Promotion-Kalender produktiv", "detail": "Wochenrhythmus Personal <-> Company, Reposting 1:3 + 1:4 Regel", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-05-31" },
         { "id": "may-5", "lane": "operative", "title": "Outreach-Plan Q2 finalisiert", "detail": "4 Personas, 200 qualifizierte Touches, A/B-Test 3 Subject-Lines", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-05-15" },
         { "id": "may-6", "lane": "operative", "title": "Pipeline-Templating gestartet", "detail": "Erste 2 Pipeline-Templates (Logistik + Doku-KI) als reusable Module", "stars": 2, "type": "manual", "tier": "optional", "deadline": "2026-05-31" },
-        { "id": "may-7", "lane": "holding", "title": "EE-StB Erstkontakt (3 Calls)", "detail": "Comistar / Silva Hunt / Wisor je 30min, Auswahl bis Monatsende", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-05-31" }
+        { "id": "may-7", "lane": "holding", "title": "EE-StB Erstkontakt (3 Calls)", "detail": "Comistar / Silva Hunt / Wisor je 30min, Auswahl bis Monatsende", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-05-31" },
+        { "id": "may-8", "lane": "operative", "title": "[BODO] 5 Best-Fit-Kunden-Interviews (Dunford Step 1)", "detail": "Nacke/Fleetboard/GV/Welzhofer/Scaleinvest - Frage: 'Was wuerdest du nutzen wenn es uns nicht gaebe?' Output: Alternativen-Cluster (Agentur/Junior/ChatGPT/nichts)", "stars": 5, "type": "manual", "tier": "pflicht", "deadline": "2026-05-31" },
+        { "id": "may-9", "lane": "operative", "title": "[BODO] Big-Fish-Sub-Nische festgelegt (Dunford Step 8)", "detail": "Strategische CEO-Entscheidung nach Interviews - Big-Fish, NICHT Create-New-Game. Hypothese: Solo-Founder/2-10P mit Hiring-Aversion", "stars": 5, "type": "manual", "tier": "pflicht", "deadline": "2026-05-31" },
+        { "id": "may-10", "lane": "brand", "title": "[BODO] 90-Sek COO-Agent Loom-Demo aufgenommen", "detail": "Echter Workflow, kein Pitch - Bushs 'Show don't tell'. Wird strongest Sales-Asset fuer Q3/Q4", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-05-31" },
+        { "id": "may-11", "lane": "brand", "title": "Sandro-Brief multi-tenant-faehig", "detail": "Brand-Voice-Profile als JSON, Schedule pro Profil, Output-Bucket pro Profil - Wedge-Pivot Q3 ohne Refactor moeglich (HubSpot-Pattern)", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2026-05-15" }
       ]
     },
     {
@@ -106,7 +110,9 @@
         { "id": "jul-4", "lane": "brand", "title": "Speaker-Profil exasync.ai/speaker LIVE", "detail": "Demo-Reel + 3 Talk-Themen + Referenzen-Page", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-07-31" },
         { "id": "jul-5", "lane": "brand", "title": "Speaking-Recycling-Pipeline live", "detail": "Jeder Talk -> 5-10 Reels + 3 LI-Posts + 1 Blog in 7 Tagen", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-07-31" },
         { "id": "jul-6", "lane": "brand", "title": "Talk-Themen finalisiert", "detail": "KI im Alltag / Lebensoptimierung / Passion finden", "stars": 1, "type": "manual", "tier": "pflicht", "deadline": "2026-07-15" },
-        { "id": "jul-7", "lane": "investment", "title": "Real-Estate-Analyst Phase 2 (Listing-Scout MVP)", "detail": "Avito/Mubawab Daily-Digest + Score-Logik", "stars": 3, "type": "manual", "tier": "optional", "deadline": "2026-07-31" }
+        { "id": "jul-7", "lane": "investment", "title": "Real-Estate-Analyst Phase 2 (Listing-Scout MVP)", "detail": "Avito/Mubawab Daily-Digest + Score-Logik", "stars": 3, "type": "manual", "tier": "optional", "deadline": "2026-07-31" },
+        { "id": "jul-8", "lane": "brand", "title": "Master Messaging Document signed-off (vor Speaker-Talks)", "detail": "Apollo erstellt Pain-Dream-Fix Sales Story + Ein-Satz-Positioning. [BODO] final sign-off VOR jul-4/jul-6 - sonst zerstreut Botschaft bei Talks", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2026-07-15" },
+        { "id": "jul-9", "lane": "brand", "title": "[BODO] Wedge-Produkt-Entscheidung Sandro", "detail": "Strategische Wahl: Sandro produktisieren (1 Pilot-Kunde) oder privat halten? Erstes echtes PLG-Vehikel ueber HubSpot-Pattern", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2026-07-31" }
       ]
     },
     {
@@ -130,7 +136,8 @@
         { "id": "sep-4", "lane": "brand", "title": "LinkedIn Exasync Company 1.5k-Marke", "detail": "Pipeline-Cases + Customer Stories + 5 viral Posts (>1k Reactions)", "stars": 2, "type": "auto", "source": { "platform": "linkedin", "account": "exasync", "metric": "followers" }, "tier": "optional" },
         { "id": "sep-5", "lane": "brand", "title": "30%-Audience-Overlap Personal/Company", "detail": "Story-Polls + Cross-Promotion-Mechanik greift", "stars": 2, "type": "manual", "tier": "stretch", "deadline": "2026-09-30" },
         { "id": "sep-6", "lane": "investment", "title": "Firmen-Analyse-Agent v0.1 live", "detail": "DCF + SWOT + Markt-Analyse + M&A-Screening", "stars": 3, "type": "manual", "tier": "optional", "deadline": "2026-09-30" },
-        { "id": "sep-7", "lane": "brand", "title": "3 Talks gehalten kumuliert", "detail": "1-2 Talks/Monat seit August", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-09-30" }
+        { "id": "sep-7", "lane": "brand", "title": "3 Talks gehalten kumuliert", "detail": "1-2 Talks/Monat seit August", "stars": 2, "type": "manual", "tier": "pflicht", "deadline": "2026-09-30" },
+        { "id": "sep-8", "lane": "operative", "title": "PQL-Definition + Tracking live (Bush-Pattern)", "detail": "Hermes+Aether: PQL = '3 Agents konfiguriert + 1 Output exportiert + 1 Workflow gespeichert' = Sales-Touch wert. Ablesung via workflow_runs.stats", "stars": 3, "type": "auto", "source": { "table": "workflow_runs", "metric": "pql_count" }, "tier": "pflicht" }
       ]
     },
     {
@@ -164,7 +171,8 @@
         { "id": "dec-4", "lane": "holding", "title": "Cash-Reserve Holding 50k+ EUR (Bodos Haelfte fuer MA-Kauf)", "detail": "Trigger fuer Q2 2027 Apartment-Kauf", "stars": 4, "type": "auto", "source": { "table": "banking_balances", "account": "aurum_lhv" }, "tier": "pflicht" },
         { "id": "dec-5", "lane": "brand", "title": "12k LinkedIn Bodo + 5k IG Company + 8 Talks kumuliert", "detail": "Triple-Brand-Lock erreicht", "stars": 3, "type": "auto", "source": { "platforms": ["linkedin", "instagram"], "metric": "combined_followers" }, "tier": "stretch" },
         { "id": "dec-6", "lane": "operative", "title": "Bodo-Wochenzeit Operative < 15h/Woche", "detail": "Vollautonomie-Vorstufe, Trigger Q1 fuer Bill-Fokus", "stars": 4, "type": "manual", "tier": "pflicht", "deadline": "2026-12-31" },
-        { "id": "dec-7", "lane": "investment", "title": "MA-Watchlist mit 5 Apartments Score>80", "detail": "Vorbereitung fuer Q2 2027 Compromis-Phase", "stars": 2, "type": "manual", "tier": "optional", "deadline": "2026-12-31" }
+        { "id": "dec-7", "lane": "investment", "title": "MA-Watchlist mit 5 Apartments Score>80", "detail": "Vorbereitung fuer Q2 2027 Compromis-Phase", "stars": 2, "type": "manual", "tier": "optional", "deadline": "2026-12-31" },
+        { "id": "dec-8", "lane": "operative", "title": "[BODO] Bill-Re-Positioning-Material gesammelt", "detail": "In jedem Q4-Pipeline-Gespraech: 'Welche 7 Agenten waeren fuer dich am wichtigsten?' - Datenbasis fuer Bill Q1-Restart als Pipeline-Suite Tier 2 (NICHT Autonomous AI Company)", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2026-12-31" }
       ]
     },
     {
@@ -175,7 +183,8 @@
         { "id": "jan27-3", "lane": "investment", "title": "Active-Rental-Setup-Plan finalisiert", "detail": "PM-Vertrag + Cleaning + Concierge + Pricing-Tool (RE-Analyst + Plutus)", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2027-01-31" },
         { "id": "jan27-4", "lane": "operative", "title": "MRR 40.000 EUR erreicht", "detail": "Q1-Schwelle, Vollautonomie-Trajektorie bestaetigt", "stars": 5, "type": "auto", "source": { "table": "stripe_subscriptions", "metric": "active_mrr" }, "tier": "pflicht" },
         { "id": "jan27-5", "lane": "investment", "title": "Stock-AI AUM 30-50k (skaliert nach GREEN)", "detail": "Aufstockung von 10k Pilot, fortlaufendes Monitoring", "stars": 4, "type": "auto", "source": { "broker": "ibkr_or_alpaca", "metric": "deployed_capital" }, "tier": "pflicht" },
-        { "id": "jan27-6", "lane": "brand", "title": "1-2 Investment-Gespraeche aktiv", "detail": "Speaker-Funnel -> qualifizierter Lead -> Investment-Memo gestartet", "stars": 3, "type": "manual", "tier": "stretch" }
+        { "id": "jan27-6", "lane": "brand", "title": "1-2 Investment-Gespraeche aktiv", "detail": "Speaker-Funnel -> qualifizierter Lead -> Investment-Memo gestartet", "stars": 3, "type": "manual", "tier": "stretch" },
+        { "id": "jan27-7", "lane": "operative", "title": "[BODO] 6-Monats Re-Positioning-Review (Dunford-Pflicht)", "detail": "Bodo+Apollo+Atlas: Passt Q2-2026-Positionierung noch zu dem was Pipelines heute kaufen? Kategorie-Wahl-Update + Sales Story Refresh", "stars": 3, "type": "manual", "tier": "pflicht", "deadline": "2027-01-31" }
       ]
     },
     {
