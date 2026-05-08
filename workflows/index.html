@@ -627,6 +627,66 @@ table.gist-versions a:hover { text-decoration: underline; }
 .rm-kpi-deadline.overdue { color: var(--red); font-weight: 600; }
 .rm-anchor-badge { font-size: 9px; padding: 1px 7px; border-radius: 8px; background: linear-gradient(90deg, var(--orange), var(--yellow)); color: var(--bg); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
 
+/* KPI Expand + Notes + Subtasks */
+.rm-kpi-card.has-detail-notes { padding-right: 38px; }
+.rm-kpi-expand-btn {
+  position: absolute; top: 10px; right: 10px;
+  width: 22px; height: 22px; padding: 0;
+  border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+  border-radius: 6px; cursor: pointer; font-size: 10px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s ease; z-index: 2;
+}
+.rm-kpi-expand-btn:hover { color: var(--blue); border-color: var(--blue); background: rgba(79,195,247,0.08); }
+.rm-kpi-card.expanded .rm-kpi-expand-btn { color: var(--blue); transform: rotate(180deg); border-color: var(--blue); }
+.rm-kpi-expanded {
+  display: none;
+  margin: 10px 0 0 32px;
+  padding: 10px 12px;
+  background: rgba(79,195,247,0.05);
+  border-left: 2px solid var(--blue);
+  border-radius: 0 4px 4px 0;
+}
+.rm-kpi-card.expanded .rm-kpi-expanded { display: block; }
+.rm-kpi-notes {
+  font-size: 11.5px; color: var(--text); line-height: 1.55;
+  margin-bottom: 10px; white-space: pre-wrap; word-break: break-word;
+}
+.rm-kpi-notes:last-child { margin-bottom: 0; }
+.rm-kpi-notes strong { color: var(--blue); }
+.rm-subtasks-header {
+  font-size: 10px; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: .5px; margin: 8px 0 4px; display: flex;
+  align-items: center; justify-content: space-between;
+}
+.rm-subtasks-progress { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+.rm-subtasks-progress.complete { color: var(--green); }
+.rm-kpi-subtasks { display: flex; flex-direction: column; gap: 2px; }
+.rm-subtask {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 5px 6px; border-radius: 4px;
+  cursor: pointer; transition: background .12s ease;
+}
+.rm-subtask:hover { background: rgba(255,255,255,0.04); }
+.rm-subtask-check {
+  flex-shrink: 0; width: 14px; height: 14px;
+  border: 1.5px solid var(--text-muted); border-radius: 3px;
+  margin-top: 2px; position: relative;
+  transition: all .15s ease;
+}
+.rm-subtask.done .rm-subtask-check { background: var(--green); border-color: var(--green); }
+.rm-subtask.done .rm-subtask-check::after {
+  content: '✓'; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--bg); font-size: 11px; font-weight: bold;
+}
+.rm-subtask-label { font-size: 11.5px; color: var(--text); line-height: 1.4; flex: 1; }
+.rm-subtask.done .rm-subtask-label {
+  text-decoration: line-through;
+  text-decoration-color: rgba(0,212,170,0.4);
+  color: var(--text-muted);
+}
+
 /* Mobile Roadmap */
 @media (max-width: 720px) {
   .rm-cockpit { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -2773,12 +2833,17 @@ let rmActiveTier = 'all';      // all | pflicht | optional | stretch
 function rmLoadState() {
   try {
     const raw = localStorage.getItem(RM_STORAGE_KEY);
-    if (!raw) return { checks: {}, updatedAt: null };
+    if (!raw) return { checks: {}, subtasks: {}, expanded: {}, updatedAt: null };
     const parsed = JSON.parse(raw);
-    return { checks: parsed.checks || {}, updatedAt: parsed.updatedAt || null };
+    return {
+      checks: parsed.checks || {},
+      subtasks: parsed.subtasks || {},
+      expanded: parsed.expanded || {},
+      updatedAt: parsed.updatedAt || null
+    };
   } catch (e) {
     console.warn('[Roadmap] localStorage parse error:', e);
-    return { checks: {}, updatedAt: null };
+    return { checks: {}, subtasks: {}, expanded: {}, updatedAt: null };
   }
 }
 
@@ -2802,6 +2867,36 @@ function rmToggleCheck(kpiId) {
   } else {
     state.checks[kpiId] = { done: true, ts: new Date().toISOString() };
   }
+  rmSaveState(state);
+  rmRender();
+}
+
+function rmIsSubtaskChecked(state, kpiId, subtaskId) {
+  return !!(state.subtasks && state.subtasks[kpiId] && state.subtasks[kpiId][subtaskId] && state.subtasks[kpiId][subtaskId].done);
+}
+
+function rmToggleSubtask(kpiId, subtaskId) {
+  const state = rmLoadState();
+  if (!state.subtasks) state.subtasks = {};
+  if (!state.subtasks[kpiId]) state.subtasks[kpiId] = {};
+  if (rmIsSubtaskChecked(state, kpiId, subtaskId)) {
+    delete state.subtasks[kpiId][subtaskId];
+  } else {
+    state.subtasks[kpiId][subtaskId] = { done: true, ts: new Date().toISOString() };
+  }
+  rmSaveState(state);
+  rmRender();
+}
+
+function rmIsExpanded(state, kpiId) {
+  return !!(state.expanded && state.expanded[kpiId]);
+}
+
+function rmToggleExpand(kpiId) {
+  const state = rmLoadState();
+  if (!state.expanded) state.expanded = {};
+  if (state.expanded[kpiId]) delete state.expanded[kpiId];
+  else state.expanded[kpiId] = true;
   rmSaveState(state);
   rmRender();
 }
@@ -3074,12 +3169,25 @@ function rmRenderTimeline(state) {
     <div class="rm-cards">${rightHtml}</div>
   `;
 
-  // Wire KPI checkbox clicks
+  // Wire KPI checkbox clicks (skip when click hits expand button or expanded section)
   tl.querySelectorAll('.rm-kpi-card').forEach(card => {
     card.addEventListener('click', (e) => {
+      if (e.target.closest('.rm-kpi-expand-btn, .rm-kpi-expanded')) return;
       const id = card.dataset.kpi;
-      // Allow clicking anywhere on card or specifically on checkbox
       rmToggleCheck(id);
+    });
+    const expandBtn = card.querySelector('.rm-kpi-expand-btn');
+    if (expandBtn) {
+      expandBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        rmToggleExpand(card.dataset.kpi);
+      });
+    }
+    card.querySelectorAll('.rm-subtask').forEach(st => {
+      st.addEventListener('click', (e) => {
+        e.stopPropagation();
+        rmToggleSubtask(card.dataset.kpi, st.dataset.subtask);
+      });
     });
   });
 
@@ -3104,12 +3212,48 @@ function rmAlignRail() {
   });
 }
 
+function rmEscapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function rmRenderKpiCard(k, state) {
   const checked = rmIsChecked(state, k.id);
   const lane = rmLaneBy(k.lane);
   const overdue = rmIsOverdue(k.deadline, checked);
+  const hasNotes = !!k.notes;
+  const subtasks = Array.isArray(k.subtasks) ? k.subtasks : [];
+  const hasDetail = hasNotes || subtasks.length > 0;
+  const expanded = hasDetail && rmIsExpanded(state, k.id);
+
+  let subtaskBlock = '';
+  if (subtasks.length > 0) {
+    const doneCount = subtasks.filter(s => rmIsSubtaskChecked(state, k.id, s.id)).length;
+    const allDone = doneCount === subtasks.length;
+    const items = subtasks.map(s => {
+      const sChecked = rmIsSubtaskChecked(state, k.id, s.id);
+      return `<div class="rm-subtask ${sChecked ? 'done' : ''}" data-subtask="${rmEscapeHtml(s.id)}">
+        <div class="rm-subtask-check"></div>
+        <div class="rm-subtask-label">${rmEscapeHtml(s.label)}</div>
+      </div>`;
+    }).join('');
+    subtaskBlock = `
+      <div class="rm-subtasks-header">
+        <span>Schritte</span>
+        <span class="rm-subtasks-progress ${allDone?'complete':''}">${doneCount}/${subtasks.length}</span>
+      </div>
+      <div class="rm-kpi-subtasks">${items}</div>`;
+  }
+  const expandedBlock = hasDetail ? `
+    <div class="rm-kpi-expanded">
+      ${hasNotes ? `<div class="rm-kpi-notes">${rmEscapeHtml(k.notes)}</div>` : ''}
+      ${subtaskBlock}
+    </div>` : '';
+  const expandBtn = hasDetail ? `<button class="rm-kpi-expand-btn" title="Details ein-/ausklappen">▼</button>` : '';
+
   return `
-    <div class="rm-kpi-card ${checked ? 'checked' : ''} ${k.anchor ? 'anchor' : ''}" data-kpi="${k.id}">
+    <div class="rm-kpi-card ${checked ? 'checked' : ''} ${k.anchor ? 'anchor' : ''} ${expanded?'expanded':''} ${hasDetail?'has-detail-notes':''}" data-kpi="${k.id}">
+      ${expandBtn}
       <div class="rm-kpi-header">
         <div class="rm-kpi-check"></div>
         <div class="rm-kpi-title">${k.title}</div>
@@ -3123,6 +3267,7 @@ function rmRenderKpiCard(k, state) {
         ${k.deadline ? `<span class="rm-kpi-deadline ${overdue?'overdue':''}">⏱ ${rmFormatDate(k.deadline)}</span>` : ''}
         ${k.anchor ? '<span class="rm-anchor-badge">Anker</span>' : ''}
       </div>
+      ${expandedBlock}
     </div>
   `;
 }
