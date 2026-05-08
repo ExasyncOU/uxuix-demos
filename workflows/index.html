@@ -7,12 +7,13 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
-  --bg: #1a1a2e; --panel: #16213e; --accent: #0f3460;
-  --green: #00d4aa; --yellow: #ffd93d; --red: #ff6b6b;
-  --blue: #4fc3f7; --purple: #b388ff; --orange: #ffab40;
-  --text: #e0e0e0; --text-muted: #8892a0; --border: #2a3a5e;
-  --code-bg: #0d1b2a; --card-bg: #1e2d4a; --hover-glow: rgba(0,212,170,0.15);
-  --lane-orch: #00d4aa; --lane-data: #4fc3f7; --lane-idis: #ffd93d; --lane-mail: #b388ff;
+  /* Exasync Brand — uebernommen aus exasync.ai (#1b16ff Indigo, #080e0e dark) */
+  --bg: #080e0e; --panel: #0e0e0f; --accent: #161616;
+  --green: #1b16ff; --yellow: #ffd93d; --red: #f85149;
+  --blue: #00f6ff; --purple: #b388ff; --orange: #ffab40;
+  --text: #e6edf3; --text-muted: #758696; --border: #1a1a1c;
+  --code-bg: #0e0e0f; --card-bg: #161616; --hover-glow: rgba(27,22,255,0.25);
+  --lane-orch: #1b16ff; --lane-data: #00f6ff; --lane-idis: #ffd93d; --lane-mail: #b388ff;
 }
 html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
 code, pre, .mono { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
@@ -192,12 +193,13 @@ table.history .status-dot.err { background: var(--red); }
 
 /* ─── Light Theme ─── */
 [data-theme="light"] {
+  /* Light-Variante mit Brand-Indigo als Primary (--green = primary action) */
   --bg: #f0f2f5; --panel: #ffffff; --accent: #e3eaf3;
-  --green: #0a8f6c; --yellow: #b8860b; --red: #c0392b;
-  --blue: #2577b5; --purple: #7c3aed; --orange: #d97706;
-  --text: #1a1a2e; --text-muted: #5a6577; --border: #d0d5dd;
-  --code-bg: #f8f9fa; --card-bg: #ffffff; --hover-glow: rgba(10,143,108,0.1);
-  --lane-orch: #0a8f6c; --lane-data: #2577b5; --lane-idis: #b8860b; --lane-mail: #7c3aed;
+  --green: #1b16ff; --yellow: #b8860b; --red: #c0392b;
+  --blue: #0070b8; --purple: #7c3aed; --orange: #d97706;
+  --text: #1a1a1c; --text-muted: #5a6577; --border: #d0d5dd;
+  --code-bg: #f8f9fa; --card-bg: #ffffff; --hover-glow: rgba(27,22,255,0.12);
+  --lane-orch: #1b16ff; --lane-data: #0070b8; --lane-idis: #b8860b; --lane-mail: #7c3aed;
 }
 
 /* ─── Heartbeat Pulse ─── */
