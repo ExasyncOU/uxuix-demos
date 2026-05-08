@@ -488,6 +488,76 @@
               "label": "Brief mit Sandro reviewed + multi-tenant-Faehigkeit bestaetigt"
             }
           ]
+        },
+        {
+          "id": "may-x-va-search",
+          "lane": "operative",
+          "title": "VA Outreach+Admin gesucht + onboardet",
+          "detail": "20h/Wo, Russisch+DE bevorzugt, Logistik-DACH-Recherche + may-8-Termine fixieren + Inbox-Triage. NICHT Bestandskunden-Expansion (UXUIX-Lizenz-Kunden), sondern eigene-Lead-Generation.",
+          "stars": 4,
+          "type": "manual",
+          "tier": "pflicht",
+          "deadline": "2026-05-31",
+          "notes": "Audit 08.05.2026: Apollo + Athena empfehlen unabhaengig als #1 Hebel. P-Lift +5-7pp (10-15h Bodo-Zeit zurueck pro Woche). Anbieter-Vergleich: Pineapple (Estland-fokus) / Magic / Maksim-Bragin-Netzwerk (Russisch-Logistik). Budget 400 EUR/Mo aus 10%-Reserve + Buffer.",
+          "subtasks": [
+            {
+              "id": "job-description",
+              "label": "Job-Description finalisiert (Russisch+DE, 20h/Wo, SOPs Outreach+Recherche+Termine)"
+            },
+            {
+              "id": "anbieter-vergleich",
+              "label": "3 VA-Anbieter verglichen (Pineapple / Magic / Maksim-Netzwerk)"
+            },
+            {
+              "id": "kandidaten-interview",
+              "label": "2-3 Kandidaten Kennenlern-Calls"
+            },
+            {
+              "id": "va-hired",
+              "label": "VA mandatiert + Vertrag/Vereinbarung"
+            },
+            {
+              "id": "onboarding-woche",
+              "label": "Onboarding-Woche durchgefuehrt (SOPs etabliert)"
+            },
+            {
+              "id": "erste-leads",
+              "label": "Erste 10 qualifizierte Logistik-DACH-Leads recherchiert"
+            }
+          ]
+        },
+        {
+          "id": "may-x-coach-search",
+          "lane": "operative",
+          "title": "Bodo-Executive-Coach gefunden + erstes Setting",
+          "detail": "1 Session/2 Wo, Strategic Sparring, 150 EUR/Mo. Reboot.io-Tier (200-400 USD/Session) vs lokal Tallinn/Tartu (50-150 EUR/Session)",
+          "stars": 3,
+          "type": "manual",
+          "tier": "pflicht",
+          "deadline": "2026-05-31",
+          "notes": "Audit 08.05.2026: Atlas+Themis #2 + Athena #3. P-Lift +3-4pp. Schuetzt vor Wishful-Thinking-Anker, Decision-Quality-Drift, Bodo-als-Single-Founder-Sparring-Partner-Mangel. Sandro = Execution-Partner, nicht Strategie.",
+          "subtasks": [
+            {
+              "id": "coach-recherche",
+              "label": "5 Coach-Optionen recherchiert (Reboot.io vs lokal EE)"
+            },
+            {
+              "id": "shortlist-3",
+              "label": "Shortlist 3 Kandidaten + Profil-Vergleich"
+            },
+            {
+              "id": "kennenlern-calls",
+              "label": "3 Kennenlern-Calls 30 Min"
+            },
+            {
+              "id": "coach-mandat",
+              "label": "Coach-Auswahl + Mandat"
+            },
+            {
+              "id": "erste-session",
+              "label": "Erste Session gehalten + Sparring-Rhythmus etabliert"
+            }
+          ]
         }
       ]
     },
@@ -743,6 +813,84 @@
             {
               "id": "wochen-review",
               "label": "Wochen-Review-Termin (Sonntags 30 Min)"
+            }
+          ]
+        },
+        {
+          "id": "jun-x-cicd-litellm",
+          "lane": "operative",
+          "title": "CI/CD-Pipeline + LiteLLM-Architektur produktiv",
+          "detail": "GitHub Actions Workflow + Self-Hosted Runner auf B-Drone + LiteLLM-Proxy auf B-Hive. Loest R10b Gist-Drift komplett, bereitet Anthropic-Hedge vor.",
+          "stars": 4,
+          "type": "manual",
+          "tier": "pflicht",
+          "deadline": "2026-06-30",
+          "notes": "Audit 08.05.2026: Hephaestus #1 + #3. P-Lift +5pp (Skalierungs-Backstop). Kostet quasi 0 EUR (GitHub Actions free + Self-Hosted Runner gratis). Voraussetzung fuer Pipeline-Skalierung 1->10 Kunden ohne Bodo-Burnout.",
+          "subtasks": [
+            {
+              "id": "github-actions-yml",
+              "label": "gist-deploy.yml Workflow geschrieben (push -> Gist-Update -> freeze-sync.mjs)"
+            },
+            {
+              "id": "self-hosted-runner",
+              "label": "Self-Hosted Runner auf B-Drone aktiv (4h Setup)"
+            },
+            {
+              "id": "r9-gate-integriert",
+              "label": "R9-Check (10/10) als Deploy-Gate integriert"
+            },
+            {
+              "id": "workflow-runs-insert",
+              "label": "workflow_runs-Insert nach jedem Deploy automatisiert"
+            },
+            {
+              "id": "litellm-proxy-bhive",
+              "label": "LiteLLM-Proxy auf B-Hive konfiguriert (zentraler Router fuer alle Agent-Calls)"
+            },
+            {
+              "id": "routing-spec",
+              "label": "Routing-Spec dokumentiert (Tier 1 Booster / 2 Haiku / 3 Sonnet+Opus / Fallback Llama)"
+            },
+            {
+              "id": "failover-test",
+              "label": "Failover-Test bestanden (Anthropic-Outage-Simulation, 4h-Recovery)"
+            }
+          ]
+        },
+        {
+          "id": "jun-x-aurum-klausur",
+          "lane": "holding",
+          "title": "Aurum-Gesellschafter-Strategie-Klausur (Bodo+Francesca)",
+          "detail": "1-2 Tage Off-Grid Estland (Lahemaa NP / Insel) - rechtlich als Aurum-Gesellschafter-Versammlung framed mit Tagesordnung + Beschluss-Protokoll, dann steuerlich absetzbar (~800 EUR Gesamtkosten).",
+          "stars": 3,
+          "type": "manual",
+          "tier": "pflicht",
+          "deadline": "2026-06-30",
+          "notes": "Audit 08.05.2026: Athena #2 als ASSET-PROTECTION (nicht Wellbeing). 50/50 Aurum-Holding ohne dokumentierten Alignment-Prozess = strukturelles Single-Point-of-Failure. Tagesordnung: Roadmap-Alignment, Aurum-Strategie, MA-SARL-Struktur, Caretaker-Mode bei Bodo-Notfall. STEUER-FRAME: Gesellschafter-Versammlung mit Beschluss-Protokoll - Comistar-Vorlage nutzen.",
+          "subtasks": [
+            {
+              "id": "tagesordnung",
+              "label": "Tagesordnung formuliert (5 Themen-Bloecke: Roadmap / Aurum-Strategie / MA-SARL / Caretaker / Investments)"
+            },
+            {
+              "id": "termin-fixiert",
+              "label": "Termin fixiert (1-2 Tage, Wochenende)"
+            },
+            {
+              "id": "unterkunft",
+              "label": "Unterkunft gebucht (Estland-Insel oder Lahemaa NP)"
+            },
+            {
+              "id": "klausur-durchgefuehrt",
+              "label": "Klausur durchgefuehrt"
+            },
+            {
+              "id": "beschluss-protokoll",
+              "label": "Beschluss-Protokoll geschrieben + von beiden unterschrieben"
+            },
+            {
+              "id": "aurum-doku",
+              "label": "Protokoll im Aurum-OUe-Datenraum archiviert (Substanz-Doku)"
             }
           ]
         }
@@ -4240,6 +4388,22 @@
       ],
       "mrr_trajektorie_neu": "5k -> 8k -> 12k -> 16k -> 18k -> 19k -> 20k",
       "mrr_trajektorie_alt": "5k -> 12k -> 25k -> 40k -> 55k -> 70k -> 80k"
+    },
+    "investment_plan": {
+      "date": "2026-05-08",
+      "cash_basis": "13k EUR + 10% Recurring",
+      "upfront_sofort": "~1500 EUR (Off-Grid Aurum-Klausur 800 + Berufshaftpflicht 500 + Tech-Setup 200) - Bloodwork+Heart-Scan privat",
+      "recurring_pflicht": "550 EUR/Mo (VA 400 + Bodo-Coach 150) - Buffer-finanziert Mo 1-4, self-funded ab MRR 5k",
+      "liquiditaet_buffer": "~10800 EUR auf Geschaeftskonto (nicht gesperrt, implizit ~5-6k MA-Compromis-Reserve)",
+      "later_triggers": {
+        "MRR 5k (Q3/26)": "Comistar Holding-Setup 2k + DE AStG-Memo 2k + DE-Buchhalter 250 EUR/Mo",
+        "MRR 8k (Q3/26)": "Better Stack 30 + LinkedIn Sales Nav 99 + Krankentagegeld 80 EUR/Mo",
+        "MRR 12k (Q4/26)": "EE-Accountant Aurum 100 + Hetzner Llama-Fallback 30 EUR/Mo",
+        "Bodo-Entscheidung offen": "Couples-Counseling 200 EUR/Mo (Athena empfiehlt, verschoben)"
+      },
+      "p_lift_compound": "+15-17pp (mit aktueller Allokation)",
+      "p_total_after": "~80% (Pflicht-Tier mit 6-Mo-Buffer)",
+      "apollo_korrektur": "Bestandskunden-QBR-Hebel funktioniert NICHT - Nacke/Fleetboard/GV/Welzhofer/Scaleinvest sind UXUIX-Lizenz-Kunden, nicht direkte Exasync-Kunden. VA muss eigene Lead-Generation treiben."
     }
   }
 }
