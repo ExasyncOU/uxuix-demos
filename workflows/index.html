@@ -831,6 +831,9 @@ table.gist-versions a:hover { text-decoration: underline; }
     <select class="wf-select" id="wfSelect" title="Workflow waehlen">
       <!-- Dynamisch befuellt aus list.json + workflow.json -->
     </select>
+    <select class="wf-select" id="accountSelect" title="Account waehlen (nur bei Multi-Account-Workflows)" style="display:none;">
+      <!-- Dynamisch befuellt aus workflow.accounts[] (nur sichtbar wenn vorhanden) -->
+    </select>
     <button class="theme-toggle" id="themeToggle" title="Dark/Light umschalten">&#9790;</button>
   </div>
 </div>
@@ -1215,7 +1218,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 // ═══════════════════════════════════════════════════════════════
 // DATA STORE — Workflows + Registry werden hier gecacht
 // ═══════════════════════════════════════════════════════════════
-const STORE = { workflows: {}, registry: {}, currentWf: null };
+const STORE = { workflows: {}, registry: {}, currentWf: null, currentWfId: null, currentAccount: null };
 
 // ═══════════════════════════════════════════════════════════════
 // INTEGRATION DATA — Pro Workflow die externen Systeme
@@ -1446,6 +1449,7 @@ function switchWorkflow(wfId) {
   if (!wf) return;
   STORE.currentWf = wf;
   STORE.currentWfId = wfId;
+  populateAccountSelector(wf);
   renderSwimlane(wf);
   renderGuardrails(wf);
   renderIntegration(wfId);
@@ -1453,6 +1457,35 @@ function switchWorkflow(wfId) {
   loadHistory(wfId);
   loadIncidents(wfId);
   loadDataPanel(wfId);
+}
+
+// Account-Picker für Multi-Account-Workflows (z.B. linkedin-auto-connect)
+function populateAccountSelector(wf) {
+  const sel = document.getElementById('accountSelect');
+  if (!sel) return;
+  sel.innerHTML = '';
+  if (!wf || !Array.isArray(wf.accounts) || wf.accounts.length === 0) {
+    sel.style.display = 'none';
+    STORE.currentAccount = null;
+    return;
+  }
+  // "Alle Accounts" + jeder Eintrag aus accounts[]
+  const optAll = document.createElement('option');
+  optAll.value = '__all';
+  optAll.textContent = 'Alle Accounts (' + wf.accounts.length + ')';
+  sel.appendChild(optAll);
+  wf.accounts.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.key;
+    const statusBadge = a.status === 'planned' ? ' (geplant)' : a.status === 'recovery' ? ' (recovery)' : '';
+    const tenantBadge = a.tenant ? ' [' + a.tenant + ']' : '';
+    opt.textContent = (a.display_name || a.key) + tenantBadge + statusBadge;
+    if (a.status === 'planned') opt.disabled = true;
+    sel.appendChild(opt);
+  });
+  STORE.currentAccount = '__all';
+  sel.value = '__all';
+  sel.style.display = '';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1775,6 +1808,20 @@ function updateWorkflowMeta(wfId) {
 
 wfSelect.addEventListener('change', () => switchWorkflow(wfSelect.value));
 
+// Account-Picker: re-render History/Heartbeat/Daten beim Wechsel (gleicher Workflow, anderer Account-Filter)
+const accountSelect = document.getElementById('accountSelect');
+if (accountSelect) {
+  accountSelect.addEventListener('change', () => {
+    STORE.currentAccount = accountSelect.value;
+    const wfId = STORE.currentWfId;
+    if (!wfId) return;
+    loadHistory(wfId);
+    loadIncidents(wfId);
+    loadDataPanel(wfId);
+    checkHeartbeat();
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════
 // SUPABASE CONFIG (anon key — read-only via RLS)
 // ═══════════════════════════════════════════════════════════════
@@ -1851,16 +1898,26 @@ let WF_ID_MAP = {
   nacke: ['nacke'],
   maut: ['uxuix/mautberechnung', 'maut'],
   linkedin: ['uxuix/linkedin-leadgen', 'linkedin'],
+  'linkedin-auto-connect': ['linkedin-auto-connect'],
   welzhofer: ['welzhofer/order-intake', 'welzhofer/order-status-update', 'uxuix/welzhofer-start', 'uxuix/welzhofer-stop']
 };
 
 function wfRunsFilter(wfId) {
   const ids = WF_ID_MAP[wfId];
+  let base;
   if (ids && ids.length > 0) {
-    return 'workflow_id=in.(' + ids.map(id => '"' + id + '"').join(',') + ')';
+    base = 'workflow_id=in.(' + ids.map(id => '"' + id + '"').join(',') + ')';
+  } else {
+    // Fallback: like-Match
+    base = 'workflow_id=like.*' + encodeURIComponent(wfId) + '*';
   }
-  // Fallback: like-Match
-  return 'workflow_id=like.*' + encodeURIComponent(wfId) + '*';
+  // Multi-Account-Filter: wenn ein Account ausgewählt ist UND der aktuelle Workflow accounts[] hat
+  const acc = STORE.currentAccount;
+  const wf = STORE.workflows[wfId];
+  if (acc && acc !== '__all' && wf && Array.isArray(wf.accounts) && wf.accounts.length > 0) {
+    base += '&metrics->>account=eq.' + encodeURIComponent(acc);
+  }
+  return base;
 }
 
 // ═══════════════════════════════════════════════════════════════
