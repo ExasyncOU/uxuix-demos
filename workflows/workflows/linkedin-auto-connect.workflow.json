@@ -1,0 +1,289 @@
+{
+  "$schema": "workflow-v1",
+  "id": "linkedin-auto-connect",
+  "name": "LinkedIn Auto-Connect",
+  "version": "1.0.0",
+  "status": "active",
+  "description": "Zentraler LinkedIn-Vernetzungs-Flow für alle Accounts auf der social-media VM (65.21.155.11). Ein Code-Stand, N Accounts (siehe accounts[]). Banner-Detection 4-Layer, Verify-Pending, Person-Tracking, Logging in workflow_runs (workflow_id='linkedin-auto-connect', metrics->>'account' differenziert).",
+  "owner": "linkedin-agent",
+  "category": "LinkedIn",
+  "vm": "social-media (65.21.155.11)",
+  "tenants": ["exasync", "uxuix"],
+  "supersedes": ["linkedin-bodo", "linkedin-michael"],
+  "accounts": [
+    {
+      "key": "bodo",
+      "tenant": "exasync",
+      "email": "bodo@buschick.de",
+      "display_name": "Bodo Buschick",
+      "supabase_id": "22222222-2222-2222-2222-222222222222",
+      "credential_vault_service": "linkedin-bodo-buschick",
+      "profile_dir": "/home/exasync/profiles/bodo",
+      "cdp_port": 9301,
+      "xvfb_display": ":94",
+      "tier": "established",
+      "daily_cap": 15,
+      "weekly_cap": 80,
+      "cron_split": [8, 7],
+      "schedule": {
+        "cron": "30 10,15 * * 1-5",
+        "human": "MO-FR 10:30 + 15:30 Berlin (Split 8+7, 1h versetzt zu Klixi)",
+        "timezone": "Europe/Berlin",
+        "earliestRunDate": "2026-05-04"
+      },
+      "search_keywords": [
+        "Geschäftsführer", "CEO", "HR Leiter", "Personalleiter", "CHRO", "Head of HR"
+      ],
+      "geo_focus": "Schweiz (geo_urn=106693272)",
+      "login_method": "auto-login.mjs (Plan B, Email+PW aus credential_vault)",
+      "activatedAt": "2026-04-29",
+      "status": "active",
+      "sessionHealth": "stale-cookie-2026-05-04",
+      "knownIssues": [
+        "Session-Cookie abgelaufen seit 04.05.2026 — alle Runs seitdem brechen mit not_logged_in ab. Fix: auto-login.mjs erneut anstoßen."
+      ]
+    },
+    {
+      "key": "michael",
+      "tenant": "uxuix",
+      "email": "info@michael-klix.de",
+      "display_name": "Michael Klix (Klixi)",
+      "supabase_id": "77ddafdc-809c-441f-b534-e0e5e3fed012",
+      "credential_vault_service": "(noch nicht angelegt)",
+      "profile_dir": "/home/exasync/profiles/michael",
+      "cdp_port": 9302,
+      "xvfb_display": ":91",
+      "tier": "warmup",
+      "daily_cap": 27,
+      "weekly_cap": 135,
+      "cron_split": [14, 13],
+      "schedule": {
+        "cron": "30 9,14 * * 1-5",
+        "human": "MO-FR 09:30 + 14:30 Berlin (Split 14+13)",
+        "timezone": "Europe/Berlin",
+        "earliestRunDate": "2026-05-04"
+      },
+      "search_keywords": [
+        "Teamleitung", "Head of Digital Transformation", "CEO", "Geschäftsführer",
+        "Disponent", "Transportleiter", "CTO", "Betriebsleiter", "Abteilungsleiter",
+        "Projektmanager", "Logistikleiter", "Operations Manager", "Vertriebsleiter",
+        "Personalleiter", "CFO", "Bereichsleiter", "Niederlassungsleiter",
+        "Key Account Manager", "Fuhrparkleiter", "Supply Chain Manager"
+      ],
+      "industry_focus": "Logistik/Trucking (industry=116)",
+      "first_message_template": "Hallo, schoen, dass wir jetzt vernetzt sind. Wenn du irgendwann mal was brauchst — einfach melden. LG Klixi",
+      "activatedAt": "2026-04-28",
+      "status": "active",
+      "knownIssues": [
+        "Acceptance-Banner werden vom Worker fälschlich als blocking_banner klassifiziert. Wochenverluste 6/11 Runs (05.-07.05.). Fix offen: connect.mjs Banner-Klassifikation um Whitelist 'hat Ihre Kontaktanfrage angenommen' erweitern."
+      ]
+    },
+    {
+      "key": "uxuix-3",
+      "tenant": "uxuix",
+      "email": "(TBD — Bodo legt fest)",
+      "display_name": "(UXUIX 3. Account — Platzhalter)",
+      "supabase_id": null,
+      "credential_vault_service": "(noch nicht angelegt)",
+      "profile_dir": "/home/exasync/profiles/uxuix-3",
+      "cdp_port": 9303,
+      "xvfb_display": ":92",
+      "tier": "warmup",
+      "daily_cap": null,
+      "weekly_cap": null,
+      "schedule": {
+        "cron": "TBD",
+        "human": "Onboarding offen — Schedule wird mit +1h Offset zum letzten aktiven Account vergeben (Bodo 10:30/15:30 → next slot 11:30/16:30)",
+        "timezone": "Europe/Berlin",
+        "earliestRunDate": "TBD"
+      },
+      "status": "planned",
+      "onboardingSteps": [
+        "1. credential_vault.insert service_name='linkedin-uxuix-3' (email, password, linkedin_account_id, cdp_port=9303, profile_dir, browser_profile)",
+        "2. linkedin_accounts.insert (browser_profile='uxuix-3', cdp_port=9303, tier='warmup')",
+        "3. VM: mkdir profiles/uxuix-3 + start-chrome-uxuix-3.sh + auto-login.mjs",
+        "4. workflow_runs Smoke-Test (1 Connect) — wenn grün: Cron in crontab user exasync",
+        "5. accounts[] in dieser Datei aktualisieren (status → active, Email + Schedule eintragen)"
+      ]
+    }
+  ],
+  "guardrails": {
+    "constraints": {
+      "allowedDays": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "allowedHours": { "start": "09:00", "end": "20:00" },
+      "maxConcurrentRuns": 1,
+      "timeoutMinutes": 10,
+      "hardRules": [
+        "Banner-Detection STOP bei jedem LinkedIn-Limit/Restriction-Banner (4 Detection-Layer)",
+        "Verify auf Ausstehend-Status nach jedem Send (max 5s waitForFunction)",
+        "Skip-Liste pro Run via aria-label — keine Person 2x angeklickt",
+        "Earliest-Run-Date Filter im Wrapper",
+        "Xvfb-Display pro Account einzigartig (Kollisionsvermeidung)",
+        "Singleton-Lock Cleanup vor jedem Run",
+        "Banner-STOP 2x in 24h für denselben Account → Status auf 'recovery', 48h Pause"
+      ]
+    }
+  },
+  "lanes": [
+    { "id": "orchestrator", "label": "Cron + Wrapper", "icon": "🎯", "color": "#4A90D9" },
+    { "id": "guard", "label": "Banner Guard", "icon": "🛡️", "color": "#E74C3C" },
+    { "id": "browser", "label": "Chrome + Playwright", "icon": "🔗", "color": "#0077B5" },
+    { "id": "data", "label": "Logging + Verify", "icon": "📊", "color": "#27AE60" }
+  ],
+  "steps": [
+    {
+      "id": "cron-trigger",
+      "lane": "orchestrator",
+      "module": "linkedin/run-connect-cron",
+      "label": "Cron Wrapper",
+      "description": "Cron-Trigger pro Account, prüft earliestRunDate, startet Xvfb auf account-spezifischem Display, source .env, ruft connect.mjs",
+      "next": ["login-check"]
+    },
+    {
+      "id": "login-check",
+      "lane": "browser",
+      "module": "linkedin/connect",
+      "label": "Login-Check via /feed/",
+      "description": "launchPersistentContext mit /home/exasync/profiles/{slug}, prüft ob Cookie-Login greift. Bei Fail: stop_reason='not_logged_in', kein Schaden.",
+      "next": ["navigate-target"]
+    },
+    {
+      "id": "navigate-target",
+      "lane": "browser",
+      "module": "linkedin/connect",
+      "label": "Zielseite ansteuern",
+      "description": "Goto mynetwork/grow + Klick auf 'Alle anzeigen' bei Aktivitäten-Vorschlägen",
+      "next": ["banner-precheck"]
+    },
+    {
+      "id": "banner-precheck",
+      "lane": "guard",
+      "module": "linkedin/connect",
+      "label": "Banner-Check (pre-click)",
+      "description": "VOR jedem Klick: 4 Detection-Layer (role=alert / artdeco-error / error-icons / Text-Pattern). Acceptance-Banner werden aktuell fälschlich als blocking klassifiziert — Fix offen.",
+      "next": ["click-vernetzen", "stop-blocking-banner"]
+    },
+    {
+      "id": "click-vernetzen",
+      "lane": "browser",
+      "module": "linkedin/connect",
+      "label": "Vernetzen + Senden",
+      "description": "1. button_search aller Vernetzen-Buttons mit aria-label  2. fresh-Filter (Skip-Set)  3. Klick erste fresh Person  4. modal_handle 'Ohne Notiz senden'",
+      "next": ["banner-postcheck"]
+    },
+    {
+      "id": "banner-postcheck",
+      "lane": "guard",
+      "module": "linkedin/connect",
+      "label": "Banner-Check (post-send)",
+      "description": "800ms nach Send: nochmal Banner-Check — LinkedIn zeigt Wochenlimit oft erst nach Submit",
+      "next": ["verify-pending", "stop-blocking-banner"]
+    },
+    {
+      "id": "verify-pending",
+      "lane": "data",
+      "module": "linkedin/connect",
+      "label": "Verify Ausstehend-Status",
+      "description": "page.waitForFunction max 5s: Card-Button muss von 'Vernetzen' auf 'Ausstehend'/'Pending' wechseln. Erst dann zählt Connect als verified.",
+      "next": ["click-vernetzen", "log-run"]
+    },
+    {
+      "id": "stop-blocking-banner",
+      "lane": "guard",
+      "module": "linkedin/connect",
+      "label": "STOP bei Banner",
+      "description": "Screenshot in /home/exasync/testruns/{ts}-{slug}-banner.png + stop_reason=blocking_banner — Loop bricht ab",
+      "next": ["log-run"]
+    },
+    {
+      "id": "log-run",
+      "lane": "data",
+      "module": "linkedin/connect",
+      "label": "Run loggen (workflow_runs)",
+      "description": "INSERT workflow_runs mit workflow_id='linkedin-auto-connect' + metrics: account (slug), connects_verified, attempts, failed_count, banner_hits, phase_timings, ms_per_connect, verified_persons, stop_reason",
+      "next": []
+    }
+  ],
+  "source": {
+    "type": "vm-only",
+    "vm": "social-media",
+    "files": {
+      "connect.mjs": {
+        "lines": 405,
+        "size": 17860,
+        "module": "linkedin/connect",
+        "logging": true,
+        "path": "/home/exasync/linkedin/connect.mjs",
+        "scope": "shared (alle Accounts)"
+      },
+      "run-connect.sh": {
+        "lines": 63,
+        "size": 1961,
+        "module": "linkedin/run-connect-cron",
+        "logging": true,
+        "path": "/home/exasync/linkedin/run-connect.sh",
+        "scope": "shared (alle Accounts, ENV-driven)"
+      }
+    },
+    "support_files": {
+      "description": "Hilfsskripte für Onboarding / Re-Login / Browser-Start — nicht Teil der aktiven Step-Pipeline, daher kein step.module.",
+      "auto-login.mjs": {
+        "lines": 130,
+        "size": 4947,
+        "module": "linkedin/auto-login",
+        "logging": true,
+        "path": "/home/exasync/linkedin/auto-login.mjs",
+        "sha256": "2e6525529ead6fe91df6f087770b8a17f9f6c8dfd4fbb7a533c25b2d2edec63d",
+        "repoSource": "A.I.D.A/flows/LinkedIn/vm-scripts/auto-login.mjs",
+        "scope": "shared (Onboarding/Re-Login)"
+      },
+      "start-chrome-bodo.sh": {
+        "lines": 4,
+        "size": 465,
+        "module": "linkedin/start-chrome",
+        "logging": false,
+        "path": "/home/exasync/linkedin/start-chrome-bodo.sh",
+        "sha256": "88aaefca77024c61fe4597fdc52e118a2c1197b84481cef927c1f451f7b0dc20",
+        "scope": "account:bodo"
+      },
+      "start-chrome-michael.sh": {
+        "lines": 3,
+        "size": 390,
+        "module": "linkedin/start-chrome",
+        "logging": false,
+        "path": "/home/exasync/linkedin/start-chrome-michael.sh",
+        "sha256": "b389fdbfa38508f4899a8499959a5958de0de5a3b7a7c93861cf940c1addc028",
+        "scope": "account:michael"
+      }
+    },
+    "currentSHA": "linkedin-auto-connect-merged-20260511",
+    "lastDeploy": "2026-05-11T12:30:00Z"
+  },
+  "monitoring": {
+    "supabase": {
+      "table": "workflow_runs",
+      "filter_base": "workflow_id = 'linkedin-auto-connect'",
+      "filter_by_account": "workflow_id = 'linkedin-auto-connect' AND metrics->>'account' = '{account.key}'",
+      "ui_hint": "Account-Picker im Workflow Monitor — leer = alle Accounts, ausgewählt = filter by metrics->>'account'"
+    },
+    "metrics": [
+      "account",
+      "connects_verified",
+      "attempts",
+      "failed_count",
+      "banner_hits",
+      "duration_ms",
+      "ms_per_connect",
+      "phase_timings",
+      "stop_reason",
+      "verified_persons"
+    ]
+  },
+  "changelog": [
+    {
+      "date": "2026-05-11",
+      "version": "1.0.0",
+      "change": "Merge von linkedin-bodo + linkedin-michael in einen zentralen Flow mit accounts[]-Array. UXUIX als zweiter Tenant angelegt. Platzhalter uxuix-3 vorbereitet. Steps + Lanes 1:1 übernommen (waren bei beiden Files identisch). DB-Mapping über ops_customer_workflows: 2 Einträge (Exasync + UXUIX) auf gleichen workflow_key."
+    }
+  ]
+}
