@@ -1,7 +1,7 @@
 {
   "$schema": "module-registry-v1",
   "version": "1.0.0",
-  "generatedAt": "2026-05-08T15:03:33.367Z",
+  "generatedAt": "2026-05-11T12:39:55.837Z",
   "description": "Zentrale Registry aller Workflow-Module fuer den Exasync Workflow Monitor",
   "modules": {
     "core/metrics-collector": {
@@ -79,7 +79,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "orchestrator.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 1172,
         "size": 48982
       },
@@ -110,7 +110,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_browser.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 246,
         "size": 9664
       },
@@ -143,7 +143,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "picklist_generator.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 1026,
         "size": 43129
       },
@@ -192,7 +192,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "picklist_pdf.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 249,
         "size": 8277
       },
@@ -239,7 +239,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "master_data.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 359,
         "size": 12571
       },
@@ -269,7 +269,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "overconfirmation.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 214,
         "size": 7854
       },
@@ -299,7 +299,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "daily_report.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 546,
         "size": 11051
       },
@@ -329,7 +329,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "printer.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 282,
         "size": 10904,
         "lastFetched": "2026-04-27T11:04:44Z"
@@ -358,7 +358,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "config.json",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 78,
         "size": 2538,
         "lastFetched": "2026-04-27T11:04:44Z"
@@ -944,7 +944,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "fulltest.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 501,
         "size": 21399
       },
@@ -973,7 +973,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_amend.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 296,
         "size": 10807
       },
@@ -1002,7 +1002,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_connect.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 176,
         "size": 6169
       },
@@ -1031,7 +1031,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_export.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 413,
         "size": 13992
       },
@@ -1060,7 +1060,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_login.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 171,
         "size": 5021
       },
@@ -1089,7 +1089,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_packaging.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 239,
         "size": 7744
       },
@@ -1118,7 +1118,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_save_back.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 116,
         "size": 3688
       },
@@ -1147,7 +1147,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "idis_selectors.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 147,
         "size": 5773
       },
@@ -1176,9 +1176,9 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "nacke_email.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 220,
-        "size": 8942
+        "size": 8947
       },
       "gate": {
         "passed": false,
@@ -1205,7 +1205,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "requirements.txt",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 7,
         "size": 86
       },
@@ -1718,7 +1718,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "generate_todo_list.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 567,
         "size": 20658
       },
@@ -1764,7 +1764,7 @@
         "owner": "ExasyncOU",
         "gistId": "d8fe35c43d948ed0e898e4eb76049934",
         "file": "preflight_check.py",
-        "sha": "3d13d8216a7ddc6f374a8054fdff6f85b327931e",
+        "sha": "9f6fe568681c4dba2f2c54c4da4ce7f2712ca524",
         "lines": 603,
         "size": 22418
       },
