@@ -1,0 +1,22 @@
+[
+  {
+    "description": "SSH from B-Hive only",
+    "direction": "in",
+    "protocol": "tcp",
+    "port": "22",
+    "source_ips": ["88.196.183.82/32"]
+  },
+  {
+    "description": "RDP from B-Hive only",
+    "direction": "in",
+    "protocol": "tcp",
+    "port": "3389",
+    "source_ips": ["88.196.183.82/32"]
+  },
+  {
+    "description": "ICMP open (ping/diag)",
+    "direction": "in",
+    "protocol": "icmp",
+    "source_ips": ["0.0.0.0/0", "::/0"]
+  }
+]
