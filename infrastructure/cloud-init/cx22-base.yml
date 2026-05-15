@@ -1,0 +1,48 @@
+#cloud-config
+# cx22-base: minimale Ubuntu 24.04 VM mit Sicherheits-Defaults
+# Verwendung: Trading-Bot, Worker, kleine Backend-Services
+
+hostname: cx22-base
+timezone: Europe/Berlin
+locale: en_US.UTF-8
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - curl
+  - jq
+  - git
+  - htop
+  - vim
+  - tmux
+
+users:
+  - default
+  - name: exasync
+    groups: sudo
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    ssh_authorized_keys: []  # B-Hive-Master Key wird via Hetzner Project-Key zugewiesen
+
+write_files:
+  - path: /etc/apt/apt.conf.d/50unattended-upgrades-custom
+    content: |
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "04:00";
+    permissions: '0644'
+
+runcmd:
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw --force enable
+  - systemctl enable --now fail2ban
+  - systemctl enable --now unattended-upgrades
+  - echo "Provisioned $(date -Iseconds) via Claude Code Web" > /etc/exasync-vm-info
+
+final_message: "cx22-base ready. Hostname=$HOSTNAME IP=$IPV4. Setup in $UPTIME seconds."

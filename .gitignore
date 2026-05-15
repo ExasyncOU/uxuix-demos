@@ -1,0 +1,30 @@
+# Local-only Claude state (per-machine)
+.claude/settings.local.json
+.claude/cache/
+.claude/memory.db
+.claude/scheduled_tasks.lock
+.claude/.session/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Logs / temp
+*.log
+logs/
+tmp/
+
+# Secrets — NIEMALS committen
+.env
+.env.local
+.env.*
+*.secret
+*.pem
+*_rsa
+*_ed25519

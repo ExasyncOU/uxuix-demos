@@ -1,0 +1,92 @@
+#cloud-config
+# cx22-pipeline: VM fuer Kunden-Pipelines (Python + Docker + Supabase)
+# Use-Case: Nacke, GV Logistik, Welzhofer, NTL, andere Pipeline-Kunden
+
+hostname: cx22-pipeline
+timezone: Europe/Berlin
+locale: en_US.UTF-8
+
+package_update: true
+package_upgrade: true
+
+apt:
+  sources:
+    docker:
+      source: "deb [arch=amd64] https://download.docker.com/linux/ubuntu noble stable"
+      keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88  # Docker Official
+
+packages:
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - curl
+  - jq
+  - git
+  - htop
+  - vim
+  - tmux
+  - python3.12
+  - python3.12-venv
+  - python3-pip
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+  - postgresql-client-16  # fuer Supabase DB direct access
+
+users:
+  - default
+  - name: exasync
+    groups: sudo, docker
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+
+write_files:
+  - path: /etc/systemd/system/exasync-pipeline.service
+    content: |
+      [Unit]
+      Description=Exasync Pipeline Worker
+      After=network.target docker.service
+      Requires=docker.service
+
+      [Service]
+      Type=simple
+      User=exasync
+      WorkingDirectory=/home/exasync/pipeline
+      EnvironmentFile=/home/exasync/.env
+      ExecStart=/home/exasync/pipeline/run.sh
+      Restart=on-failure
+      RestartSec=30
+
+      [Install]
+      WantedBy=multi-user.target
+    permissions: '0644'
+
+runcmd:
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw --force enable
+  - systemctl enable --now fail2ban
+  - systemctl enable --now unattended-upgrades
+
+  # Supabase CLI
+  - curl -fsSL https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz | tar -xz -C /usr/local/bin
+
+  # Pipeline-Verzeichnisse
+  - sudo -u exasync mkdir -p /home/exasync/pipeline /home/exasync/logs /home/exasync/data
+  - sudo -u exasync touch /home/exasync/.env
+  - chmod 600 /home/exasync/.env
+  - chown exasync:exasync /home/exasync/.env
+
+  - echo "Provisioned $(date -Iseconds) via Claude Code Web — Template cx22-pipeline" > /etc/exasync-vm-info
+
+final_message: |
+  cx22-pipeline ready.
+  Next Steps:
+    1. .env auf VM mit Pipeline-Config befuellen (SCP von B-Hive)
+    2. Pipeline-Code nach /home/exasync/pipeline/ deployen
+    3. systemctl enable --now exasync-pipeline
+    4. journalctl -u exasync-pipeline -f fuer Live-Logs

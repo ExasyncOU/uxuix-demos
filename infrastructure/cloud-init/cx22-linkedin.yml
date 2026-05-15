@@ -1,0 +1,100 @@
+#cloud-config
+# cx22-linkedin: VM fuer LinkedIn Multi-Account Outreach (Browser-Workload)
+# Basis: social-media VM (Server-ID 127816983) Setup, reproduzierbar
+# Lerneffekt: GPG-Keys MUESSEN mit explizitem keyid (siehe learnings)
+
+hostname: cx22-linkedin
+timezone: Europe/Berlin
+locale: en_US.UTF-8
+
+package_update: true
+package_upgrade: true
+
+apt:
+  sources:
+    google-chrome:
+      source: "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
+      keyid: 4CCA1EAF950CEE4AB83976DCA040830F7FAC5991  # Google Linux Package Signing
+    nodesource:
+      source: "deb https://deb.nodesource.com/node_22.x nodistro main"
+      keyid: 1655A0AB68576280  # NodeSource
+
+packages:
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - curl
+  - jq
+  - git
+  - htop
+  - vim
+  - tmux
+  - google-chrome-stable
+  - nodejs
+  - npm
+  - xfce4
+  - xrdp
+  - xvfb
+  - dbus-x11
+  - xdotool
+  - libnss3
+  - libatk-bridge2.0-0
+  - libgbm1
+  - libasound2t64
+
+users:
+  - default
+  - name: exasync
+    groups: sudo
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false  # RDP-Login braucht Passwort (aus credential_vault gesetzt)
+
+write_files:
+  - path: /home/exasync/setup-chrome-profile.sh
+    content: |
+      #!/bin/bash
+      # Anlegen eines Chrome-Profile Verzeichnisses pro LinkedIn-Account
+      # Nutzung: ./setup-chrome-profile.sh <profile-name> <cdp-port>
+      PROFILE=${1:-bodo}
+      PORT=${2:-9301}
+      mkdir -p "/home/exasync/profiles/$PROFILE"
+      cat > "/home/exasync/start-chrome-$PROFILE.sh" <<EOF
+      #!/bin/bash
+      google-chrome --user-data-dir="/home/exasync/profiles/$PROFILE" \\
+        --remote-debugging-port=$PORT \\
+        --no-first-run --no-default-browser-check \\
+        "\$@"
+      EOF
+      chmod +x "/home/exasync/start-chrome-$PROFILE.sh"
+    permissions: '0755'
+    owner: exasync:exasync
+
+runcmd:
+  # Sicherheit
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 3389/tcp  # RDP
+  - ufw --force enable
+  - systemctl enable --now fail2ban
+  - systemctl enable --now unattended-upgrades
+
+  # RDP/Desktop
+  - systemctl enable --now xrdp
+  - echo "xfce4-session" > /home/exasync/.xsession
+  - chown exasync:exasync /home/exasync/.xsession
+
+  # Verzeichnisse fuer Multi-Account-Pattern
+  - sudo -u exasync mkdir -p /home/exasync/profiles /home/exasync/linkedin /home/exasync/testruns /home/exasync/logs
+
+  # Marker
+  - echo "Provisioned $(date -Iseconds) via Claude Code Web — Template cx22-linkedin" > /etc/exasync-vm-info
+
+final_message: |
+  cx22-linkedin ready.
+  Manual Steps:
+    1. exasync-Passwort setzen: passwd exasync (aus credential_vault)
+    2. RDP von B-Hive: <IPV4>:3389 User exasync
+    3. Chrome-Profil anlegen: /home/exasync/setup-chrome-profile.sh <profile> <cdp-port>
+    4. Manual LinkedIn-Login einmalig
